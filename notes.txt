@@ -1,0 +1,18 @@
+Не в каждом файле <processor> находится внутри <device>. Иногда он объявлен глобально внутри <family>
+
+Некоторые устройства, такие как STM32 содержат внутри <family> ветку <subFamily>, в то время как Nordic такой ветки не содержит
+
+В CoIDE принято такое разделение:
+-- Manufacturer -> Family -> Serie -> Chip
+
+Если провести аналогию с pdsc, то :
+Manufacturer = <family Dvendor="STMicroelectronics:13"> (13 - это Vendor ID)
+Family = <processor Dcore="Cortex-M4">
+Serie = <subFamily DsubFamily="STM32F401"> или <family Dfamily="nRF51 Series"> (если нет subFamily)
+Chip = <device Dname="nRF51801_xxAB">
+
+То, что внесено в базу как Family, Serie и Chip средой автоматически генерируется в качестве Define, т.е. -DSTM32F401;
+
+ID Manufacturer в базе CoIDE не соответствуют Vendor ID в системе Keil
+
+Family в структуре CoIDE должны быть переименованы с "Cortex-M0" на "Cortex M0" (иногда автоматически вставляется дефайн -DM0;)

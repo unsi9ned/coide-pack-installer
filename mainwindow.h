@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "pdscparser.h"
 
 namespace Ui {
 class MainWindow;
@@ -10,7 +11,8 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
+private:
+    PdscParser parser;
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
