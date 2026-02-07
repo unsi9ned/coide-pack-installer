@@ -28,6 +28,11 @@ QString PackDescription::description()
     return this->_description;
 }
 
+QString PackDescription::release()
+{
+    return _release;
+}
+
 void PackDescription::setVendor(QString vendor)
 {
    this->_vendor = vendor;
@@ -46,6 +51,11 @@ void PackDescription::setUrl(QString url)
 void PackDescription::setDescription(QString description)
 {
     this->_description = description;
+}
+
+void PackDescription::setRelease(QString release)
+{
+    this->_release = release;
 }
 
 Manufacturer &PackDescription::vendor(const QString &vendorName)

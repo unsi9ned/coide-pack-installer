@@ -190,7 +190,7 @@
        <widget class="QLineEdit" name="lineEditUrl">
         <property name="geometry">
          <rect>
-          <x>125</x>
+          <x>130</x>
           <y>519</y>
           <width>681</width>
           <height>20</height>
@@ -200,7 +200,7 @@
        <widget class="QLineEdit" name="lineEditDatasheetUrl">
         <property name="geometry">
          <rect>
-          <x>125</x>
+          <x>130</x>
           <y>545</y>
           <width>681</width>
           <height>20</height>
@@ -236,7 +236,7 @@
        <widget class="QPushButton" name="pushButtonSave">
         <property name="geometry">
          <rect>
-          <x>570</x>
+          <x>580</x>
           <y>570</y>
           <width>119</width>
           <height>23</height>
@@ -255,7 +255,7 @@
        <widget class="QPushButton" name="pushButtonDataLoad">
         <property name="geometry">
          <rect>
-          <x>700</x>
+          <x>710</x>
           <y>570</y>
           <width>102</width>
           <height>23</height>
@@ -432,6 +432,29 @@
           <y>460</y>
           <width>231</width>
           <height>22</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_33">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>490</y>
+          <width>91</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Версия релиза:</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEditRelease">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>490</y>
+          <width>681</width>
+          <height>20</height>
          </rect>
         </property>
        </widget>

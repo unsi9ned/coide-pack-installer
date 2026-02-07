@@ -361,6 +361,7 @@ void MainForm::showDFPInfo(QModelIndex index)
     }
 
     ui->lineEditUrl->setText(pack.url());
+    ui->lineEditRelease->setText(pack.release());
     ui->plainTextEditDescription->setPlainText(pack.description());
 }
 

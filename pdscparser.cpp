@@ -119,6 +119,15 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         {
             parseDevFamilies(node, pack);
         }
+        else if(nodeName == "releases")
+        {
+            QDomElement lastRelease = node.firstChildElement("release");
+
+            if(!lastRelease.isNull())
+            {
+                pack.setRelease(lastRelease.attribute("version"));
+            }
+        }
     }
 }
 
