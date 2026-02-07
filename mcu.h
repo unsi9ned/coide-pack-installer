@@ -7,6 +7,7 @@
 
 #include "debugalgorithm.h"
 #include "flashalgorithm.h"
+#include "memory.h"
 
 #define USER_ID_COOCOX  (2)
 
@@ -33,6 +34,8 @@ private:
 
     DebugAlgorithm debugAlgorithm;
     FlashAlgorithm flashAlgorithm;
+
+    QMap<QString, Memory> _memoryMap;
 
 public:
     Mcu()
@@ -102,6 +105,31 @@ public:
         }
         else
             return true;
+    }
+
+    QMap<QString, Memory>& memoryRegions()
+    {
+        return this->_memoryMap;
+    }
+
+    Memory& memory(const QString& name)
+    {
+        if(_memoryMap.contains(name))
+            return _memoryMap[name];
+        else
+            return createMemoryRegion(name);
+    }
+
+    Memory& addMemoryRegion(const QString name)
+    {
+        return memory(name);
+    }
+
+private:
+    Memory& createMemoryRegion(const QString regionName)
+    {
+        _memoryMap.insert(regionName, Memory());
+        return _memoryMap[regionName].setName(regionName);
     }
 };
 

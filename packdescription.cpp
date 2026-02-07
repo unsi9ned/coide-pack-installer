@@ -83,8 +83,11 @@ void PackDescription::printInfo()
               << std::setw(25) << "Manufacturer"
               << std::setw(12) << "Core"
               << std::setw(20) << "Series"
+              << std::setw(20) << "Memory"
+              << std::setw(10) << "Start"
+              << std::setw(10) << "Size"
               << std::endl;
-    std::cout << std::string(80, '-') << std::endl;
+    std::cout << std::string(120, '-') << std::endl;
 
     foreach (Manufacturer vendor, vendors())
     {
@@ -100,6 +103,16 @@ void PackDescription::printInfo()
                               << std::setw(12) << family.getName().toStdString()
                               << std::setw(20) << series.getName().toStdString()
                               << std::endl;
+
+                    foreach(Memory region, chip.memoryRegions())
+                    {
+                        std::cout << std::left
+                                  << std::setw(77) << ""
+                                  << std::setw(20) << region.name().toStdString()
+                                  << std::setw(10) << QString::number(region.startAddr(), 16).toStdString()
+                                  << std::setw(10) << QString::number(region.size(), 16).toStdString()
+                                  << std::endl;
+                    }
                 }
             }
         }

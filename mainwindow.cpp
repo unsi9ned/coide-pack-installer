@@ -16,6 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.pdsc", pack);
 #elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.pdsc", pack);
+#elif 1
+    parser.parse(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.pdsc", pack);
 #endif
     pack.printInfo();
 }

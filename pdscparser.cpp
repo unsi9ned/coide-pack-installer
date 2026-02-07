@@ -223,5 +223,41 @@ void PdscParser::parseDevice(const QDomNode &deviceNode,
     QString devName = deviceNode.attributes().namedItem("Dname").nodeValue();
 
     pack.vendor(vendorName).setId(vendorId);
-    pack.vendor(vendorName).family(processor).series(series).addMcu(devName);
+    Mcu& newMcu = pack.vendor(vendorName).family(processor).series(series).addMcu(devName);
+
+    //
+    // Парсинг блоков memory
+    //
+    if(!deviceNode.firstChildElement("memory").isNull())
+    {
+        QDomNodeList memories = deviceNode.toElement().elementsByTagName("memory");
+
+        for (int i = 0; i < memories.count(); i++)
+        {
+               QDomElement memoryElem = memories.at(i).toElement();
+
+               QString id = memoryElem.attribute("id");
+               QString name = memoryElem.attribute("name");
+
+               QString startStr = memoryElem.attribute("start");
+               QString sizeStr = memoryElem.attribute("size");
+
+               quint32 start = startStr.toUInt(nullptr, 0);
+               quint32 size = sizeStr.toUInt(nullptr, 0);
+
+               bool startup = memoryElem.attribute("startup").toInt(nullptr, 0);
+               bool isDefault = memoryElem.attribute("default").toInt(nullptr, 0);
+               bool isInit = memoryElem.attribute("init").toInt(nullptr, 0);
+               QString access = memoryElem.attribute("access");
+
+               Memory& memoryRegion = newMcu.memory(KeilMemory(id, name).name());
+
+               memoryRegion.setStartAddr(start);
+               memoryRegion.setSize(size);
+               memoryRegion.setAccess(access);
+               memoryRegion.setStartup(startup);
+               memoryRegion.setDefault(isDefault);
+               memoryRegion.setInit(isInit);
+        }
+    }
 }
