@@ -13,15 +13,15 @@ private:
 
     int id;
     QString name;
-    QMap<int, Family> familiesMap;
+    QMap<QString, Family> familyMap;
 
 public:
 
     //Конструкторы
     //--------------------------------------------------------------------------
-    Manufacturer(int id = -1)
+    Manufacturer()
     {
-        this->id = id;
+        this->id = -1;
     }
     Manufacturer(int id, QString name)
     {
@@ -29,59 +29,92 @@ public:
         this->name = name;
     }
 
-    Manufacturer(const Manufacturer &m)
+    Manufacturer(Manufacturer* m)
     {
-        this->id = m.getId();
-        this->name = m.getName();
-        this->familiesMap = m.getFamiliesMap();
-    }
+        if(m == nullptr)
+            return;
 
-    Manufacturer(Manufacturer *m)
-    {
         this->id = m->getId();
         this->name = m->getName();
-        this->familiesMap = m->getFamiliesMap();
+
+        for (auto it = m->familyMap.begin(); it != m->familyMap.end(); ++it)
+        {
+            this->familyMap.insert(it.key(), it.value());
+        }
     }
 
-    //Конструкторы
-    //--------------------------------------------------------------------------
-    void operator =(const Manufacturer &m)
+    QMap<QString, Family>& families()
     {
-        this->id = m.getId();
-        this->name = m.getName();
-        this->familiesMap = m.getFamiliesMap();
+        return this->familyMap;
     }
 
-
-    //Геттеры/сеттеры
-    //--------------------------------------------------------------------------
     int getId() const {return id;}
     QString getName() const {return name;}
-    QMap<int, Family> getFamiliesMap() const
-    {
-        return this->familiesMap;
-    }
 
     void setId(int id){this->id = id;}
-    void setName(QString name){this->name = name;}
+
+    Manufacturer& setName(QString name)
+    {
+        this->name = name;
+        return *this;
+    }
 
 
 
     //Узнать количество семейств в списке
-    int getFamiliesCount(){return this->familiesMap.count();}
+    int getFamiliesCount(){return this->familyMap.count();}
 
     //Вернуть идентификаторы
-    QList<int> getFamiliesKeys(){return this->familiesMap.keys();}
+    QStringList getFamiliesKeys(){return this->familyMap.keys();}
 
     //Найти семейство по идентификатору
-    Family getFamily(int i)
+    Family getFamilyById(int i)
     {
-        return (familiesMap.contains(i)) ? familiesMap.value(i) : Family();
+        Family fam;
+        QMap<QString,Family>::iterator famIterator = familyMap.begin();
+
+        while(famIterator != familyMap.end())
+        {
+            Family currFamily = famIterator.value();
+
+            if(currFamily.getId() == i)
+            {
+                fam = currFamily;
+                break;
+            }
+
+            ++famIterator;
+        }
+
+        return fam;
+    }
+
+    Family& family(const QString& name)
+    {
+        if(this->familyMap.contains(name))
+            return this->familyMap[name];
+        else
+            return this->createNewFamily(name);
     }
 
     //Добавить семейство
-    void addFamily(Family f){this->familiesMap.insert(f.getId(), f);}
+    Family& addFamily(const QString& name)
+    {
+        return this->family(name).setName(name);
+    }
 
+    bool isValid()
+    {
+        return this->id > 0 && !this->name.isEmpty();
+    }
+
+private:
+
+    Family& createNewFamily(const QString& name)
+    {
+        this->familyMap.insert(name, Family());
+        return this->familyMap[name].setName(name);
+    }
 };
 
 #endif // MANUFACTURER_H

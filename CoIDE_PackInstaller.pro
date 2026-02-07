@@ -26,7 +26,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp\
         mainwindow.cpp \
     pdscparser.cpp \
-    packdescription.cpp
+    packdescription.cpp \
+    memory.cpp
 
 HEADERS  += mainwindow.h \
     pdscparser.h \
@@ -35,7 +36,8 @@ HEADERS  += mainwindow.h \
     flashalgorithm.h \
     family.h \
     manufacturer.h \
-    serie.h \
-    packdescription.h
+    packdescription.h \
+    series.h \
+    memory.h
 
 FORMS    += mainwindow.ui

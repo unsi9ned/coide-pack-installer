@@ -5,110 +5,121 @@
 #include <QString>
 #include <QList>
 
-#include "serie.h"
+#include "series.h"
 
 class Family
 {
 private:
 
     int id;
-    QString familyName;
+    QString _name;
     int manufacturerId;
 
-    QMap<int, Serie> seriesMap;
+    QMap<QString, Series> _seriesMap;
 
 public:
 
     //Конструкторы
     //--------------------------------------------------------------------------
-    Family(int id = -1)
+    Family()
     {
-        this->id = id;
+        this->id = -1;
     }
 
     Family(int id, QString familyName, int manufacturerId)
     {
         this->id = id;
-        this->familyName = familyName;
+        this->_name = familyName;
         this->manufacturerId = manufacturerId;
-    }
-
-    Family(const Family &f)
-    {
-        this->id = f.getId();
-        this->familyName = f.getFamilyName();
-        this->manufacturerId = f.getManufacturerId();
-        this->seriesMap = f.getSeriesMap();
     }
 
     Family(Family *f)
     {
+        if(f == nullptr)
+            return;
+
         this->id = f->getId();
-        this->familyName = f->getFamilyName();
+        this->_name = f->getName();
         this->manufacturerId = f->getManufacturerId();
-        this->seriesMap = f->getSeriesMap();
-    }
 
-    //Операторы
-    //--------------------------------------------------------------------------
-    void operator =(const Family &f)
-    {
-        this->id = f.getId();
-        this->familyName = f.getFamilyName();
-        this->manufacturerId = f.getManufacturerId();
-        this->seriesMap = f.getSeriesMap();
+        for(auto it = f->seriesMap().begin(); it != seriesMap().end(); ++it)
+        {
+            this->_seriesMap.insert(it.key(), it.value());
+        }
     }
 
 
-    //Геттеры, сеттеры
-    //--------------------------------------------------------------------------
     int getId() const {return id;}
-    QString getFamilyName() const {return familyName;}
+    QString getName() const {return _name;}
     int getManufacturerId() const {return manufacturerId;}
-    QMap<int, Serie> getSeriesMap() const {return this->seriesMap;}
+
+    QMap<QString, Series>& seriesMap()
+    {
+        return this->_seriesMap;
+    }
 
     void setId(int id){this->id = id;}
-    void setfamilyName(QString name){this->familyName = name;}
-    void setmanufacturerId(int id){this->manufacturerId = id;}
+    void setManufacturerId(int id){this->manufacturerId = id;}
 
-
-
-    //Количество серий процессоров в списке
-    int getSeriesCount(){return this->seriesMap.count();}
-
-    //Список идентификаторов серий
-    QList<int> getSeriesKeys(){return this->seriesMap.keys();}
-
-    //Найти серию по идентификатору
-    Serie getSerie(int i)
+    Family& setName(QString name)
     {
-        return (seriesMap.contains(i)) ? seriesMap.value(i) : Serie();
+        this->_name = name;
+        return *this;
     }
 
-    //Найти серию по имени
-    Serie getSerie(QString name)
+    //Количество серий процессоров в списке
+    int getSeriesCount(){return this->_seriesMap.count();}
+
+    //Список идентификаторов серий
+    QStringList getSeriesKeys(){return this->_seriesMap.keys();}
+
+    //Найти серию по идентификатору
+    Series getSeriesById(int i)
     {
-        Serie s;
-        QMap<int,Serie>::iterator serieIterator = seriesMap.begin();
+        Series s;
+        QMap<QString,Series>::iterator seriesIterator = _seriesMap.begin();
 
-        while(serieIterator != seriesMap.end())
+        while(seriesIterator != _seriesMap.end())
         {
-            Serie currSerie = serieIterator.value();
+            Series currSeries = seriesIterator.value();
 
-            if(currSerie.getSerieName() == name)
+            if(currSeries.getId() == i)
             {
-                s = currSerie;
+                s = currSeries;
                 break;
             }
 
-            ++serieIterator;
+            ++seriesIterator;
         }
 
         return s;
     }
 
-    void addSerie(const Serie &s){this->seriesMap.insert(s.getId(), s);}
+    // Вернуть серию по имени
+    Series& series(QString name)
+    {
+        if(_seriesMap.contains(name))
+            return _seriesMap[name];
+        else
+            return createNewSeries(name);
+    }
 
+    Series& addSeries(const QString& name)
+    {
+        return this->series(name).setName(name);
+    }
+
+    bool isValid()
+    {
+        return this->id > 0 && !this->_name.isEmpty();
+    }
+
+private:
+    Series& createNewSeries(const QString& seriesName)
+    {
+        this->_seriesMap.insert(seriesName, Series());
+        return this->_seriesMap[seriesName].setName(seriesName);
+    }
 };
 
 #endif // FAMILY_H

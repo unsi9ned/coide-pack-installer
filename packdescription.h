@@ -13,7 +13,7 @@ private:
     QString _url;
     QString _description;
 
-    QMap<int, Manufacturer> _devManufacturers;
+    QMap<QString, Manufacturer> _vendorMap;
 
 public:
     PackDescription();
@@ -28,7 +28,13 @@ public:
     void setUrl(QString url);
     void setDescription(QString description);
 
+    Manufacturer& vendor(const QString& vendorName);
+    QMap<QString, Manufacturer>& vendors();
+
     void printInfo();
+
+private:
+    Manufacturer& createNewVendor(const QString& vendorName);
 };
 
 #endif // PACKDESCRIPTION_H

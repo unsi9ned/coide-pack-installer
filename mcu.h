@@ -35,9 +35,9 @@ private:
     FlashAlgorithm flashAlgorithm;
 
 public:
-    Mcu(int id = -1)
+    Mcu()
     {
-        this->id = id;
+        this->id = -1;
     }
 
     Mcu(int id,
@@ -73,7 +73,11 @@ public:
     void setSeriesId(int id){this->seriesId = id;}
     void setUserId(int id){this->userId = id;}
     void setDebugAlgorithmId(int id){this->debugAlgorithmId = id;}
-    void setName(QString s){this->name = s;}
+    Mcu& setName(QString s)
+    {
+        this->name = s;
+        return *this;
+    }
     void setDescription(QString s){this->description = s;}
     void setKeyParameter(QByteArray s){this->keyParameter = s;}
     void setWebPageURL(QByteArray s){this->webPageURL = s;}
@@ -86,6 +90,19 @@ public:
     void setHits(int hits){this->hits = hits;}
     void setDebugAlgorithm(DebugAlgorithm da){this->debugAlgorithm = da;}
     void setFlashAlgorithm(FlashAlgorithm da){this->flashAlgorithm = da;}
+
+    bool isValid()
+    {
+        if(this->id <= 0 ||
+           this->seriesId <= 0 ||
+           this->name.isEmpty() ||
+           this->memInfo.isEmpty())
+        {
+            return false;
+        }
+        else
+            return true;
+    }
 };
 
 #endif // MCU_H

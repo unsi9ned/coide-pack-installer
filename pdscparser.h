@@ -17,7 +17,12 @@ public:
 
 private:
     void parseDomDocument(QDomDocument * doc, PackDescription& pack);
-    void parseDevices(const QDomNode& node, PackDescription& pack);
+    void parseDevFamilies(const QDomNode& node, PackDescription& pack);
+    void parseDevice(const QDomNode& deviceNode,
+                     const QString& vendor,
+                     const QString& processor,
+                     const QString& series,
+                     PackDescription& pack);
 };
 
 #endif // PDSCPARSER_H

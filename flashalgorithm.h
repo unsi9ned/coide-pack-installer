@@ -10,40 +10,49 @@ class FlashAlgorithm
 
 private:
 
-    int id;
-    QString name;
+    int     _id;
+    QString _name;
 
 public:
-    FlashAlgorithm(int id = -1){this->id = id;}
+    FlashAlgorithm()
+    {
+        this->_id = -1;
+    }
+
     FlashAlgorithm(int id, QString name)
     {
-        this->id = id;
-        this->name = name;
+        this->_id = id;
+        this->_name = name;
     }
 
     FlashAlgorithm(const FlashAlgorithm &fa)
     {
-        this->id = fa.getId();
-        this->name = fa.getName();
+        this->_id = fa.getId();
+        this->_name = fa.getName();
     }
 
     FlashAlgorithm(FlashAlgorithm *fa)
     {
-        this->id = fa->getId();
-        this->name = fa->getName();
+        this->_id = fa->getId();
+        this->_name = fa->getName();
     }
 
     void operator =(const FlashAlgorithm &fa)
     {
-        this->id = fa.getId();
-        this->name = fa.getName();
+        this->_id = fa.getId();
+        this->_name = fa.getName();
     }
 
-    void setId(int id){this->id = id;}
-    void setName(QString name){this->name = name;}
+    void setId(int id){this->_id = id;}
+    void setName(QString name){this->_name = name;}
 
-    int getId() const {return this->id;}
-    QString getName() const {return this->name;}
+    int getId() const {return this->_id;}
+    QString getName() const {return this->_name;}
+
+    bool isNull()
+    {
+        return this->_id <= 0 || this->_name.isEmpty();
+    }
 };
 
 #endif // FLASHALGORITHM_H

@@ -10,46 +10,49 @@ class DebugAlgorithm
 
 private:
 
-    int id;
-    QString name;
+    int     _id;
+    QString _name;
 
 public:
-    DebugAlgorithm(int id = -1)
+    DebugAlgorithm()
     {
-        this->id = id;
+        this->_id = -1;
     }
 
     DebugAlgorithm(int id, QString name)
     {
-        this->id = id;
-        this->name = name;
+        this->_id = id;
+        this->_name = name;
     }
 
     DebugAlgorithm(const DebugAlgorithm &da)
     {
-        this->id = da.getId();
-        this->name = da.getName();
+        this->_id = da.getId();
+        this->_name = da.getName();
     }
 
     DebugAlgorithm(DebugAlgorithm *da)
     {
-        this->id = da->getId();
-        this->name = da->getName();
+        this->_id = da->getId();
+        this->_name = da->getName();
     }
 
     void operator =(const DebugAlgorithm &da)
     {
-        this->id = da.getId();
-        this->name = da.getName();
+        this->_id = da.getId();
+        this->_name = da.getName();
     }
 
+    void setId(int id){this->_id = id;}
+    void setName(QString name){this->_name = name;}
 
+    int getId() const {return this->_id;}
+    QString getName() const {return this->_name;}
 
-    void setId(int id){this->id = id;}
-    void setName(QString name){this->name = name;}
-
-    int getId() const {return this->id;}
-    QString getName() const {return this->name;}
+    bool isNull()
+    {
+        return this->_id <= 0 || this->_name.isEmpty();
+    }
 };
 
 #endif // DEDUGALGORITHM_H

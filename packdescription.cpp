@@ -1,4 +1,6 @@
 #include <QDebug>
+#include <iostream>
+#include <iomanip>
 #include "packdescription.h"
 
 PackDescription::PackDescription()
@@ -46,10 +48,66 @@ void PackDescription::setDescription(QString description)
     this->_description = description;
 }
 
+Manufacturer &PackDescription::vendor(const QString &vendorName)
+{
+    return _vendorMap.contains(vendorName) ?
+           _vendorMap[vendorName] :
+                createNewVendor(vendorName);
+}
+
+QMap<QString, Manufacturer> &PackDescription::vendors()
+{
+    return this->_vendorMap;
+}
+
 void PackDescription::printInfo()
 {
-    qInfo() << "Name: " << name();
-    qInfo() << "Vendor: " << vendor();
-    qInfo() << "Description: " << description();
-    qInfo() << "Url: " << url();
+//    qInfo() << "Name: " << name();
+//    qInfo() << "Vendor: " << vendor();
+//    qInfo() << "Description: " << description();
+//    qInfo() << "Url: " << url();
+
+    // Устанавливаем выравнивание влево для всех
+    std::cout << std::left;
+
+    std::cout << std::setw(13) << "Name:"        << name().toStdString() << std::endl;
+    std::cout << std::setw(13) << "Vendor:"      << vendor().toStdString() << std::endl;
+    std::cout << std::setw(13) << "Description:" << description().toStdString() << std::endl;
+    std::cout << std::setw(13) << "Url:"         << url().toStdString() << std::endl;
+
+    std::cout << std::endl;
+
+    // Шапка таблицы
+    std::cout << std::left
+              << std::setw(20) << "Device Name"
+              << std::setw(25) << "Manufacturer"
+              << std::setw(12) << "Core"
+              << std::setw(20) << "Series"
+              << std::endl;
+    std::cout << std::string(80, '-') << std::endl;
+
+    foreach (Manufacturer vendor, vendors())
+    {
+        foreach(Family family, vendor.families())
+        {
+            foreach(Series series, family.seriesMap())
+            {
+                foreach(Mcu chip, series.mcuMap())
+                {
+                    std::cout << std::left
+                              << std::setw(20) << chip.getName().toStdString()
+                              << std::setw(25) << vendor.getName().toStdString()
+                              << std::setw(12) << family.getName().toStdString()
+                              << std::setw(20) << series.getName().toStdString()
+                              << std::endl;
+                }
+            }
+        }
+    }
+}
+
+Manufacturer &PackDescription::createNewVendor(const QString &vendorName)
+{
+    _vendorMap.insert(vendorName, Manufacturer());
+    return _vendorMap[vendorName].setName(vendorName);
 }

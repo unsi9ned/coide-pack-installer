@@ -117,7 +117,7 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         }
         else if(nodeName == "devices")
         {
-            parseDevices(node, pack);
+            parseDevFamilies(node, pack);
         }
     }
 }
@@ -125,7 +125,7 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
 //------------------------------------------------------------------------------
 // Поиск описания устройств и разбор
 //------------------------------------------------------------------------------
-void PdscParser::parseDevices(const QDomNode &node, PackDescription &pack)
+void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
 {
     struct DevNode
     {
@@ -138,6 +138,7 @@ void PdscParser::parseDevices(const QDomNode &node, PackDescription &pack)
         DevNode()
         {
             this->vendorId = -1;
+            this->vendor = "";
         }
     };
 
@@ -151,7 +152,7 @@ void PdscParser::parseDevices(const QDomNode &node, PackDescription &pack)
         QString vendorInfo = family.attributes().namedItem("Dvendor").nodeValue();
         QString familyProcessor;
 
-        if(familyName.isEmpty() || vendorInfo.isEmpty())
+        if(familyName.isEmpty() || vendorInfo.isEmpty() || !vendorInfo.contains(":"))
             continue;
 
         QDomNodeList familyElements = family.childNodes();
@@ -183,41 +184,44 @@ void PdscParser::parseDevices(const QDomNode &node, PackDescription &pack)
                     }
                     else if(nodeName == "device")
                     {
-                        DevNode newNode;
                         QString devProcessor = node.namedItem("processor").attributes().namedItem("Dcore").nodeValue();
-
-                        newNode.vendor = vendorInfo;
-                        newNode.serie = subFamilyName;
-                        newNode.device = &node;
+                        QString coreName;
 
                         if(devProcessor.isEmpty())
                             if(subFamilyProcessor.isEmpty())
-                                newNode.core = familyProcessor;
+                                coreName = familyProcessor;
                             else
-                                newNode.core = subFamilyProcessor;
+                                coreName = subFamilyProcessor;
                         else
-                            newNode.core = familyProcessor;
+                            coreName = devProcessor;
 
-                        devNodes.append(newNode);
+                        parseDevice(node, vendorInfo, coreName, subFamilyName, pack);
                     }
                 }
             }
             else if(nodeName == "device")
             {
-                DevNode newNode;
                 QString devProcessor = node.namedItem("processor").attributes().namedItem("Dcore").nodeValue();
+                QString coreName;
 
-                newNode.vendor = vendorInfo;
-                newNode.core = devProcessor.isEmpty() ? familyProcessor : devProcessor;
-                newNode.serie = familyName;
-                newNode.device = &node;
-
-                devNodes.append(newNode);
+                coreName = devProcessor.isEmpty() ? familyProcessor : devProcessor;
+                parseDevice(node, vendorInfo, coreName, familyName, pack);
             }
         }
     }
+}
 
-    foreach (DevNode devNode, devNodes) {
-        qInfo() << devNode.core << devNode.serie;
-    }
+void PdscParser::parseDevice(const QDomNode &deviceNode,
+                             const QString &vendorInfo,
+                             const QString &processor,
+                             const QString &series,
+                             PackDescription &pack)
+{
+    QStringList vendorParts = vendorInfo.split(":") << "unknown" << "-1";
+    QString vendorName = vendorParts.at(0);
+    int vendorId = vendorParts.at(1).toInt();
+    QString devName = deviceNode.attributes().namedItem("Dname").nodeValue();
+
+    pack.vendor(vendorName).setId(vendorId);
+    pack.vendor(vendorName).family(processor).series(series).addMcu(devName);
 }
