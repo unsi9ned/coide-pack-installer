@@ -45,9 +45,9 @@ public:
     KeilMemory& setId(KeilMemoryId id);
     KeilMemory& setId(const QString& idStr);
     KeilMemory& setName(const QString& name);
+    static QString idToName(KeilMemoryId id);
 
 private:
-    QString idToName(KeilMemoryId id);
     KeilMemoryId idToInt(const QString& idStr);
 };
 
@@ -92,12 +92,15 @@ public:
     void setSize(const uint32_t &size);
     QString access() const;
     void setAccess(const QString &access);
-    bool startup() const;
-    void setStartup(bool startup);
+    bool isStartup() const;
+    void setStartup(bool isStartup);
     bool isInit() const;
     void setInit(bool isInit);
     bool isDefault() const;
     void setDefault(bool state);
+
+    bool isCodeMemory();
+    bool isDataMemory();
 
 private:
 

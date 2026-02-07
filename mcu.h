@@ -125,6 +125,28 @@ public:
         return memory(name);
     }
 
+    Memory* getCodeMemory()
+    {
+        for(auto it = _memoryMap.begin(); it != _memoryMap.end(); ++it)
+        {
+            if(it.value().isCodeMemory())
+                return &_memoryMap[it.key()];
+        }
+
+        return nullptr;
+    }
+
+    Memory* getDataMemory()
+    {
+        for(auto it = _memoryMap.begin(); it != _memoryMap.end(); ++it)
+        {
+            if(it.value().isDataMemory())
+                return &_memoryMap[it.key()];
+        }
+
+        return nullptr;
+    }
+
 private:
     Memory& createMemoryRegion(const QString regionName)
     {

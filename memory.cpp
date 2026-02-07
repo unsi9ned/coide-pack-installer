@@ -132,7 +132,7 @@ void Memory::setAccess(const QString &access)
     _access = access;
 }
 
-bool Memory::startup() const
+bool Memory::isStartup() const
 {
     return _startup;
 }
@@ -160,6 +160,49 @@ bool Memory::isDefault() const
 void Memory::setDefault(bool state)
 {
     _default = state;
+}
+
+//------------------------------------------------------------------------------
+// Определяет является ли данный регион памятью программ
+//------------------------------------------------------------------------------
+bool Memory::isCodeMemory()
+{
+    if(!isDefault() || !isStartup())
+        return false;
+
+#if 0
+    for(KeilMemory::KeilMemoryId id = KeilMemory::IROM1; id <= KeilMemory::IROM8; id++)
+    {
+        if(name() == KeilMemory::idToName(id))
+            return true;
+    }
+#endif
+
+    if(name().toLower().contains("irom") ||
+       name().toLower().contains("flash") ||
+       name().toLower().contains("rom"))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+// Определяет является ли данный регион памятью данных
+//------------------------------------------------------------------------------
+bool Memory::isDataMemory()
+{
+    if(!isDefault())
+        return false;
+
+    if(name().toLower().contains("iram") ||
+       name().toLower().contains("ram"))
+    {
+        return true;
+    }
+
+    return false;
 }
 
 

@@ -11,7 +11,7 @@ MainForm::MainForm(QWidget *parent) :
     parser.parse(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.pdsc", pack);
 #elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.pdsc", pack);
-#elif 0
+#elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.pdsc", pack);
 #elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.pdsc", pack);
@@ -543,12 +543,53 @@ void MainForm::showFeatures(QModelIndex index)
 {
     Q_UNUSED(index)
 
-    int manId = extractIdFromItemText(ui->listWidgetManufacturer->currentItem()->text());
-    int famId = extractIdFromItemText(ui->listWidgetFamily->currentItem()->text());
-    int serId = extractIdFromItemText(ui->listWidgetSeries->currentItem()->text());
-    int mcuId = extractIdFromItemText(ui->listWidgetMcu->currentItem()->text());
+    QListWidgetItem * currentManItem = ui->listWidgetManufacturer->currentItem();
+    QListWidgetItem * currentFamilyItem = ui->listWidgetFamily->currentItem();
+    QListWidgetItem * currentSeries = ui->listWidgetSeries->currentItem();
+    QListWidgetItem * currentMcu = ui->listWidgetMcu->item(index.row());
+
+    if(currentSeries == NULL ||
+       currentFamilyItem == NULL ||
+       currentManItem == NULL)
+    {
+        return;
+    }
 
     ui->plainTextEditFeatures->clear();
+
+    QString vendor = currentManItem->text();
+    QString armCore = currentFamilyItem->text();
+    QString series = currentSeries->text();
+    QString mcu = currentMcu->text();
+
+    //
+    // Загрузка данных о памяти
+    //
+    Mcu& device = pack.vendor(vendor).family(armCore).series(series).mcu(mcu);
+    Memory * codeMemory = device.getCodeMemory();
+    Memory * dataMemory = device.getDataMemory();
+
+    if(codeMemory)
+    {
+        ui->lineEditFlashStart->setText(QString("0x%1").arg(codeMemory->startAddr(), 8, 16, QChar('0')));
+        ui->lineEditFlashSize->setText(QString("0x%1").arg(codeMemory->size(), 8, 16, QChar('0')));
+    }
+    else
+    {
+        ui->lineEditFlashStart->clear();
+        ui->lineEditFlashSize->clear();
+    }
+
+    if(dataMemory)
+    {
+        ui->lineEditRamStart->setText(QString("0x%1").arg(dataMemory->startAddr(), 8, 16, QChar('0')));
+        ui->lineEditRamSize->setText(QString("0x%1").arg(dataMemory->size(), 8, 16, QChar('0')));
+    }
+    else
+    {
+        ui->lineEditRamStart->clear();
+        ui->lineEditRamSize->clear();
+    }
 
 #if 0
     Manufacturer man = mcuInfo.getManufacturer(manId);

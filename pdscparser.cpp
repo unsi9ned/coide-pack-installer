@@ -245,9 +245,14 @@ void PdscParser::parseDevice(const QDomNode &deviceNode,
                quint32 start = startStr.toUInt(nullptr, 0);
                quint32 size = sizeStr.toUInt(nullptr, 0);
 
-               bool startup = memoryElem.attribute("startup").toInt(nullptr, 0);
-               bool isDefault = memoryElem.attribute("default").toInt(nullptr, 0);
-               bool isInit = memoryElem.attribute("init").toInt(nullptr, 0);
+               QString startup = memoryElem.attribute("startup").toLower();
+               QString deflt = memoryElem.attribute("default").toLower();
+               QString init = memoryElem.attribute("init").toLower();
+
+               bool isStartup = (startup == "true" || startup == "1");
+               bool isDefault = (deflt == "true" || deflt == "1");
+               bool isInit = (init == "true" || init == "1");
+
                QString access = memoryElem.attribute("access");
 
                Memory& memoryRegion = newMcu.memory(KeilMemory(id, name).name());
@@ -255,7 +260,7 @@ void PdscParser::parseDevice(const QDomNode &deviceNode,
                memoryRegion.setStartAddr(start);
                memoryRegion.setSize(size);
                memoryRegion.setAccess(access);
-               memoryRegion.setStartup(startup);
+               memoryRegion.setStartup(isStartup);
                memoryRegion.setDefault(isDefault);
                memoryRegion.setInit(isInit);
         }
