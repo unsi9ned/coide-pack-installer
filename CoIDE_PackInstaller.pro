@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui xml
+QT       += core gui xml sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -24,12 +24,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
     pdscparser.cpp \
     packdescription.cpp \
-    memory.cpp
+    memory.cpp \
+    mainform.cpp
 
-HEADERS  += mainwindow.h \
+HEADERS  += \
     pdscparser.h \
     mcu.h \
     debugalgorithm.h \
@@ -38,6 +38,12 @@ HEADERS  += mainwindow.h \
     manufacturer.h \
     packdescription.h \
     series.h \
-    memory.h
+    memory.h \
+    mainform.h \
+    qclickablelabel.h
 
-FORMS    += mainwindow.ui
+FORMS    += \
+    mainform.ui
+
+RESOURCES += \
+    resources.qrc

@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>img/HamLab_favicon.ico</file>
+    </qresource>
+</RCC>
