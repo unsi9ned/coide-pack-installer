@@ -27,7 +27,9 @@ SOURCES += main.cpp\
     pdscparser.cpp \
     packdescription.cpp \
     memory.cpp \
-    mainform.cpp
+    mainform.cpp \
+    devicefeature.cpp \
+    featurecontainer.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -40,7 +42,9 @@ HEADERS  += \
     series.h \
     memory.h \
     mainform.h \
-    qclickablelabel.h
+    qclickablelabel.h \
+    devicefeature.h \
+    featurecontainer.h
 
 FORMS    += \
     mainform.ui

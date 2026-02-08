@@ -8,7 +8,7 @@ PackDescription::PackDescription()
 
 }
 
-QString PackDescription::vendor()
+QString PackDescription::packVendor()
 {
     return this->_vendor;
 }
@@ -65,6 +65,14 @@ Manufacturer &PackDescription::vendor(const QString &vendorName)
                 createNewVendor(vendorName);
 }
 
+Manufacturer &PackDescription::vendorByDvendor(const QString &Dvendor)
+{
+    QStringList vendorParts = Dvendor.split(":") << "unknown" << "-1";
+    QString vendorName = vendorParts.at(0);
+
+    return vendor(vendorName);
+}
+
 QMap<QString, Manufacturer> &PackDescription::vendors()
 {
     return this->_vendorMap;
@@ -72,16 +80,11 @@ QMap<QString, Manufacturer> &PackDescription::vendors()
 
 void PackDescription::printInfo()
 {
-//    qInfo() << "Name: " << name();
-//    qInfo() << "Vendor: " << vendor();
-//    qInfo() << "Description: " << description();
-//    qInfo() << "Url: " << url();
-
     // Устанавливаем выравнивание влево для всех
     std::cout << std::left;
 
     std::cout << std::setw(13) << "Name:"        << name().toStdString() << std::endl;
-    std::cout << std::setw(13) << "Vendor:"      << vendor().toStdString() << std::endl;
+    std::cout << std::setw(13) << "Vendor:"      << packVendor().toStdString() << std::endl;
     std::cout << std::setw(13) << "Description:" << description().toStdString() << std::endl;
     std::cout << std::setw(13) << "Url:"         << url().toStdString() << std::endl;
 

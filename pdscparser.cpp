@@ -206,6 +206,14 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
 
                         parseDevice(node, vendorInfo, coreName, subFamilyName, pack);
                     }
+                    else if(nodeName == "feature")
+                    {
+                        QString coreName;
+                        DeviceFeature devFeature = parseFeature(node.toElement());
+
+                        coreName = subFamilyProcessor.isEmpty() ? familyProcessor : subFamilyProcessor;
+                        pack.vendorByDvendor(vendorInfo).family(coreName).series(subFamilyName).addFeature(devFeature);
+                    }
                 }
             }
             else if(nodeName == "device")
@@ -216,10 +224,18 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                 coreName = devProcessor.isEmpty() ? familyProcessor : devProcessor;
                 parseDevice(node, vendorInfo, coreName, familyName, pack);
             }
+            else if(nodeName == "feature" && !familyProcessor.isEmpty())
+            {
+                DeviceFeature devFeature = parseFeature(node.toElement());
+                pack.vendorByDvendor(vendorInfo).family(familyProcessor).addFeature(devFeature);
+            }
         }
     }
 }
 
+//------------------------------------------------------------------------------
+// Парсинг блока device
+//------------------------------------------------------------------------------
 void PdscParser::parseDevice(const QDomNode &deviceNode,
                              const QString &vendorInfo,
                              const QString &processor,
@@ -274,4 +290,47 @@ void PdscParser::parseDevice(const QDomNode &deviceNode,
                memoryRegion.setInit(isInit);
         }
     }
+
+    //
+    // Парсинг блоков feature
+    //
+    if(!deviceNode.firstChildElement("feature").isNull())
+    {
+        QDomNodeList features = deviceNode.toElement().elementsByTagName("feature");
+
+        for (int i = 0; i < features.count(); i++)
+        {
+            QDomElement featureElem = features.at(i).toElement();
+            DeviceFeature devFeature = parseFeature(featureElem);
+
+            if(!devFeature.type().isEmpty())
+            {
+                newMcu.addFeature(devFeature);
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// Парсинг блока feature
+//------------------------------------------------------------------------------
+DeviceFeature PdscParser::parseFeature(const QDomElement &featureElem)
+{
+    DeviceFeature feature;
+
+    QString type = featureElem.attribute("type");
+    QString name = featureElem.attribute("name");
+    QString n = featureElem.attribute("n");
+    QString m = featureElem.attribute("m");
+    QString Pname = featureElem.attribute("Pname");
+    QString count = featureElem.attribute("count");
+
+    feature.setType(type);
+    feature.setName(name);
+    feature.setM(m.toDouble(nullptr));
+    feature.setN(n.toDouble(nullptr));
+    feature.setCount(count.toInt(nullptr, 10));
+    feature.setPname(Pname);
+
+    return feature;
 }

@@ -6,8 +6,9 @@
 #include <QList>
 
 #include "series.h"
+#include "featurecontainer.h"
 
-class Family
+class Family : public FeatureContainer
 {
 private:
 

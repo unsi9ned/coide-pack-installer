@@ -23,6 +23,7 @@ private:
                      const QString& processor,
                      const QString& series,
                      PackDescription& pack);
+    DeviceFeature parseFeature(const QDomElement &featureElem);
 };
 
 #endif // PDSCPARSER_H

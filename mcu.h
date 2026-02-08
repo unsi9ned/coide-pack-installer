@@ -8,10 +8,12 @@
 #include "debugalgorithm.h"
 #include "flashalgorithm.h"
 #include "memory.h"
+#include "devicefeature.h"
+#include "featurecontainer.h"
 
 #define USER_ID_COOCOX  (2)
 
-class Mcu
+class Mcu : public FeatureContainer
 {
 
 private:

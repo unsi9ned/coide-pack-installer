@@ -7,8 +7,9 @@
 #include <QMap>
 
 #include "mcu.h"
+#include "featurecontainer.h"
 
-class Series
+class Series : public FeatureContainer
 {
 
 private:
@@ -21,8 +22,6 @@ private:
 
 public:
 
-    //Конструкторы
-    //--------------------------------------------------------------------------
     Series()
     {
         this->id = -1;

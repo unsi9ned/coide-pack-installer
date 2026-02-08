@@ -19,7 +19,7 @@ private:
 public:
     PackDescription();
 
-    QString vendor();
+    QString packVendor();
     QString name();
     QString url();
     QString description();
@@ -32,6 +32,7 @@ public:
     void setRelease(QString release);
 
     Manufacturer& vendor(const QString& vendorName);
+    Manufacturer& vendorByDvendor(const QString& Dvendor);
     QMap<QString, Manufacturer>& vendors();
 
     void printInfo();

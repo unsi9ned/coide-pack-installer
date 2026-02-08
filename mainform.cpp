@@ -9,9 +9,9 @@ MainForm::MainForm(QWidget *parent) :
 
 #if 1
     parser.parse(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.pdsc", pack);
-#elif 0
-    parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.pdsc", pack);
 #elif 1
+    parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.pdsc", pack);
+#elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.pdsc", pack);
 #elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.pdsc", pack);
@@ -566,7 +566,9 @@ void MainForm::showFeatures(QModelIndex index)
     //
     // Загрузка данных о памяти
     //
-    Mcu& device = pack.vendor(vendor).family(armCore).series(series).mcu(mcu);
+    Family& devCore = pack.vendor(vendor).family(armCore);
+    Series& devSeries = devCore.series(series);
+    Mcu& device = devSeries.mcu(mcu);
     Memory * codeMemory = device.getCodeMemory();
     Memory * dataMemory = device.getDataMemory();
 
@@ -591,6 +593,11 @@ void MainForm::showFeatures(QModelIndex index)
         ui->lineEditRamStart->clear();
         ui->lineEditRamSize->clear();
     }
+
+    QString featureText = devCore.featuresSummary().join('\n') + "\n" +
+                          devSeries.featuresSummary().join('\n') + "\n" +
+                          device.featuresSummary().join('\n');
+    ui->plainTextEditFeatures->setPlainText(featureText);
 
 #if 0
     Manufacturer man = mcuInfo.getManufacturer(manId);
