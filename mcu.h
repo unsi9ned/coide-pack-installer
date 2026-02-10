@@ -6,14 +6,15 @@
 #include <QByteArray>
 
 #include "debugalgorithm.h"
-#include "flashalgorithm.h"
+#include "progalgorithm.h"
 #include "memory.h"
 #include "devicefeature.h"
 #include "featurecontainer.h"
+#include "algorithmcontainer.h"
 
 #define USER_ID_COOCOX  (2)
 
-class Mcu : public FeatureContainer
+class Mcu : public FeatureContainer, public AlgorithmContainer
 {
 
 private:
@@ -35,7 +36,7 @@ private:
     int hits;
 
     DebugAlgorithm debugAlgorithm;
-    FlashAlgorithm flashAlgorithm;
+    ProgAlgorithm flashAlgorithm;
 
     QMap<QString, Memory> _memoryMap;
 
@@ -72,7 +73,6 @@ public:
     QString getTimeuuid() const {return timeuuid;}
     int getHits() const {return hits;}
     DebugAlgorithm getDebugAlgorithm() const {return this->debugAlgorithm;}
-    FlashAlgorithm getFlashAlgorithm() const {return this->flashAlgorithm;}
 
     void setId(int id){this->id = id;}
     void setSeriesId(int id){this->seriesId = id;}
@@ -94,7 +94,7 @@ public:
     void setTimeuuid(QString s){this->timeuuid = s;}
     void setHits(int hits){this->hits = hits;}
     void setDebugAlgorithm(DebugAlgorithm da){this->debugAlgorithm = da;}
-    void setFlashAlgorithm(FlashAlgorithm da){this->flashAlgorithm = da;}
+    void setFlashAlgorithm(ProgAlgorithm da){this->flashAlgorithm = da;}
 
     bool isValid()
     {

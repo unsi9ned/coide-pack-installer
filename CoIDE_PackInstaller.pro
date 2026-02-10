@@ -29,13 +29,14 @@ SOURCES += main.cpp\
     memory.cpp \
     mainform.cpp \
     devicefeature.cpp \
-    featurecontainer.cpp
+    featurecontainer.cpp \
+    algorithmcontainer.cpp \
+    progalgorithm.cpp
 
 HEADERS  += \
     pdscparser.h \
     mcu.h \
     debugalgorithm.h \
-    flashalgorithm.h \
     family.h \
     manufacturer.h \
     packdescription.h \
@@ -44,7 +45,9 @@ HEADERS  += \
     mainform.h \
     qclickablelabel.h \
     devicefeature.h \
-    featurecontainer.h
+    featurecontainer.h \
+    algorithmcontainer.h \
+    progalgorithm.h
 
 FORMS    += \
     mainform.ui

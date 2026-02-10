@@ -7,7 +7,7 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if 1
+#if 0
     parser.parse(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.pdsc", pack);
 #elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.pdsc", pack);
@@ -596,6 +596,9 @@ void MainForm::showFeatures(QModelIndex index)
         ui->lineEditRamSize->clear();
     }
 
+    //
+    // Загрузка данных о фичах
+    //
     QStringList coreFeatures = devCore.featuresSummary();
     QStringList seriesFeatures = devSeries.featuresSummary();
     QStringList deviceFeatures = device.featuresSummary();
@@ -613,153 +616,35 @@ void MainForm::showFeatures(QModelIndex index)
 
     ui->plainTextEditFeatures->setPlainText(featuresText);
 
-#if 0
-    Manufacturer man = mcuInfo.getManufacturer(manId);
-    Family fam = man.getFamily(famId);
-    Serie ser = fam.getSerie(serId);
-    Mcu mcu = ser.getMcu(mcuId);
-
-    //Вывод описания
-    ui->plainTextEditDescription->appendPlainText(mcu.getDescription().replace("\"",""));
-
-    //Вывод параметров памяти
-    QJsonParseError jsonError;
-    QJsonDocument jsonDoc = QJsonDocument::fromJson(mcu.getMemInfo(), &jsonError);
-
-    if(!jsonDoc.isNull() && jsonDoc.isObject())
-    {
-        QJsonObject jsonObj = jsonDoc.object();
-
-        if(jsonObj.keys().contains("memInfo"))
-        {
-            QJsonArray jArray = jsonObj["memInfo"].toArray();
-
-            for(int i = 0; i < jArray.size(); i++)
-            {
-                QJsonObject memObj = jArray[i].toObject();
-
-                if(memObj.keys().contains("type") &&
-                   memObj["type"].toString().toLower() == "flash")
-                {
-                    QString size = memObj["size"].toString();
-                    QString start = memObj["start"].toString();
-
-                    ui->lineEditFlashSize->setText(size);
-                    ui->lineEditFlashStart->setText(start);
-                }
-                else if(memObj.keys().contains("type") &&
-                        memObj["type"].toString().toLower() == "ram")
-                {
-                    QString size = memObj["size"].toString();
-                    QString start = memObj["start"].toString();
-
-                    ui->lineEditRamSize->setText(size);
-                    ui->lineEditRamStart->setText(start);
-                }
-            }
-        }
-    }
-
-    //Вывод характеристик процессора
-    jsonDoc = QJsonDocument::fromJson(mcu.getKeyParameter());
-
-    if(jsonDoc.isNull() || !jsonDoc.isArray())
-    {
-        QString features;
-        features.append(mcu.getKeyParameter());
-
-        ui->plainTextEditFeatures->appendPlainText(features);
-    }
+    //
+    // Загрузка описания
+    //
+    if(!device.getDescription().isEmpty())
+        ui->plainTextEditDescription->setPlainText(device.getDescription());
     else
+        ui->plainTextEditDescription->setPlainText(pack.description());
+
+    //
+    // Загрузка алгоритмов программирования
+    //
+    int32_t flashStartAddr = codeMemory ? codeMemory->startAddr() : -1;
+    ProgAlgorithm * devAlgorithm = device.getFlashAlgorithm(flashStartAddr);
+    int defaultItem = -1;
+
+    ui->comboBoxFlashAlg->clear();
+
+    for(int i = 0; i < device.algorithms().count(); i++)
     {
+        ProgAlgorithm a = device.algorithms().at(i);
 
-        QJsonArray jArray = jsonDoc.array();
-
-        for(int i = 0; i < jArray.size(); i++)
+        if(devAlgorithm && devAlgorithm->name() == a.name())
         {
-            QString feature = jArray[i].toString();
-            ui->plainTextEditFeatures->appendPlainText(feature);
+            defaultItem = i;
+            ui->comboBoxFlashAlg->setCurrentIndex(i);
         }
+
+        ui->comboBoxFlashAlg->addItem(a.name());
     }
-
-    //Вывод URL
-    jsonDoc = QJsonDocument::fromJson(mcu.getWebPageURL());
-
-    if(jsonDoc.isNull() || !jsonDoc.isArray())
-    {
-        QString url;
-        url.append(mcu.getWebPageURL());
-
-        ui->lineEditUrl->setText(url);
-    }
-    else
-    {
-
-        QJsonArray jArray = jsonDoc.array();
-
-        for(int i = 0; i < jArray.size(); i++)
-        {
-            QString url = jArray[i].toString();
-            ui->lineEditUrl->setText(url);
-        }
-    }
-
-    //Вывод URL на документацию
-    jsonDoc = QJsonDocument::fromJson(mcu.getDatasheetURL());
-
-    if(jsonDoc.isNull() || !jsonDoc.isArray())
-    {
-        QString url;
-        url.append(mcu.getDatasheetURL());
-
-        ui->lineEditDatasheetUrl->setText(url);
-    }
-    else
-    {
-
-        QJsonArray jArray = jsonDoc.array();
-
-        for(int i = 0; i < jArray.size(); i++)
-        {
-            QString url = jArray[i].toString();
-            ui->lineEditDatasheetUrl->setText(url);
-        }
-    }
-
-    //Выбор режима отладки в выпадающем списке
-    for(int i = 0; i < ui->comboBoxDebugAlg->count(); i++)
-    {
-        DebugAlgorithm da = mcu.getDebugAlgorithm();
-        QString itemName = extractNameFromItemText(ui->comboBoxDebugAlg->itemText(i));
-
-        if(da.getName() == itemName)
-        {
-            ui->comboBoxDebugAlg->setCurrentIndex(i);
-            break;
-        }
-    }
-
-    //Выбор алгоритма прошивки
-    if(mcu.getFlashAlgorithm().getId() >= 0)
-    {
-        for(int i = 0; i < ui->comboBoxFlashAlg->count(); i++)
-        {
-            FlashAlgorithm fa = mcu.getFlashAlgorithm();
-            QString itemName = extractNameFromItemText(ui->comboBoxFlashAlg->itemText(i));
-
-            if(fa.getName() == itemName)
-            {
-                ui->comboBoxFlashAlg->setCurrentIndex(i);
-                break;
-            }
-        }
-    }
-    else
-    {
-        //Алгоритм отсутствует
-        ui->comboBoxFlashAlg->setCurrentIndex(ui->comboBoxFlashAlg->count() - 1);
-    }
-#endif
 }
 
 //------------------------------------------------------------------------------

@@ -18,12 +18,13 @@ public:
 private:
     void parseDomDocument(QDomDocument * doc, PackDescription& pack);
     void parseDevFamilies(const QDomNode& node, PackDescription& pack);
-    void parseDevice(const QDomNode& deviceNode,
+    Mcu& parseDevice(const QDomNode& deviceNode,
                      const QString& vendor,
                      const QString& processor,
                      const QString& series,
                      PackDescription& pack);
     DeviceFeature parseFeature(const QDomElement &featureElem);
+    ProgAlgorithm parseAlgorithm(const QDomElement &algorithmElement);
 };
 
 #endif // PDSCPARSER_H

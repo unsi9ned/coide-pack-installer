@@ -4,7 +4,7 @@
 #include <QDomText>
 #include <QDomNode>
 #include <QDomNodeList>
-
+#include <QList>
 #include "pdscparser.h"
 
 //------------------------------------------------------------------------------
@@ -159,23 +159,21 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
         QDomNode family = families.at(j);
         QString familyName = family.attributes().namedItem("Dfamily").nodeValue();
         QString vendorInfo = family.attributes().namedItem("Dvendor").nodeValue();
-        QString familyProcessor;
+        QString familyProcessor = family.namedItem("processor").attributes().namedItem("Dcore").nodeValue();
 
         if(familyName.isEmpty() || vendorInfo.isEmpty() || !vendorInfo.contains(":"))
             continue;
 
         QDomNodeList familyElements = family.childNodes();
+        QList<ProgAlgorithm> coreAlgorithms;
+        QList<ProgAlgorithm> subFamilyAlgorithms;
 
         for(int k = 0; k < familyElements.length(); k++)
         {
             QDomNode node = familyElements.at(k);
             QString nodeName = node.nodeName();
 
-            if(nodeName == "processor")
-            {
-                familyProcessor = node.attributes().namedItem("Dcore").nodeValue();
-            }
-            else if(nodeName == "subFamily")
+            if(nodeName == "subFamily")
             {
                 QString subFamilyName = node.attributes().namedItem("DsubFamily").nodeValue();
                 QString subFamilyProcessor;
@@ -204,7 +202,11 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                         else
                             coreName = devProcessor;
 
-                        parseDevice(node, vendorInfo, coreName, subFamilyName, pack);
+                        Mcu& newMcu = parseDevice(node, vendorInfo, coreName, subFamilyName, pack);
+
+                        if(!newMcu.hasAlgorithms())
+                            foreach(ProgAlgorithm a, subFamilyAlgorithms)
+                                newMcu.addAlgorithm(a);
                     }
                     else if(nodeName == "feature")
                     {
@@ -214,6 +216,14 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                         coreName = subFamilyProcessor.isEmpty() ? familyProcessor : subFamilyProcessor;
                         pack.vendorByDvendor(vendorInfo).family(coreName).series(subFamilyName).addFeature(devFeature);
                     }
+                    else if(nodeName == "algorithm")
+                    {
+                        QString coreName;
+                        ProgAlgorithm subFamilyAlgorithm = parseAlgorithm(node.toElement());
+
+                        coreName = subFamilyProcessor.isEmpty() ? familyProcessor : subFamilyProcessor;
+                        subFamilyAlgorithms.append(subFamilyAlgorithm);
+                    }
                 }
             }
             else if(nodeName == "device")
@@ -222,12 +232,21 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                 QString coreName;
 
                 coreName = devProcessor.isEmpty() ? familyProcessor : devProcessor;
-                parseDevice(node, vendorInfo, coreName, familyName, pack);
+                Mcu& newMcu = parseDevice(node, vendorInfo, coreName, familyName, pack);
+
+                if(!newMcu.hasAlgorithms())
+                    foreach(ProgAlgorithm a, coreAlgorithms)
+                        newMcu.addAlgorithm(a);
             }
             else if(nodeName == "feature" && !familyProcessor.isEmpty())
             {
                 DeviceFeature devFeature = parseFeature(node.toElement());
                 pack.vendorByDvendor(vendorInfo).family(familyProcessor).addFeature(devFeature);
+            }
+            else if(nodeName == "algorithm")
+            {
+                ProgAlgorithm familyAlgorithm = parseAlgorithm(node.toElement());
+                coreAlgorithms.append(familyAlgorithm);
             }
         }
     }
@@ -236,7 +255,7 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
 //------------------------------------------------------------------------------
 // Парсинг блока device
 //------------------------------------------------------------------------------
-void PdscParser::parseDevice(const QDomNode &deviceNode,
+Mcu &PdscParser::parseDevice(const QDomNode &deviceNode,
                              const QString &vendorInfo,
                              const QString &processor,
                              const QString &series,
@@ -249,6 +268,15 @@ void PdscParser::parseDevice(const QDomNode &deviceNode,
 
     pack.vendor(vendorName).setId(vendorId);
     Mcu& newMcu = pack.vendor(vendorName).family(processor).series(series).addMcu(devName);
+
+    //
+    // Парсинг описания
+    //
+    if(!deviceNode.namedItem("description").isNull() &&
+        deviceNode.namedItem("description").hasChildNodes())
+    {
+        newMcu.setDescription(deviceNode.namedItem("description").firstChild().nodeValue());
+    }
 
     //
     // Парсинг блоков memory
@@ -309,6 +337,27 @@ void PdscParser::parseDevice(const QDomNode &deviceNode,
             }
         }
     }
+
+    //
+    // Парсинг блоков algorithm
+    //
+    if(!deviceNode.firstChildElement("algorithm").isNull())
+    {
+        QDomNodeList algorithms = deviceNode.toElement().elementsByTagName("algorithm");
+
+        for (int i = 0; i < algorithms.count(); i++)
+        {
+            QDomElement algoElem = algorithms.at(i).toElement();
+            ProgAlgorithm flashAlgo = parseAlgorithm(algoElem);
+
+            if(!flashAlgo.name().isEmpty())
+            {
+               newMcu.addAlgorithm(flashAlgo);
+            }
+        }
+    }
+
+    return newMcu;
 }
 
 //------------------------------------------------------------------------------
@@ -342,4 +391,48 @@ DeviceFeature PdscParser::parseFeature(const QDomElement &featureElem)
     feature.setPname(Pname);
 
     return feature;
+}
+
+//------------------------------------------------------------------------------
+// Парсинг блока algorithm
+//------------------------------------------------------------------------------
+ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
+{
+    ProgAlgorithm algo;
+
+    QString name = algorithmElement.attribute("name");
+    QString start = algorithmElement.attribute("start");
+    QString size = algorithmElement.attribute("size");
+    QString ramStart = algorithmElement.attribute("RAMstart");
+    QString ramSize = algorithmElement.attribute("RAMsize");
+    QString isDefault = algorithmElement.attribute("default");
+
+    algo.setName(name);
+
+    if(start.contains("0x", Qt::CaseInsensitive))
+        algo.setStart(start.toUInt(nullptr, 16));
+    else
+        algo.setStart(start.toUInt(nullptr, 10));
+
+    if(size.contains("0x", Qt::CaseInsensitive))
+        algo.setSize(size.toUInt(nullptr, 16));
+    else
+        algo.setSize(size.toUInt(nullptr, 10));
+
+    if(ramStart.contains("0x", Qt::CaseInsensitive))
+        algo.setRAMstart(ramStart.toUInt(nullptr, 16));
+    else
+        algo.setRAMstart(ramStart.toUInt(nullptr, 10));
+
+    if(ramSize.contains("0x", Qt::CaseInsensitive))
+        algo.setRAMsize(ramSize.toUInt(nullptr, 16));
+    else
+        algo.setRAMsize(ramSize.toUInt(nullptr, 10));
+
+    if(isDefault == "true" || isDefault == "1")
+        algo.setDefault(true);
+    else
+        algo.setDefault(false);
+
+    return algo;
 }
