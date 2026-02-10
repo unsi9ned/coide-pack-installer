@@ -4,55 +4,28 @@
 #include <QObject>
 #include <QString>
 #include <QByteArray>
+#include <QMap>
 
 class DebugAlgorithm
 {
 
 private:
 
-    int     _id;
+    int     _coId;
     QString _name;
+    const static QMap<QString, QString> coDebugAlgorithmsMap;
 
 public:
-    DebugAlgorithm()
-    {
-        this->_id = -1;
-    }
+    DebugAlgorithm(const QString& name = QString());
 
-    DebugAlgorithm(int id, QString name)
-    {
-        this->_id = id;
-        this->_name = name;
-    }
+    void setCoId(int id);
+    void setName(QString name);
+    void setProcessor(const QString& core);
 
-    DebugAlgorithm(const DebugAlgorithm &da)
-    {
-        this->_id = da.getId();
-        this->_name = da.getName();
-    }
+    int coId() const;
+    QString name() const;
 
-    DebugAlgorithm(DebugAlgorithm *da)
-    {
-        this->_id = da->getId();
-        this->_name = da->getName();
-    }
-
-    void operator =(const DebugAlgorithm &da)
-    {
-        this->_id = da.getId();
-        this->_name = da.getName();
-    }
-
-    void setId(int id){this->_id = id;}
-    void setName(QString name){this->_name = name;}
-
-    int getId() const {return this->_id;}
-    QString getName() const {return this->_name;}
-
-    bool isNull()
-    {
-        return this->_id <= 0 || this->_name.isEmpty();
-    }
+    bool isNull();
 };
 
 #endif // DEDUGALGORITHM_H

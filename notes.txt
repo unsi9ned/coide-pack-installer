@@ -35,3 +35,6 @@ mklink /D node_modules ..\..\Common\node_modules
 
 
 for %i in (..\..\..\..\..\..\ThirdParty\Delfino_HAL\lib\buffer\*.h) do mklink "%~ni.h" "%i"
+
+--------------------------------------------------------------------------------------------------------------------------------
+Чтобы не раздувать занимаемое место программой, ссылки на даташиты можно сделать вида https://yandex.ru/search/?text=mdr32ve91t+datasheet

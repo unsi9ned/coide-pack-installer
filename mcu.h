@@ -96,6 +96,12 @@ public:
     void setDebugAlgorithm(DebugAlgorithm da){this->debugAlgorithm = da;}
     void setFlashAlgorithm(ProgAlgorithm da){this->flashAlgorithm = da;}
 
+    Mcu& setCoreDebugAlgorithm(const QString& coreName)
+    {
+        debugAlgorithm.setProcessor(coreName);
+        return *this;
+    }
+
     bool isValid()
     {
         if(this->id <= 0 ||

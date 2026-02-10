@@ -31,7 +31,8 @@ SOURCES += main.cpp\
     devicefeature.cpp \
     featurecontainer.cpp \
     algorithmcontainer.cpp \
-    progalgorithm.cpp
+    progalgorithm.cpp \
+    debugalgorithm.cpp
 
 HEADERS  += \
     pdscparser.h \

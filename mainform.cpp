@@ -7,13 +7,13 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if 0
+#if 1
     parser.parse(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.pdsc", pack);
-#elif 0
+#elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.pdsc", pack);
-#elif 0
+#elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.pdsc", pack);
-#elif 0
+#elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.pdsc", pack);
 #elif 1
     parser.parse(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.pdsc", pack);
@@ -629,7 +629,6 @@ void MainForm::showFeatures(QModelIndex index)
     //
     int32_t flashStartAddr = codeMemory ? codeMemory->startAddr() : -1;
     ProgAlgorithm * devAlgorithm = device.getFlashAlgorithm(flashStartAddr);
-    int defaultItem = -1;
 
     ui->comboBoxFlashAlg->clear();
 
@@ -639,12 +638,28 @@ void MainForm::showFeatures(QModelIndex index)
 
         if(devAlgorithm && devAlgorithm->name() == a.name())
         {
-            defaultItem = i;
             ui->comboBoxFlashAlg->setCurrentIndex(i);
         }
 
         ui->comboBoxFlashAlg->addItem(a.name());
     }
+
+    //
+    // Вывод алгоритмов отладки
+    //
+    ui->comboBoxDebugAlg->clear();
+
+    if(!device.getDebugAlgorithm().name().isEmpty())
+    {
+        ui->comboBoxDebugAlg->addItem(device.getDebugAlgorithm().name());
+        ui->comboBoxDebugAlg->setCurrentIndex(0);
+    }
+
+    //
+    // Вывод URL
+    //
+    ui->lineEditUrl->setText(device.getWebPageURL());
+    ui->lineEditDatasheetUrl->setText(device.getDatasheetURL());
 }
 
 //------------------------------------------------------------------------------

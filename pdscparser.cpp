@@ -204,9 +204,17 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
 
                         Mcu& newMcu = parseDevice(node, vendorInfo, coreName, subFamilyName, pack);
 
+                        //
+                        // Добавляем алгоритмы программирования
+                        //
                         if(!newMcu.hasAlgorithms())
                             foreach(ProgAlgorithm a, subFamilyAlgorithms)
                                 newMcu.addAlgorithm(a);
+
+                        //
+                        // Добавляем алгоритм отладки
+                        //
+                        newMcu.setCoreDebugAlgorithm(coreName);
                     }
                     else if(nodeName == "feature")
                     {
@@ -234,9 +242,17 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                 coreName = devProcessor.isEmpty() ? familyProcessor : devProcessor;
                 Mcu& newMcu = parseDevice(node, vendorInfo, coreName, familyName, pack);
 
+                //
+                // Добавляем алгоритмы программирования
+                //
                 if(!newMcu.hasAlgorithms())
                     foreach(ProgAlgorithm a, coreAlgorithms)
                         newMcu.addAlgorithm(a);
+
+                //
+                // Добавляем алгоритм отладки
+                //
+                newMcu.setCoreDebugAlgorithm(coreName);
             }
             else if(nodeName == "feature" && !familyProcessor.isEmpty())
             {
@@ -268,6 +284,12 @@ Mcu &PdscParser::parseDevice(const QDomNode &deviceNode,
 
     pack.vendor(vendorName).setId(vendorId);
     Mcu& newMcu = pack.vendor(vendorName).family(processor).series(series).addMcu(devName);
+
+    //
+    // Формирует ссылки на документацию и сайт
+    //
+    newMcu.setDatasheetURL(QString("https://yandex.ru/search/?text=%1+datasheet").arg(devName).toLatin1());
+    newMcu.setWebPageURL(QString("https://yandex.ru/search/?text=%1").arg(vendorName).toLatin1());
 
     //
     // Парсинг описания
