@@ -327,8 +327,17 @@ DeviceFeature PdscParser::parseFeature(const QDomElement &featureElem)
 
     feature.setType(type);
     feature.setName(name);
-    feature.setM(m.toDouble(nullptr));
-    feature.setN(n.toDouble(nullptr));
+
+    if(m.toLower().contains("0x"))
+        feature.setM(m.toInt(nullptr, 16));
+    else
+        feature.setM(m.toDouble(nullptr));
+
+    if(n.toLower().contains("0x"))
+        feature.setN(n.toInt(nullptr, 16));
+    else
+        feature.setN(n.toDouble(nullptr));
+
     feature.setCount(count.toInt(nullptr, 10));
     feature.setPname(Pname);
 

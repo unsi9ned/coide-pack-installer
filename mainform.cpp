@@ -7,7 +7,7 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if 0
+#if 1
     parser.parse(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.pdsc", pack);
 #elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.pdsc", pack);
@@ -596,10 +596,22 @@ void MainForm::showFeatures(QModelIndex index)
         ui->lineEditRamSize->clear();
     }
 
-    QString featureText = devCore.featuresSummary().join('\n') + "\n" +
-                          devSeries.featuresSummary().join('\n') + "\n" +
-                          device.featuresSummary().join('\n');
-    ui->plainTextEditFeatures->setPlainText(featureText);
+    QStringList coreFeatures = devCore.featuresSummary();
+    QStringList seriesFeatures = devSeries.featuresSummary();
+    QStringList deviceFeatures = device.featuresSummary();
+
+    QString featuresText;
+
+    if(!coreFeatures.isEmpty())
+        featuresText += coreFeatures.join('\n') + "\n";
+
+    if(!seriesFeatures.isEmpty())
+        featuresText += seriesFeatures.join('\n') + "\n";
+
+    if(!deviceFeatures.isEmpty())
+        featuresText += deviceFeatures.join('\n');
+
+    ui->plainTextEditFeatures->setPlainText(featuresText);
 
 #if 0
     Manufacturer man = mcuInfo.getManufacturer(manId);

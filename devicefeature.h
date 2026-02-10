@@ -23,7 +23,7 @@ private:
     QString getCategoryDescription(const QString &category) const;
 
 public:
-    DeviceFeature();
+    DeviceFeature(const QString& type = QString());
 
     // Сеттеры (с Fluent interface для setType)
     DeviceFeature& setType(const QString &type);

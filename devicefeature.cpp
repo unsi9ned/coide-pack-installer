@@ -23,8 +23,9 @@ const QStringList DeviceFeature::validCategories = {
 //------------------------------------------------------------------------------
 // Конструктор
 //------------------------------------------------------------------------------
-DeviceFeature::DeviceFeature()
+DeviceFeature::DeviceFeature(const QString& type)
 {
+    this->_type = type;
 }
 
 //------------------------------------------------------------------------------
@@ -150,6 +151,12 @@ QString DeviceFeature::getFormattedDescription() const
     }
 #else
     desc = _type;
+
+    if(_type.toLower() == "memory" && !_name.isEmpty())
+        desc += " (" + _name + ")";
+
+    if(_type.toLower() == "crypto" && !_name.isEmpty())
+        desc = _name;
 #endif
 
     QString valueStr = formatValueByType();
