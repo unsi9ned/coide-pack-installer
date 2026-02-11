@@ -13,7 +13,6 @@ private:
 
     int     _coId;
     QString _name;
-    const static QMap<QString, QString> coDebugAlgorithmsMap;
 
 public:
     DebugAlgorithm(const QString& name = QString());

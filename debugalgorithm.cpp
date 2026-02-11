@@ -1,11 +1,5 @@
 #include "debugalgorithm.h"
-
-const QMap<QString, QString> DebugAlgorithm::coDebugAlgorithmsMap = {
-    {"Cortex-M0",  "cortex-m0.xml"},
-    {"Cortex-M0+", "cortex-m0plus.xml"},
-    {"Cortex-M3",  "cortex-m3.xml"},
-    {"Cortex-M4",  "cortex-m4.xml"},
-};
+#include "paths.h"
 
 DebugAlgorithm::DebugAlgorithm(const QString &name)
 {
@@ -13,27 +7,35 @@ DebugAlgorithm::DebugAlgorithm(const QString &name)
     this->_name = name;
 }
 
-void DebugAlgorithm::setCoId(int id){this->_coId = id;}
+void DebugAlgorithm::setCoId(int id)
+{
+    this->_coId = id;
+}
 
-void DebugAlgorithm::setName(QString name){this->_name = name;}
+void DebugAlgorithm::setName(QString name)
+{
+    this->_name = name;
+}
 
 void DebugAlgorithm::setProcessor(const QString &core)
 {
-    for(auto it = DebugAlgorithm::coDebugAlgorithmsMap.begin();
-             it != DebugAlgorithm::coDebugAlgorithmsMap.end();
-           ++it)
+    QString debugAlgotrithmFile = Paths::instance()->coIdeDebugAlgorithmFileName(core);
+
+    if(!debugAlgotrithmFile.isEmpty())
     {
-        if(it.key() == core)
-        {
-            _name = it.value();
-            break;
-        }
+        _name = debugAlgotrithmFile;
     }
 }
 
-int DebugAlgorithm::coId() const {return this->_coId;}
+int DebugAlgorithm::coId() const
+{
+    return this->_coId;
+}
 
-QString DebugAlgorithm::name() const {return this->_name;}
+QString DebugAlgorithm::name() const
+{
+    return this->_name;
+}
 
 bool DebugAlgorithm::isNull()
 {

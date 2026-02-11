@@ -1,5 +1,8 @@
 #include "mainform.h"
 #include "ui_mainform.h"
+#include "paths.h"
+#include "ziparchive.h"
+#include "packmanager.h"
 
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
@@ -7,20 +10,34 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if 1
+#if 0
     parser.parse(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.pdsc", pack);
-#elif 1
+#elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.pdsc", pack);
-#elif 1
+#elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.pdsc", pack);
-#elif 1
+#elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.pdsc", pack);
-#elif 1
+#elif 0
     parser.parse(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.pdsc", pack);
 #endif
 
 #if 0
     pack.printInfo();
+#endif
+
+    PackManager packMgr;
+
+#if 1
+    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack", pack);
+#elif 1
+    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack", pack);
+#elif 1
+    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.2.11.0.pack", pack);
+#elif 1
+    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.1.2.0.pack", pack);
+#elif 1
+    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.3.7.262.atpack", pack);
 #endif
 
     //Иконка
@@ -674,6 +691,8 @@ void MainForm::on_pushButtonDataLoad_clicked()
     componInfo.loadDataFromDb();
 #endif
 
+    refreshData();
+
     ui->pushButtonDataLoad->setEnabled(true);
 }
 
@@ -844,6 +863,11 @@ void MainForm::on_pushButtonSetIdePath_clicked()
     componInfo.loadDataFromDb();
     refreshData();
 #endif
+
+    QString str = QFileDialog::getExistingDirectory(this, tr("Директория установки CooCox IDE"), QApplication::applicationDirPath());
+    Paths::instance()->setCoIdeDir(str);
+    ui->lineEditIdePath->setText(str);
+    refreshData();
 }
 
 //------------------------------------------------------------------------------

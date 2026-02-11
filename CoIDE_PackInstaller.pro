@@ -32,7 +32,10 @@ SOURCES += main.cpp\
     featurecontainer.cpp \
     algorithmcontainer.cpp \
     progalgorithm.cpp \
-    debugalgorithm.cpp
+    debugalgorithm.cpp \
+    paths.cpp \
+    packmanager.cpp \
+    ziparchive.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -48,10 +51,48 @@ HEADERS  += \
     devicefeature.h \
     featurecontainer.h \
     algorithmcontainer.h \
-    progalgorithm.h
+    progalgorithm.h \
+    paths.h \
+    packmanager.h \
+    ziparchive.h
 
 FORMS    += \
     mainform.ui
 
 RESOURCES += \
     resources.qrc
+
+# Копирует utils в каталог сборки (debug/release)
+
+# Определяем исходный путь
+UTILS_SRC = $$PWD/utils
+
+# Определяем целевую папку в зависимости от конфигурации
+CONFIG(debug, debug|release) {
+    # Debug сборка
+    BUILD_TYPE = debug
+} else {
+    # Release сборка
+    BUILD_TYPE = release
+}
+
+# Путь назначения с учетом типа сборки
+UTILS_DST = $$OUT_PWD/$$BUILD_TYPE/utils
+
+# Отладочная информация
+# message("Copying utils from: $$UTILS_SRC")
+# message("Copying utils to: $$UTILS_DST")
+# message("Build type: $$BUILD_TYPE")
+
+# Создаем команду копирования
+win32 {
+    # Для Windows - используем QMAKE_COPY_DIR
+    copy_cmd = $$QMAKE_COPY_DIR \"$$shell_path($$UTILS_SRC)\" \"$$shell_path($$UTILS_DST)\"
+    QMAKE_POST_LINK += $$copy_cmd
+}
+
+# Для Linux/macOS
+unix {
+    copy_cmd = cp -rf \"$$UTILS_SRC\" \"$$UTILS_DST\"
+    QMAKE_POST_LINK += $$copy_cmd
+}
