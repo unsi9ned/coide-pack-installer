@@ -9,112 +9,80 @@
 
 class Manufacturer
 {
+public:
+
+    struct SvdInfo
+    {
+        QString pathInArchive;
+        QString destDirectory;
+        QString relativePath;
+        QStringList mcuList;
+
+        SvdInfo(const QString& path, const QString& dir = QString())
+        {
+            pathInArchive = path;
+            destDirectory = dir;
+        }
+
+        bool operator==(const SvdInfo &other) const
+        {
+            return pathInArchive == other.pathInArchive;
+        }
+
+        void addMcuName(const QString& mcuName)
+        {
+            mcuList.append(mcuName);
+        }
+    };
+
 private:
 
     int id;
     QString name;
     QMap<QString, Family> familyMap;
+    QList<SvdInfo> _svdList;
 
 public:
 
-    //Конструкторы
-    //--------------------------------------------------------------------------
-    Manufacturer()
-    {
-        this->id = -1;
-    }
-    Manufacturer(int id, QString name)
-    {
-        this->id = id;
-        this->name = name;
-    }
+    Manufacturer();
+    Manufacturer(int id, QString name);
+    Manufacturer(Manufacturer* m);
 
-    Manufacturer(Manufacturer* m)
-    {
-        if(m == nullptr)
-            return;
+    QMap<QString, Family>& families();
 
-        this->id = m->getId();
-        this->name = m->getName();
+    bool hasFamilies();
 
-        for (auto it = m->familyMap.begin(); it != m->familyMap.end(); ++it)
-        {
-            this->familyMap.insert(it.key(), it.value());
-        }
-    }
+    void setId(int id);
+    int getId() const;
 
-    QMap<QString, Family>& families()
-    {
-        return this->familyMap;
-    }
-
-    int getId() const {return id;}
-    QString getName() const {return name;}
-
-    void setId(int id){this->id = id;}
-
-    Manufacturer& setName(QString name)
-    {
-        this->name = name;
-        return *this;
-    }
-
-
+    Manufacturer& setName(QString name);
+    QString getName() const;
 
     //Узнать количество семейств в списке
-    int getFamiliesCount(){return this->familyMap.count();}
+    int getFamiliesCount();
 
     //Вернуть идентификаторы
-    QStringList getFamiliesKeys(){return this->familyMap.keys();}
+    QStringList getFamiliesKeys();
 
     //Найти семейство по идентификатору
-    Family getFamilyById(int i)
-    {
-        Family fam;
-        QMap<QString,Family>::iterator famIterator = familyMap.begin();
+    Family getFamilyById(int i);
 
-        while(famIterator != familyMap.end())
-        {
-            Family currFamily = famIterator.value();
-
-            if(currFamily.getId() == i)
-            {
-                fam = currFamily;
-                break;
-            }
-
-            ++famIterator;
-        }
-
-        return fam;
-    }
-
-    Family& family(const QString& name)
-    {
-        if(this->familyMap.contains(name))
-            return this->familyMap[name];
-        else
-            return this->createNewFamily(name);
-    }
+    Family& family(const QString& name);
 
     //Добавить семейство
-    Family& addFamily(const QString& name)
-    {
-        return this->family(name).setName(name);
-    }
+    Family& addFamily(const QString& name);
 
-    bool isValid()
-    {
-        return this->id > 0 && !this->name.isEmpty();
-    }
+    //Возврат списка svd-файлов
+    QList<SvdInfo>& svdList();
+
+    //Возврат конкретного SVD
+    SvdInfo * svd(const QString& path);
+
+    bool isValid();
 
 private:
 
-    Family& createNewFamily(const QString& name)
-    {
-        this->familyMap.insert(name, Family());
-        return this->familyMap[name].setName(name);
-    }
+    Family& createNewFamily(const QString& name);
 };
 
 #endif // MANUFACTURER_H

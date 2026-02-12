@@ -1,9 +1,12 @@
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
+#include <QString>
 #include "packmanager.h"
 #include "paths.h"
 #include "ziparchive.h"
 #include "pdscparser.h"
+#include "manufacturer.h"
 
 PackManager::PackManager(QObject *parent) : QObject(parent)
 {
@@ -81,9 +84,37 @@ void PackManager::packInstall(PackDescription &pack)
 
     if(!extractPDSC(pack, errorString))
     {
-        errorString = "Couldn't extract pdsc file" + errorString.isEmpty() ? "" : QString(": %1").arg(errorString);
+        if(errorString.isEmpty())
+            emit errorOccured("Couldn't extract pdsc file");
+        else
+            emit errorOccured(QString("Couldn't extract pdsc file: %1").arg(errorString));
 
-        emit errorOccured(errorString);
+        return;
+    }
+
+    //
+    // Распаковка SVD-файлов и добавление в TXT-базу
+    //
+    if(!extractSVD(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            emit errorOccured("Couldn't extract SVD files");
+        else
+            emit errorOccured(QString("Couldn't extract SVD files: %1").arg(errorString));
+
+        return;
+    }
+
+    //
+    // Формирование базы данных SVD
+    //
+    if(!makeSvdDatabase(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            emit errorOccured("An error occurred when creating the SVD database");
+        else
+            emit errorOccured(QString("An error occurred when creating the SVD database: %1").arg(errorString));
+
         return;
     }
 
@@ -186,12 +217,131 @@ bool PackManager::extractPDSC(PackDescription &pack, QString &errorString)
 }
 
 //------------------------------------------------------------------------------
+// Извлечение файлов описание периферии SVD
+//------------------------------------------------------------------------------
+bool PackManager::extractSVD(PackDescription &pack, QString &errorString)
+{
+    QDir dir;
+
+    dir.setPath(pack.installDir());
+
+    //
+    // Пакет не валиден
+    //
+    if(pack.pathToArchive().isEmpty())
+    {
+        errorString = QString("The archive path is not set");
+        return false;
+    }
+    else if(pack.installDir().isEmpty() || !dir.exists())
+    {
+        errorString = QString("The installation directory is not defined or does not exist");
+        return false;
+    }
+    else if(!pack.isValid())
+    {
+        errorString = QString("The '%1' package is not valid").arg(pack.name());
+        return false;
+    }
+
+    //
+    // Формирование списка файлов для распаковки
+    //
+    Manufacturer& vendor = pack.vendors().first();
+
+    foreach(QString familyName, vendor.families().keys())
+    {
+        Family& family = vendor.family(familyName);
+
+        foreach(QString seriesName, family.seriesMap().keys())
+        {
+            Series& series = vendor.family(familyName).series(seriesName);
+
+            foreach (QString mcuName, series.mcuMap().keys())
+            {
+                Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
+                QString svd = mcu.svdLocalPath();
+
+                if(!vendor.svdList().contains(Manufacturer::SvdInfo(svd)))
+                {
+                    Manufacturer::SvdInfo newSvd(svd);
+                    newSvd.destDirectory = pack.installDir() + "/" + QFileInfo(svd).path();
+                    newSvd.relativePath = pack.installDir() + "/" + svd;
+                    newSvd.relativePath = newSvd.relativePath.remove(Paths::instance()->coIdeDir());
+                    newSvd.destDirectory = newSvd.destDirectory.replace('/', '\\');
+                    newSvd.relativePath = newSvd.relativePath.replace('/', '\\');
+                    newSvd.addMcuName(mcu.getName());
+                    vendor.svdList().append(newSvd);
+                }
+                else
+                {
+                    Manufacturer::SvdInfo * currSvd = vendor.svd(svd);
+
+                    if(currSvd)
+                    {
+                        currSvd->addMcuName(mcu.getName());
+                    }
+                }
+            }
+        }
+    }
+
+    //
+    // Распаковка
+    //
+    foreach (Manufacturer::SvdInfo s, vendor.svdList())
+    {
+        if(!ZipArchive().extractFile(pack.pathToArchive(), s.destDirectory, s.pathInArchive))
+        {
+            errorString = QString("An error occurred while extracting the %1 file").arg(s.pathInArchive);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
 // Формирование TXT-файла базы данных SVD
 //------------------------------------------------------------------------------
-void PackManager::svdFileRegister(const QString &vendorName,
-                                  const QString &svdFileName)
+bool PackManager::makeSvdDatabase(PackDescription &pack, QString& errorString)
 {
+    //
+    // Пакет не валиден
+    //
+    if(!pack.isValid())
+    {
+        errorString = QString("The '%1' package is not valid").arg(pack.name());
+        return false;
+    }
 
+    QFile svdDatabase;
+    Manufacturer vendor = pack.vendors().first();
+    QString dbFilename = Paths::instance()->coIdeDataDir() + "/" + vendor.getName() + ".txt";
+
+    svdDatabase.setFileName(dbFilename);
+
+    if(!svdDatabase.open(QFile::WriteOnly))
+    {
+        errorString = QString("Failed to create %1 file: %2").arg(dbFilename).arg(svdDatabase.errorString());
+        return false;
+    }
+
+    foreach(auto svd, vendor.svdList())
+    {
+        QString line;
+
+        foreach(QString mcuName, svd.mcuList)
+        {
+            line += mcuName + ", ";
+        }
+        line += ".." + svd.relativePath + "\r\n";
+        svdDatabase.write(line.toLatin1());
+    }
+
+    svdDatabase.close();
+
+    return true;
 }
 
 //------------------------------------------------------------------------------

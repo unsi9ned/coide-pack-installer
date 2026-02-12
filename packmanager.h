@@ -18,7 +18,8 @@ public:
 private:
     QString findPDSC(const PackDescription& pack);
     bool extractPDSC(PackDescription& pack, QString& errorString);
-    void svdFileRegister(const QString& vendorName, const QString& svdFileName);
+    bool extractSVD(PackDescription& pack, QString& errorString);
+    bool makeSvdDatabase(PackDescription& pack, QString& errorString);
 
 signals:
     void errorOccured(QString e);

@@ -35,7 +35,8 @@ SOURCES += main.cpp\
     debugalgorithm.cpp \
     paths.cpp \
     packmanager.cpp \
-    ziparchive.cpp
+    ziparchive.cpp \
+    manufacturer.cpp
 
 HEADERS  += \
     pdscparser.h \

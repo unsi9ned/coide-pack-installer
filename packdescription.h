@@ -30,6 +30,7 @@ public:
     QString pathToArchive() const;
     QString installDir() const;
     QString pathToPdsc() const;
+    QString pathToSVD(const Mcu& device);
 
     void setVendor(QString vendor);
     void setName(QString name);

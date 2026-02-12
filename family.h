@@ -60,6 +60,8 @@ public:
         return this->_seriesMap;
     }
 
+    bool hasSeries(){return !this->_seriesMap.isEmpty();}
+
     void setId(int id){this->id = id;}
     void setManufacturerId(int id){this->manufacturerId = id;}
 

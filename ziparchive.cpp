@@ -103,6 +103,11 @@ bool ZipArchive::extractFile(const QString &pathToArchive,
 
     QStringList lines = execute(args);
 
+#if 0
+    qInfo() << args.join(' ');
+    qInfo() << lines.join("\r\n");
+#endif
+
     foreach (QString line, lines)
     {
         if(line.startsWith("Processing archive:"))
@@ -122,8 +127,9 @@ bool ZipArchive::extractFile(const QString &pathToArchive,
         else if(line.startsWith("Extracting"))
         {
             QString filePath = (line.split(' ', QString::SkipEmptyParts) << "").at(1).trimmed();
+            QString validPath = pathToFile;
 
-            if(filePath != pathToFile || stage != PROCESSING_ARCHIVE)
+            if(filePath.replace('\\', '/') != validPath.replace('\\', '/') || stage != PROCESSING_ARCHIVE)
             {
                 return false;
             }

@@ -69,7 +69,7 @@ public:
         return _mcuMap;
     }
 
-
+    bool hasDevices(){return !this->_mcuMap.isEmpty();}
 
     //Узнать количество процессоров в списке
     int getMcuCount(){return this->_mcuMap.count();}

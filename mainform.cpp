@@ -10,22 +10,6 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if 0
-    parser.parse(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.pdsc", pack);
-#elif 0
-    parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.pdsc", pack);
-#elif 0
-    parser.parse(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.pdsc", pack);
-#elif 0
-    parser.parse(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.pdsc", pack);
-#elif 0
-    parser.parse(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.pdsc", pack);
-#endif
-
-#if 0
-    pack.printInfo();
-#endif
-
 #if 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
 #elif 1

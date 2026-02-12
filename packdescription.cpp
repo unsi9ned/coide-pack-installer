@@ -48,6 +48,11 @@ QString PackDescription::pathToPdsc() const
     return _pathToPdsc;
 }
 
+QString PackDescription::pathToSVD(const Mcu &device)
+{
+    return installDir() + "/" + device.svdLocalPath().replace('\\', '/');
+}
+
 void PackDescription::setVendor(QString vendor)
 {
    this->_vendor = vendor;
