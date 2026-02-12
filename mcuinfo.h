@@ -13,7 +13,7 @@
 #include "manufacturer.h"
 #include "database.h"
 #include "logger.h"
-#include "dbconf.h"
+#include "paths.h"
 
 class McuInfo : public QObject
 {
@@ -187,8 +187,8 @@ public:
         Logger::instance()->addEvent(QString("The path to the IDE is set '%1'").arg(idePath));
 
         this->idePath = idePath;
-        db->setDbPath(idePath + BIN_DIR + DB_FILE);
-        saveIdePath();
+        db->setDbPath(Paths::instance()->coIdeDatabaseFile());
+        Paths::instance()->setCoIdeDir(idePath);
     }
 
 
@@ -217,8 +217,6 @@ public slots:
 
     void loadDataFromDb();
     void loadAlgorithmFromDb();
-    void saveIdePath();
-    void loadIdePath();
 };
 
 #endif // MCUINFO_H

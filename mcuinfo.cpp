@@ -7,11 +7,9 @@ QString McuInfo::getIdePath() const
 }
 
 McuInfo::McuInfo(DataBase * db, QObject *parent) : QObject(parent),
-    idePath(IDE_PATH),
+    idePath(Paths::instance()->coIdeDir()),
     db(db)
 {
-    loadIdePath();
-
     connect(db,
             SIGNAL(errorOccured(QString)),
             SIGNAL(errorOccured(QString)));
@@ -381,52 +379,6 @@ void McuInfo::loadAlgorithmFromDb()
     this->flashAlgList.append(this->requestFlashAlgorithmList());
 
     emit algInfoReady();
-}
-
-//------------------------------------------------------------------------------
-// Сохранить путь к среде разработки
-//------------------------------------------------------------------------------
-void McuInfo::saveIdePath()
-{
-    QString path = this->idePath;
-    QFile confFile(CONFIG_FILE);
-
-    if(confFile.open(QFile::WriteOnly))
-    {
-        confFile.write(QByteArray().append(path));
-        confFile.close();
-    }
-    else
-    {
-        emit errorOccured(tr("Не удалось создать файл %1").arg(confFile.fileName()));
-    }
-}
-
-//------------------------------------------------------------------------------
-// Загрузить из файла путь к среде разработки
-//------------------------------------------------------------------------------
-void McuInfo::loadIdePath()
-{
-    QFile file(CONFIG_FILE);
-    QString path = IDE_PATH;
-
-    if(file.exists())
-    {
-        if(file.open(QFile::ReadOnly))
-        {
-            QByteArray ba = file.readAll();
-            path = QString(ba).trimmed();
-            file.close();
-
-            Logger::instance()->addEvent(QString("Reading the configuration file '%1'").arg(CONFIG_FILE));
-
-            changeIdePath(path);
-        }
-    }
-    else
-        Logger::instance()->addEvent(QString("The configuration file '%1' was not found").arg(CONFIG_FILE));
-
-    this->idePath = path;
 }
 
 //------------------------------------------------------------------------------
@@ -1284,7 +1236,7 @@ bool McuInfo::updateMcuInfo(Mcu mcu)
 //------------------------------------------------------------------------------
 void McuInfo::searchNewDebugAlgorithm()
 {
-    QDir algDir(idePath + DEBUGGER_DIR);
+    QDir algDir(Paths::instance()->coIdeDebugAlgorithmDir());
 
     this->newDebugAlgList.clear();
 
@@ -1323,7 +1275,7 @@ void McuInfo::searchNewDebugAlgorithm()
 //------------------------------------------------------------------------------
 void McuInfo::searchNewFlashAlgorithm()
 {
-    QDir algDir(idePath + FLASH_DIR);
+    QDir algDir(Paths::instance()->coIdeFlashAlgorithmDir());
 
     this->newFlashAlgList.clear();
 

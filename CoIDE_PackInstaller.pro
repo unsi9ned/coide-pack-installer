@@ -61,8 +61,7 @@ HEADERS  += \
     ziparchive.h \
     logger.h \
     database.h \
-    mcuinfo.h \
-    dbconf.h
+    mcuinfo.h
 
 FORMS    += \
     mainform.ui
