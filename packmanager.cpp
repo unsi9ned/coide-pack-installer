@@ -41,6 +41,9 @@ void PackManager::readPackDescription(PackDescription &pack)
 //------------------------------------------------------------------------------
 void PackManager::packInstall(PackDescription &pack)
 {
+    //
+    // Проверка валидности устанавливаемого пакета
+    //
     if(!pack.isValid())
     {
         emit errorOccured(QString("The '%1' package is not valid").arg(pack.name()));
@@ -60,6 +63,9 @@ void PackManager::packInstall(PackDescription &pack)
     packInstallDir.setPath(path);
     pack.setInstallDir(path);
 
+    //
+    // Создание каталога установки
+    //
     emit eventOccured(QString("Creating an installation directory"));
 
     if(!packInstallDir.exists() && !packInstallDir.mkpath(packInstallDir.path()))
@@ -68,6 +74,9 @@ void PackManager::packInstall(PackDescription &pack)
         return;
     }
 
+    //
+    // Распаковка файла описание аппаратуры в каталог установки
+    //
     emit eventOccured(QString("Extracting a pdsc file"));
 
     if(!extractPDSC(pack, errorString))
@@ -78,6 +87,9 @@ void PackManager::packInstall(PackDescription &pack)
         return;
     }
 
+    //
+    // Завершение установки
+    //
     emit eventOccured(QString("Package installation '%1' completed").arg(pack.name()));
 }
 
@@ -117,7 +129,9 @@ bool PackManager::extractPDSC(PackDescription &pack, QString &errorString)
         return false;
     }
 
+    //
     // Находим pdsc-файл в архиве
+    //
     QString pdscFilePath = findPDSC(pack);
 
     if(pdscFilePath.isEmpty())
@@ -126,9 +140,6 @@ bool PackManager::extractPDSC(PackDescription &pack, QString &errorString)
         return false;
     }
 
-    //
-    // Подготовка каталога установки
-    //
     QDir packDestDir;
 
     //
@@ -152,7 +163,7 @@ bool PackManager::extractPDSC(PackDescription &pack, QString &errorString)
         }
     }
     //
-    // Формируем путь к каталогу и создаем его
+    // Подготовка каталога установки
     //
     else
     {

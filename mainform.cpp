@@ -677,6 +677,11 @@ void MainForm::showFeatures(QModelIndex index)
     //
     ui->lineEditUrl->setText(device.getWebPageURL());
     ui->lineEditDatasheetUrl->setText(device.getDatasheetURL());
+
+    //
+    // Вывод пути к SVD-файлу
+    //
+    ui->lineEditSVD->setText(device.svdLocalPath());
 }
 
 //------------------------------------------------------------------------------

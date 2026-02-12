@@ -167,6 +167,8 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
         QDomNodeList familyElements = family.childNodes();
         QList<ProgAlgorithm> coreAlgorithms;
         QList<ProgAlgorithm> subFamilyAlgorithms;
+        QString coreSVD;
+        QString subFamilySVD;
 
         for(int k = 0; k < familyElements.length(); k++)
         {
@@ -215,6 +217,15 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                         // Добавляем алгоритм отладки
                         //
                         newMcu.setCoreDebugAlgorithm(coreName);
+
+                        //
+                        // Добавляем файл описание периферии, если он общий для семейства
+                        //
+                        if(newMcu.svdLocalPath().isEmpty())
+                            if(subFamilySVD.isEmpty())
+                                newMcu.setSvd(coreSVD);
+                            else
+                                newMcu.setSvd(subFamilySVD);
                     }
                     else if(nodeName == "feature")
                     {
@@ -231,6 +242,10 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
 
                         coreName = subFamilyProcessor.isEmpty() ? familyProcessor : subFamilyProcessor;
                         subFamilyAlgorithms.append(subFamilyAlgorithm);
+                    }
+                    else if(nodeName == "debug")
+                    {
+                        subFamilySVD = node.attributes().namedItem("svd").nodeValue();
                     }
                 }
             }
@@ -253,6 +268,12 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                 // Добавляем алгоритм отладки
                 //
                 newMcu.setCoreDebugAlgorithm(coreName);
+
+                //
+                // Добавляем файл описание периферии, если он общий для семейства
+                //
+                if(newMcu.svdLocalPath().isEmpty())
+                    newMcu.setSvd(coreSVD);
             }
             else if(nodeName == "feature" && !familyProcessor.isEmpty())
             {
@@ -263,6 +284,10 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
             {
                 ProgAlgorithm familyAlgorithm = parseAlgorithm(node.toElement());
                 coreAlgorithms.append(familyAlgorithm);
+            }
+            else if(nodeName == "debug")
+            {
+                coreSVD = node.attributes().namedItem("svd").nodeValue();
             }
         }
     }
@@ -298,6 +323,14 @@ Mcu &PdscParser::parseDevice(const QDomNode &deviceNode,
         deviceNode.namedItem("description").hasChildNodes())
     {
         newMcu.setDescription(deviceNode.namedItem("description").firstChild().nodeValue());
+    }
+
+    //
+    // Парсинг блока debug
+    //
+    if(!deviceNode.namedItem("debug").isNull())
+    {
+        newMcu.setSvd(deviceNode.namedItem("debug").attributes().namedItem("svd").nodeValue());
     }
 
     //

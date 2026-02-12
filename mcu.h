@@ -34,6 +34,7 @@ private:
     QString price;
     QString timeuuid;
     int hits;
+    QString _svd;
 
     DebugAlgorithm debugAlgorithm;
     ProgAlgorithm flashAlgorithm;
@@ -72,6 +73,7 @@ public:
     QString getPrice() const {return price;}
     QString getTimeuuid() const {return timeuuid;}
     int getHits() const {return hits;}
+    QString svdLocalPath() const { return _svd;}
     DebugAlgorithm getDebugAlgorithm() const {return this->debugAlgorithm;}
 
     void setId(int id){this->id = id;}
@@ -93,6 +95,7 @@ public:
     void setPrice(QString s){this->price = s;}
     void setTimeuuid(QString s){this->timeuuid = s;}
     void setHits(int hits){this->hits = hits;}
+    void setSvd(const QString& path){this->_svd = path;}
     void setDebugAlgorithm(DebugAlgorithm da){this->debugAlgorithm = da;}
     void setFlashAlgorithm(ProgAlgorithm da){this->flashAlgorithm = da;}
 
