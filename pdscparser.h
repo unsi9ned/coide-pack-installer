@@ -13,7 +13,7 @@ private:
 public:
     PdscParser();
 
-    bool parse(const QString& pathToPdsc, PackDescription& pack);
+    bool parse(PackDescription& pack);
 
 private:
     void parseDomDocument(QDomDocument * doc, PackDescription& pack);

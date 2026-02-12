@@ -18,9 +18,9 @@ PdscParser::PdscParser()
 //------------------------------------------------------------------------------
 // Загрузка XML-документа в память и разбор
 //------------------------------------------------------------------------------
-bool PdscParser::parse(const QString &pathToPdsc, PackDescription &pack)
+bool PdscParser::parse(PackDescription &pack)
 {
-    QFile pdscFile(pathToPdsc);
+    QFile pdscFile(pack.pathToPdsc());
 
     if(!pdscFile.exists())
     {

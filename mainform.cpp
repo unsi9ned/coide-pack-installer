@@ -26,19 +26,19 @@ MainForm::MainForm(QWidget *parent) :
     pack.printInfo();
 #endif
 
-    PackManager packMgr;
-
 #if 1
-    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack", pack);
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
 #elif 1
-    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack", pack);
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack");
 #elif 1
-    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.2.11.0.pack", pack);
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.2.11.0.pack");
 #elif 1
-    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.1.2.0.pack", pack);
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.1.2.0.pack");
 #elif 1
-    packMgr.readPackDescription(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.3.7.262.atpack", pack);
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.3.7.262.atpack");
 #endif
+
+    packMgr.readPackDescription(pack);
 
     //Иконка
     this->setWindowIcon(QIcon(":coide_project.ico"));
@@ -701,6 +701,9 @@ void MainForm::on_pushButtonDataLoad_clicked()
 //------------------------------------------------------------------------------
 void MainForm::on_pushButtonSave_clicked()
 {
+    ui->pushButtonSave->setEnabled(false);
+    packMgr.packInstall(pack);
+    ui->pushButtonSave->setEnabled(true);
 #if 0
     QListWidgetItem * manItem = ui->listWidgetManufacturer->currentItem();
     QListWidgetItem * famItem = ui->listWidgetFamily->currentItem();

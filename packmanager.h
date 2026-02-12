@@ -12,17 +12,22 @@ private:
 public:
     explicit PackManager(QObject *parent = 0);
 
-    void readPackDescription(const QString& pathToPack, PackDescription& pack);
-    void packInstall(const PackDescription& pack);
+    void readPackDescription(PackDescription& pack);
+    void packInstall(PackDescription& pack);
 
 private:
-    QString findPDSC(const QString& pathToPack);
-    bool extractPDSC(const QString& pathToPack, const QString& pathToPdsc);
+    QString findPDSC(const PackDescription& pack);
+    bool extractPDSC(PackDescription& pack, QString& errorString);
     void svdFileRegister(const QString& vendorName, const QString& svdFileName);
 
 signals:
     void errorOccured(QString e);
+    void eventOccured(QString e);
+
 public slots:
+
+private slots:
+    void debugPrintMessage(QString e);
 };
 
 #endif // PACKMANAGER_H

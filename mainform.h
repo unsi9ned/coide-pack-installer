@@ -17,6 +17,7 @@
 
 #include "pdscparser.h"
 #include "packdescription.h"
+#include "packmanager.h"
 
 namespace Ui {
 class MainForm;
@@ -29,6 +30,7 @@ class MainForm : public QMainWindow
 private:
     PdscParser parser;
     PackDescription pack;
+    PackManager packMgr;
 
 public:
     explicit MainForm(QWidget *parent = 0);

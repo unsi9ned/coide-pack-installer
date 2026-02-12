@@ -13,7 +13,7 @@ QString PackDescription::packVendor()
     return this->_vendor;
 }
 
-QString PackDescription::name()
+QString PackDescription::name() const
 {
     return this->_name;
 }
@@ -28,9 +28,24 @@ QString PackDescription::description()
     return this->_description;
 }
 
-QString PackDescription::release()
+QString PackDescription::release() const
 {
     return _release;
+}
+
+QString PackDescription::pathToArchive() const
+{
+    return _pathToArchive;
+}
+
+QString PackDescription::installDir() const
+{
+    return _installDir;
+}
+
+QString PackDescription::pathToPdsc() const
+{
+    return _pathToPdsc;
 }
 
 void PackDescription::setVendor(QString vendor)
@@ -56,6 +71,21 @@ void PackDescription::setDescription(QString description)
 void PackDescription::setRelease(QString release)
 {
     this->_release = release;
+}
+
+void PackDescription::setInstallDir(const QString &path)
+{
+    this->_installDir = path;
+}
+
+void PackDescription::setPathToPdsc(const QString &path)
+{
+    this->_pathToPdsc = path;
+}
+
+void PackDescription::setPathToArchive(const QString& path)
+{
+    this->_pathToArchive = path;
 }
 
 Manufacturer &PackDescription::vendor(const QString &vendorName)
@@ -130,6 +160,14 @@ void PackDescription::printInfo()
             }
         }
     }
+}
+
+//------------------------------------------------------------------------------
+// Проверка пакета на валидность
+//------------------------------------------------------------------------------
+bool PackDescription::isValid() const
+{
+    return true;
 }
 
 Manufacturer &PackDescription::createNewVendor(const QString &vendorName)
