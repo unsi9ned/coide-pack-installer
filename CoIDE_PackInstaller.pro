@@ -36,7 +36,10 @@ SOURCES += main.cpp\
     paths.cpp \
     packmanager.cpp \
     ziparchive.cpp \
-    manufacturer.cpp
+    manufacturer.cpp \
+    logger.cpp \
+    database.cpp \
+    mcuinfo.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -55,7 +58,11 @@ HEADERS  += \
     progalgorithm.h \
     paths.h \
     packmanager.h \
-    ziparchive.h
+    ziparchive.h \
+    logger.h \
+    database.h \
+    mcuinfo.h \
+    dbconf.h
 
 FORMS    += \
     mainform.ui
