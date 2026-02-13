@@ -15,15 +15,21 @@ class ComponentsInfo : public QObject
 
 private:
 
-    DataBase * db;
-
     QMap<int, Component> componentsMap;
     QMap<int, Category> categoriesMap;
     QMap<int, Category> subcategoriesMap;
 
-public:
-    explicit ComponentsInfo(DataBase * db, QObject *parent = 0);
+    explicit ComponentsInfo();
     ~ComponentsInfo();
+
+    static ComponentsInfo* _m_instance;
+
+public:
+
+    ComponentsInfo(const ComponentsInfo&) = delete;
+    ComponentsInfo& operator=(const ComponentsInfo&) = delete;
+
+    static ComponentsInfo* instance();
 
     QMap<int, Component> * components();
     QMap<int, Category> * categories();

@@ -1,18 +1,20 @@
 #include "componentsinfo.h"
+#include "database.h"
+
+ComponentsInfo* ComponentsInfo::_m_instance = nullptr;
 
 //------------------------------------------------------------------------------
 // Конструктор
 //------------------------------------------------------------------------------
-ComponentsInfo::ComponentsInfo(DataBase *db, QObject *parent) : QObject(parent),
-    db(db)
+ComponentsInfo::ComponentsInfo() : QObject()
 {
-    if(db->isOpen())
+    if(DataBase::instance()->isOpen())
     {
         loadDataFromDb();
     }
     else
     {
-        connect(db,
+        connect(DataBase::instance(),
                 SIGNAL(dbConnected()),
                 this,
                 SLOT(loadDataFromDb()));
@@ -26,6 +28,15 @@ ComponentsInfo::~ComponentsInfo()
 {
     componentsMap.clear();
     categoriesMap.clear();
+    delete _m_instance;
+}
+
+ComponentsInfo *ComponentsInfo::instance()
+{
+    if(!_m_instance)
+        _m_instance = new ComponentsInfo();
+
+    return _m_instance;
 }
 
 QMap<int, Component> *ComponentsInfo::components()
@@ -49,7 +60,7 @@ QMap<int, Category> *ComponentsInfo::subcategories()
 QMap<int, Category> ComponentsInfo::requestCategoryMap()
 {
     QMap<int, Category> categoriesMap;
-    QSqlQuery result = db->sendQuery("SELECT * FROM category");
+    QSqlQuery result = DataBase::instance()->sendQuery("SELECT * FROM category");
 
     while(result.next())
     {
@@ -70,7 +81,7 @@ QMap<int, Category> ComponentsInfo::requestCategoryMap()
 QMap<int, Category> ComponentsInfo::requestSubcategoryMap()
 {
     QMap<int, Category> subcategoriesMap;
-    QSqlQuery result = db->sendQuery("SELECT * FROM subcategory");
+    QSqlQuery result = DataBase::instance()->sendQuery("SELECT * FROM subcategory");
 
     while(result.next())
     {
@@ -92,7 +103,7 @@ QMap<int, Category> ComponentsInfo::requestSubcategoryMap()
 QMap<int, Component> ComponentsInfo::requestComponentsMap()
 {
     QMap<int, Component> componentsMap;
-    QSqlQuery result = db->sendQuery("SELECT * FROM component");
+    QSqlQuery result = DataBase::instance()->sendQuery("SELECT * FROM component");
 
     while(result.next())
     {
@@ -125,7 +136,7 @@ QMap<int, Component> ComponentsInfo::requestComponentsMap()
     }
 
     //Установка связи между компонентами
-    result = db->sendQuery("SELECT * FROM component_depends_component");
+    result = DataBase::instance()->sendQuery("SELECT * FROM component_depends_component");
 
     while(result.next())
     {
@@ -139,7 +150,7 @@ QMap<int, Component> ComponentsInfo::requestComponentsMap()
     }
 
     //Загрузка списка процессоров для каждого компонента
-    result = db->sendQuery("SELECT * FROM component_supports_mcu");
+    result = DataBase::instance()->sendQuery("SELECT * FROM component_supports_mcu");
 
     while(result.next())
     {
@@ -151,7 +162,7 @@ QMap<int, Component> ComponentsInfo::requestComponentsMap()
     }
 
     //Загрузка списка семейств процессоров для каждого компонента
-    result = db->sendQuery("SELECT * FROM component_supports_mcufamily");
+    result = DataBase::instance()->sendQuery("SELECT * FROM component_supports_mcufamily");
 
     while(result.next())
     {
@@ -163,7 +174,7 @@ QMap<int, Component> ComponentsInfo::requestComponentsMap()
     }
 
     //Загрузка списка серий процессоров для каждого компонента
-    result = db->sendQuery("SELECT * FROM component_supports_mcuseries");
+    result = DataBase::instance()->sendQuery("SELECT * FROM component_supports_mcuseries");
 
     while(result.next())
     {
@@ -175,7 +186,7 @@ QMap<int, Component> ComponentsInfo::requestComponentsMap()
     }
 
     //Загрузка списка производителей процессоров для каждого компонента
-    result = db->sendQuery("SELECT * FROM component_supports_mcumanufacturer");
+    result = DataBase::instance()->sendQuery("SELECT * FROM component_supports_mcumanufacturer");
 
     while(result.next())
     {
