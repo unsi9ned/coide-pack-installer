@@ -4,14 +4,6 @@
 
 RequestManager* RequestManager::_m_instance = nullptr;
 
-RequestManager *RequestManager::instance()
-{
-    if(!_m_instance)
-        _m_instance = new RequestManager();
-
-    return _m_instance;
-}
-
 RequestManager::RequestManager() : QObject()
 {
 #if 1
@@ -46,6 +38,103 @@ RequestManager::~RequestManager()
 {
     manufacturers.clear();
     delete _m_instance;
+}
+
+RequestManager *RequestManager::instance()
+{
+    if(!_m_instance)
+        _m_instance = new RequestManager();
+
+    return _m_instance;
+}
+
+DebugAlgorithm RequestManager::getDebugAlg(int i)
+{
+    if(i >= 0 && i < debugAlgList.length())
+    {
+        return this->debugAlgList.at(i);
+    }
+    return DebugAlgorithm();
+}
+
+DebugAlgorithm RequestManager::getDebugAlg(QString name)
+{
+    DebugAlgorithm da;
+
+    foreach(da, debugAlgList)
+    {
+        if(da.name().trimmed().toLower() == name.trimmed().toLower())
+        {
+            break;
+        }
+    }
+
+    return da;
+}
+
+ProgAlgorithm RequestManager::getFlashAlg(int i)
+{
+    if(i >= 0 && i < flashAlgList.length())
+    {
+        return this->flashAlgList.at(i);
+    }
+    return ProgAlgorithm();
+}
+
+ProgAlgorithm RequestManager::getFlashAlg(QString name)
+{
+    ProgAlgorithm fa;
+
+    foreach(fa, flashAlgList)
+    {
+        if(fa.name().trimmed().toLower() == name.trimmed().toLower())
+        {
+            break;
+        }
+    }
+
+    return fa;
+}
+
+Manufacturer RequestManager::getManufacturer(int i)
+{
+    return (i < manufacturers.length() && i >= 0) ? manufacturers.at(i) : Manufacturer();
+}
+
+int RequestManager::getManufacturerId(int i)
+{
+    if(i < 0 || i >= manufacturers.length())
+    {
+        return -1;
+    }
+    Manufacturer man = manufacturers.at(i);
+    return man.getId();
+}
+
+Manufacturer RequestManager::getManufacturer(QString name)
+{
+    Manufacturer m;
+
+    for(int i = 0; i < manufacturers.length(); i++)
+    {
+        m = manufacturers.at(i);
+
+        if(m.getName() == name)
+        {
+            break;
+        }
+    }
+    return m;
+}
+
+void RequestManager::addManufacturerList(QList<Manufacturer> list)
+{
+    this->manufacturers.append(list);
+}
+
+QList<Manufacturer> *RequestManager::getManufacturList()
+{
+    return &this->manufacturers;
 }
 
 //------------------------------------------------------------------------------
@@ -1280,6 +1369,15 @@ void RequestManager::searchNewDebugAlgorithm()
     }
 }
 
+DebugAlgorithm RequestManager::getNewDebugAlg(int i)
+{
+    if(i >= 0 && i < newDebugAlgList.length())
+    {
+        return this->newDebugAlgList.at(i);
+    }
+    return DebugAlgorithm();
+}
+
 //------------------------------------------------------------------------------
 // Поиск алгоритмов программирования, которые не прописаны в базе
 //------------------------------------------------------------------------------
@@ -1319,45 +1417,29 @@ void RequestManager::searchNewFlashAlgorithm()
     }
 }
 
+ProgAlgorithm RequestManager::getNewFlashAlg(int i)
+{
+    if(i >= 0 && i < newFlashAlgList.length())
+    {
+        return this->newFlashAlgList.at(i);
+    }
+    return ProgAlgorithm();
+}
+
 //------------------------------------------------------------------------------
 // Исправляет в БД имена вендоров и их идентификаторы и приводит к стандарту Keil
 //------------------------------------------------------------------------------
 bool RequestManager::fixVendor(QString& errorString)
 {
-    //
     // Обновление таблицы `mcumanufacturer`
-    //
-    if(!fixVendorIDs(errorString))
-    {
-        return false;
-    }
-
-    //
     // Обновление таблицы `mcufamily`
-    //
-    if(!fixFamilyVendorIDs(errorString))
-    {
-        return false;
-    }
-
-    //
     // Обновление таблицы `component_supports_mcumanufacturer`
-    //
-    if(!ComponentsInfo::instance()->loadDataFromDb().fixManufacturerIDs(errorString))
-    {
-        return false;
-    }
-
-    //
     // Обновление таблицы `board_supports_mcumanufacturer`
-    //
-    if(!fixBoardVendorIDs(errorString))
-    {
-        return false;
-    }
+    return fixVendorIDs(errorString) &&
+           fixFamilyVendorIDs(errorString) &&
+           ComponentsInfo::instance()->loadDataFromDb().fixManufacturerIDs(errorString) &&
+           fixBoardVendorIDs(errorString);
 
-
-    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -1537,6 +1619,9 @@ bool RequestManager::fixBoardVendorIDs(QString &errorString)
 
     foreach(Board b, boards)
     {
+        if(b.mcuManufacturerId > 1000)
+            continue;
+
         QString queryStr = QString("UPDATE board_supports_mcumanufacturer SET "
                                    "boardId = '%1', "
                                    "mcuManufacturerId = '%2' WHERE "
@@ -1592,6 +1677,10 @@ bool RequestManager::fixFamilyVendorIDs(QString &errorString)
 
     foreach(McuFamily f, families)
     {
+        // Запись валидна. Пропускаем
+        if(f.manufacturerId >= 1000)
+            continue;
+
         QString queryStr = QString("UPDATE mcufamily SET "
                                    "id = '%1', "
                                    "familyName = '%2', "
@@ -1615,14 +1704,8 @@ bool RequestManager::fixFamilyVendorIDs(QString &errorString)
 
 bool RequestManager::fixVendorIDs(QString &errorString)
 {
-    struct Vendor
-    {
-        int id;
-        QString name;
-    };
-
     bool status;
-    QList<Vendor> vendors;
+    QList<Manufacturer> vendors;
     QSqlQuery result = DataBase::instance()->sendQuery("SELECT `id`, `name` "
                                                        "FROM mcumanufacturer",
                                                        &status);
@@ -1635,16 +1718,17 @@ bool RequestManager::fixVendorIDs(QString &errorString)
 
     while(result.next())
     {
-        Vendor v;
-        v.id = result.value(0).toInt();
-        v.name = result.value(1).toString();
+        int vendorId = result.value(0).toInt();
 
-        vendors.append(v);
+        if(vendorId < 1000)
+        {
+            Manufacturer m(vendorId, result.value(1).toString());
+            vendors.append(m);
+        }
     }
 
-    foreach(Vendor v, vendors)
+    foreach(Manufacturer m, vendors)
     {
-        Manufacturer m(v.id, v.name);
         QString queryStr = QString("UPDATE mcumanufacturer SET "
                                    "id = '%1', "
                                    "name = '%2' WHERE "

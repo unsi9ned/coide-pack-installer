@@ -27,9 +27,11 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     if(!extractPDSC(pack, errorString))
     {
-        errorString = "Couldn't extract pdsc file" + errorString.isEmpty() ? "" : QString(": %1").arg(errorString);
+        if(errorString.isEmpty())
+            emit errorOccured("Couldn't extract pdsc file");
+        else
+            emit errorOccured(QString("Couldn't extract pdsc file: %1").arg(errorString));
 
-        emit errorOccured(errorString);
         return;
     }
 

@@ -109,6 +109,20 @@ bool ComponentsInfo::fixManufacturerIDs(QMap<int, Component> &components, QStrin
         Component c = it.value();
         QList<int> mList = c.getMcuManufacturerList();
 
+        // Если все ID обновлены, то пропускаем
+        bool needUpdate = false;
+
+        foreach (int m, mList)
+        {
+            if(m <= 1000)
+            {
+                needUpdate = true;
+                break;
+            }
+        }
+
+        if(!needUpdate) continue;
+
         // Временно удаляем пару Компонент-Производитель из базы
         if(!deleteManufacturerList(c.getId(), errorString)) return false;
 

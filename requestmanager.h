@@ -46,99 +46,28 @@ public:
     int getDebugAlgCount(){return this->debugAlgList.length();}
     void addDebugAlgList(QList<DebugAlgorithm> l){this->debugAlgList.append(l);}
     void addDebugAlg(DebugAlgorithm a){this->debugAlgList.append(a);}
-    DebugAlgorithm getDebugAlg(int i)
-    {
-        if(i >= 0 && i < debugAlgList.length())
-        {
-            return this->debugAlgList.at(i);
-        }
-        return DebugAlgorithm();
-    }
+    DebugAlgorithm getDebugAlg(int i);
 
-    DebugAlgorithm getDebugAlg(QString name)
-    {
-        DebugAlgorithm da;
-
-        foreach(da, debugAlgList)
-        {
-            if(da.name().trimmed().toLower() == name.trimmed().toLower())
-            {
-                break;
-            }
-        }
-
-        return da;
-    }
+    DebugAlgorithm getDebugAlg(QString name);
 
     int getFlashAlgCount(){return this->flashAlgList.length();}
     void addFlashAlgList(QList<ProgAlgorithm> l){this->flashAlgList.append(l);}
     void addFlashAlg(ProgAlgorithm a){this->flashAlgList.append(a);}
-    ProgAlgorithm getFlashAlg(int i)
-    {
-        if(i >= 0 && i < flashAlgList.length())
-        {
-            return this->flashAlgList.at(i);
-        }
-        return ProgAlgorithm();
-    }
+    ProgAlgorithm getFlashAlg(int i);
 
-    ProgAlgorithm getFlashAlg(QString name)
-    {
-        ProgAlgorithm fa;
-
-        foreach(fa, flashAlgList)
-        {
-            if(fa.name().trimmed().toLower() == name.trimmed().toLower())
-            {
-                break;
-            }
-        }
-
-        return fa;
-    }
+    ProgAlgorithm getFlashAlg(QString name);
 
 
-    Manufacturer getManufacturer(int i)
-    {
-        return (i < manufacturers.length() && i >= 0) ? manufacturers.at(i) : Manufacturer();
-    }
+    Manufacturer getManufacturer(int i);
 
-    int getManufacturerId(int i)
-    {
-        if(i < 0 || i >= manufacturers.length())
-        {
-            return -1;
-        }
-        Manufacturer man = manufacturers.at(i);
-        return man.getId();
-    }
+    int getManufacturerId(int i);
 
-    Manufacturer getManufacturer(QString name)
-    {
-        Manufacturer m;
-
-        for(int i = 0; i < manufacturers.length(); i++)
-        {
-            m = manufacturers.at(i);
-
-            if(m.getName() == name)
-            {
-                break;
-            }
-        }
-        return m;
-    }
+    Manufacturer getManufacturer(QString name);
 
     void addManufacturer(Manufacturer m){this->manufacturers.append(m);}
-    void addManufacturerList(QList<Manufacturer> list)
-    {
-        this->manufacturers.append(list);
-    }
+    void addManufacturerList(QList<Manufacturer> list);
 
-    QList<Manufacturer> * getManufacturList()
-    {
-        return &this->manufacturers;
-    }
+    QList<Manufacturer> * getManufacturList();
 
     bool createManufacturer(QString m);
     bool createFamily(Manufacturer manufacturer, QString f);
@@ -167,27 +96,13 @@ public:
 
     int getNewDebugAlgCount(){return this->newDebugAlgList.length();}
 
-    DebugAlgorithm getNewDebugAlg(int i)
-    {
-        if(i >= 0 && i < newDebugAlgList.length())
-        {
-            return this->newDebugAlgList.at(i);
-        }
-        return DebugAlgorithm();
-    }
+    DebugAlgorithm getNewDebugAlg(int i);
 
     void searchNewFlashAlgorithm();
 
     int getNewFlashAlgCount(){return this->newFlashAlgList.length();}
 
-    ProgAlgorithm getNewFlashAlg(int i)
-    {
-        if(i >= 0 && i < newFlashAlgList.length())
-        {
-            return this->newFlashAlgList.at(i);
-        }
-        return ProgAlgorithm();
-    }
+    ProgAlgorithm getNewFlashAlg(int i);
 
 
     bool fixVendor(QString& errorString);

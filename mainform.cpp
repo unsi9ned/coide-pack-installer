@@ -10,8 +10,10 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if 1
+#if 0
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
+#elif 1
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1.pack");
 #elif 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack");
 #elif 1
