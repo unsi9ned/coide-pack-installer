@@ -188,7 +188,16 @@ public:
         return ProgAlgorithm();
     }
 
+
+    // TODO: Перенести после отладки в private
+    bool fixVendorNames(QString &errorString);
+    bool fixVendorId(QString &errorString);
+
 private:
+
+    bool updateVendorName(const Manufacturer manufacturer, QString& errorString);
+    bool updateFamilyTable(const Family& family, int vendorId, QString& errorString);
+    //bool updateComponentSupportsManufacturerTable(const Family& family, int vendorId, QString& errorString);
 
     QList<Manufacturer> requestManufacturerList();
     QList<Family> requestFamilyList(Manufacturer man);

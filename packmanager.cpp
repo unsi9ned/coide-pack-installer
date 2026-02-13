@@ -123,14 +123,26 @@ void PackManager::packInstall(PackDescription &pack)
     // Загружаем из базы данных информацию об устройствах
     //
     RequestManager * reqManager = RequestManager::instance();
-    reqManager->loadDataFromDb();
 
-    qInfo() << "Manufacturers:" << reqManager->getManufacturerCount();
-
-    for (int i = 0; i < reqManager->getManufacturerCount(); i++)
+    if(!reqManager->fixVendorNames(errorString))
     {
-        Manufacturer m = reqManager->getManufacturer(i);
-        qInfo() << m.getName();
+        qInfo() << errorString;
+    }
+    else if(!reqManager->fixVendorId(errorString))
+    {
+        qInfo() << errorString;
+    }
+    else
+    {
+        reqManager->loadDataFromDb();
+
+        qInfo() << "Manufacturers:" << reqManager->getManufacturerCount();
+
+        for (int i = 0; i < reqManager->getManufacturerCount(); i++)
+        {
+            Manufacturer m = reqManager->getManufacturer(i);
+            qInfo() << QString("%2:%1").arg(m.getName()).arg(m.getId());
+        }
     }
 
     //

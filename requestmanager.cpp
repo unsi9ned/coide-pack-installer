@@ -13,6 +13,17 @@ RequestManager *RequestManager::instance()
 
 RequestManager::RequestManager() : QObject()
 {
+#if 1
+    // На время отладки создаем бекап базы данных
+    QFile dbFile(Paths::instance()->coIdeDatabaseFile());
+    QFile dbBackup(Paths::instance()->coIdeDatabaseFile() + ".bak");
+
+    if(dbFile.exists() && !dbBackup.exists())
+    {
+        QFile::copy(dbFile.fileName(), dbBackup.fileName());
+    }
+#endif
+
     connect(DataBase::instance(),
             SIGNAL(errorOccured(QString)),
             SIGNAL(errorOccured(QString)));
@@ -1305,4 +1316,117 @@ void RequestManager::searchNewFlashAlgorithm()
             }
         }
     }
+}
+
+//------------------------------------------------------------------------------
+// Исправляет в БД имена вендоров и приводит к стандарту Keil
+//------------------------------------------------------------------------------
+bool RequestManager::fixVendorNames(QString& errorString)
+{
+    bool status = true;
+    QList<Manufacturer> manList = requestManufacturerList();
+
+    if(manList.isEmpty())
+        return false;
+
+    foreach(Manufacturer m, manList)
+    {
+        QString coName = m.getName();
+        QString keilName = m.toKeilName();
+
+        if(!keilName.isEmpty() && keilName != coName)
+        {
+            m.setName(keilName);
+            status = updateVendorName(m, errorString);
+
+            if(!status) break;
+        }
+    }
+
+    return status;
+}
+
+//------------------------------------------------------------------------------
+// Исправляет в БД ID вендоров и приводит к стандарту Keil
+//------------------------------------------------------------------------------
+bool RequestManager::fixVendorId(QString &errorString)
+{
+    bool status = true;
+    QList<Manufacturer> manList = requestManufacturerList();
+    QList<Family> familyList;
+
+    if(manList.isEmpty())
+        return false;
+
+    foreach(Manufacturer m, manList)
+    {
+        int keilId = m.toKeilId();
+
+        if(keilId <= 0)
+        {
+            errorString = QString("ID '%1' not found id Vendor Map").arg(keilId);
+            return false;
+        }
+
+        familyList = requestFamilyList(m);
+
+        foreach(Family f, familyList)
+        {
+            if(!updateFamilyTable(f, keilId, errorString))
+                return false;
+        }
+    }
+
+    return status;
+}
+
+//------------------------------------------------------------------------------
+// Формирует SQL-запрос на обновление данных вендора в БД
+//------------------------------------------------------------------------------
+bool RequestManager::updateVendorName(const Manufacturer manufacturer,
+                                      QString &errorString)
+{
+    bool status;
+    QString queryStr = QString("UPDATE mcumanufacturer SET "
+                               "id = '%1', "
+                               "name = '%2' WHERE "
+                               "id = %1;").
+                        arg(manufacturer.getId()).
+                        arg(manufacturer.getName());
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+    if(!status)
+    {
+        errorString = result.lastError().text();
+    }
+
+    return status;
+}
+
+//------------------------------------------------------------------------------
+// Формирует SQL-запрос на обновление ID вендора в таблице Family
+//------------------------------------------------------------------------------
+bool RequestManager::updateFamilyTable(const Family &family,
+                                       int vendorId,
+                                       QString &errorString)
+{
+    bool status;
+    QString queryStr = QString("UPDATE mcufamily SET "
+                               "id = '%1', "
+                               "familyName = '%2', "
+                               "manufacturerId = '%3' WHERE "
+                               "id = %1;").
+                        arg(family.getId()).
+                        arg(family.getName()).
+                        arg(vendorId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+    if(!status)
+    {
+        errorString = result.lastError().text();
+    }
+
+    return status;
 }

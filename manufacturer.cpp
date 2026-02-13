@@ -1,5 +1,82 @@
 #include "manufacturer.h"
 
+const QMap<QString, int> Manufacturer::_coVendorMap = {
+    {"ARM", 1},
+    {"Atmel", 2},
+    {"Energy Micro", 3},
+    {"Freescale", 4},
+    {"Holtek", 5},
+    {"TI", 6},
+    {"NXP", 7},
+    {"Nuvoton", 8},
+    {"ST", 9},
+    {"Toshiba", 10},
+    {"Spansion", 12},
+    {"Active-Semi", 11},
+};
+
+const QMap<QString, int> Manufacturer::_keilVendorMap = {
+    // Основные вендоры
+    {"ABOV Semiconductor", 126},
+    {"Actel", 56},
+    {"Altera", 85},
+    {"Altium", 65},
+    {"Ambiq Micro", 120},
+    {"Analog Devices", 1},
+    {"ARM", 82},
+    {"ARM CMSIS", 109},
+    {"Atmel", 3},
+    {"CSR", 118},
+    {"Cypress", 19},
+    {"Dialog Semiconductor", 113},
+    {"Dolphin", 57},
+    {"Domosys", 26},
+    {"Ember", 98},
+    {"Energy Micro", 97},
+    {"EnOcean", 91},
+    {"Evatronix", 64},
+    {"Freescale", 78},
+    {"Generic", 5},
+    {"GigaDevice", 123},
+    {"Holtek", 106},
+    {"Hynix Semiconductor", 6},
+    {"Hyundai", 35},
+    {"Infineon", 7},
+    {"Kionix", 127},
+    {"Lapis Semiconductor", 10},
+    {"Luminary Micro", 76},
+    {"Maxim", 23},
+    {"MegaChips", 128},
+    {"Mentor Graphics Co.", 24},
+    {"Micronas", 30},
+    {"Microsemi", 112},
+    {"Milandr", 99},
+    {"NetSilicon", 67},
+    {"Nordic Semiconductor", 54},
+    {"Nuvoton", 18},
+    {"NXP", 11},
+    {"OKI SEMICONDUCTOR CO.,LTD.", 108},
+    {"Realtek Semiconductor", 124},
+    {"Redpine Signals", 125},
+    {"Renesas", 117},
+    {"ROHM", 103},
+    {"Samsung", 47},
+    {"Silicon Labs", 21},
+    {"SONiX", 110},
+    {"Spansion", 100},
+    {"STMicroelectronics", 13},
+    {"Sunrise Micro Devices", 121},
+    {"TI", 16},
+    {"Texas Instruments", 16},
+    {"Toshiba", 92},
+    {"Triad Semiconductor", 104},
+    {"WIZnet", 122},
+
+    // Deprecated - оставляем для обратной совместимости
+    {"Freescale Semiconductor", 78},
+    {"NXP (founded by Philips)", 11},
+};
+
 Manufacturer::Manufacturer()
 {
     this->id = -1;
@@ -47,6 +124,60 @@ int Manufacturer::getId() const {return id;}
 // Вернуть имя производителя
 //------------------------------------------------------------------------------
 QString Manufacturer::getName() const {return name;}
+
+//------------------------------------------------------------------------------
+// Преобразовать имя вендора CoIDE в валидное имя Keil
+//------------------------------------------------------------------------------
+QString Manufacturer::toKeilName() const
+{
+    QString keilName;
+
+    if (this->name == "ST") {
+        keilName = "STMicroelectronics";
+    } else if (this->name == "TI") {
+        keilName = "Texas Instruments";
+    } else if (this->name == "ARM") {
+        keilName = "ARM";
+    } else if (this->name == "Atmel") {
+        keilName = "Atmel";
+    } else if (this->name == "Energy Micro") {
+        keilName = "Energy Micro";
+    } else if (this->name == "Freescale") {
+        keilName = "Freescale";
+    } else if (this->name == "Holtek") {
+        keilName = "Holtek";
+    } else if (this->name == "NXP") {
+        keilName = "NXP";
+    } else if (this->name == "Nuvoton") {
+        keilName = "Nuvoton";
+    } else if (this->name == "Toshiba") {
+        keilName = "Toshiba";
+    } else if (this->name == "Spansion") {
+        keilName = "Spansion";
+    } else if (this->name == "Active-Semi") {
+        keilName = "Active-Semi";
+    } else {
+        keilName = this->name;  // оставляем как есть
+    }
+
+    return keilName;
+}
+
+//------------------------------------------------------------------------------
+// Преобразовать ID вендора CoIDE в валидное ID Keil
+//------------------------------------------------------------------------------
+int Manufacturer::toKeilId() const
+{
+    int keilId = 0;
+    QString keilName = toKeilName();
+
+    if(_keilVendorMap.contains(keilName))
+        keilId = _keilVendorMap.value(keilName);
+    else
+        keilId = this->id;
+
+    return keilId;
+}
 
 //------------------------------------------------------------------------------
 // Задать ID производителя

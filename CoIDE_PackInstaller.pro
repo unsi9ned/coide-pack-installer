@@ -39,7 +39,10 @@ SOURCES += main.cpp\
     manufacturer.cpp \
     logger.cpp \
     database.cpp \
-    requestmanager.cpp
+    requestmanager.cpp \
+    component.cpp \
+    componentsinfo.cpp \
+    category.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -61,7 +64,10 @@ HEADERS  += \
     ziparchive.h \
     logger.h \
     database.h \
-    requestmanager.h
+    requestmanager.h \
+    component.h \
+    componentsinfo.h \
+    category.h
 
 FORMS    += \
     mainform.ui

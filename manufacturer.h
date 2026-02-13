@@ -42,6 +42,9 @@ private:
     QMap<QString, Family> familyMap;
     QList<SvdInfo> _svdList;
 
+    static const QMap<QString, int> _coVendorMap;
+    static const QMap<QString, int> _keilVendorMap;
+
 public:
 
     Manufacturer();
@@ -57,6 +60,8 @@ public:
 
     Manufacturer& setName(QString name);
     QString getName() const;
+    QString toKeilName() const;
+    int toKeilId() const;
 
     //Узнать количество семейств в списке
     int getFamiliesCount();
