@@ -15,16 +15,20 @@ class DataBase : public QObject
 
 private:
     QSqlDatabase db;
-    QString pathToDb;
+    static DataBase* _m_instance;
 
-public:
     explicit DataBase();
     ~DataBase();
 
-    bool tryOpen(QString path_to_db);
-    QSqlQuery sendQuery(QString queryString, bool * result = NULL);
-    void setDbPath(QString path);
-    bool isOpen(){return db.isOpen();}
+public:
+    DataBase(const DataBase&) = delete;
+    DataBase& operator=(const DataBase&) = delete;
+
+    static DataBase* instance();
+
+    bool isOpen();
+    bool tryOpen();
+    QSqlQuery sendQuery(QString queryString, bool * result = nullptr);
 
 signals:
 

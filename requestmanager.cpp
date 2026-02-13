@@ -6,27 +6,26 @@ QString RequestManager::getIdePath() const
     return idePath;
 }
 
-RequestManager::RequestManager(DataBase * db, QObject *parent) : QObject(parent),
-    idePath(Paths::instance()->coIdeDir()),
-    db(db)
+RequestManager::RequestManager(QObject *parent) : QObject(parent),
+    idePath(Paths::instance()->coIdeDir())
 {
-    connect(db,
+    connect(DataBase::instance(),
             SIGNAL(errorOccured(QString)),
             SIGNAL(errorOccured(QString)));
 
-    connect(db,
+    connect(DataBase::instance(),
             SIGNAL(dbConnected()),
             this,
             SLOT(saveIdePath()));
 
 
-    if(db->isOpen())
+    if(DataBase::instance()->isOpen())
     {
         loadDataFromDb();
     }
     else
     {
-        connect(db,
+        connect(DataBase::instance(),
                 SIGNAL(dbConnected()),
                 this,
                 SLOT(loadDataFromDb()));
@@ -44,7 +43,7 @@ RequestManager::~RequestManager()
 QList<Manufacturer> RequestManager::requestManufacturerList()
 {
     QList<Manufacturer> manufact;
-    QSqlQuery result = db->sendQuery("SELECT * FROM mcumanufacturer");
+    QSqlQuery result = DataBase::instance()->sendQuery("SELECT * FROM mcumanufacturer");
 
     while(result.next())
     {
@@ -65,7 +64,7 @@ QList<Family> RequestManager::requestFamilyList(Manufacturer manufact)
     QList<Family> fam;
     QString queryStr = QString("SELECT * FROM mcufamily "
                                "WHERE manufacturerId=%1").arg(manufact.getId());
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -85,7 +84,7 @@ QList<Family> RequestManager::requestFamilyList()
 {
     QList<Family> fam;
     QString queryStr = QString("SELECT * FROM mcufamily");
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -107,7 +106,7 @@ QList<Series> RequestManager::requestSeriesList(Family fam)
     QList<Series> series;
     QString queryStr = QString("SELECT * FROM mcuseries "
                                "WHERE familyId=%1").arg(fam.getId());
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -128,7 +127,7 @@ QList<Mcu> RequestManager::requestMcuList(Series serie)
     QList<Mcu> microcontrollers;
     QString queryStr = QString("SELECT * FROM mcu "
                                "WHERE seriesId=%1").arg(serie.getId());
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -197,7 +196,7 @@ QList<DebugAlgorithm> RequestManager::requestDebugAlgorithmList()
     QList<DebugAlgorithm> daList;
 
     QString queryStr = QString("SELECT * FROM debug_algorithm");
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -224,7 +223,7 @@ DebugAlgorithm RequestManager::requestDebugAlgorithm(int id)
 
     QString queryStr = QString("SELECT * FROM debug_algorithm "
                                "WHERE id=%1 LIMIT 1").arg(id);
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -248,7 +247,7 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(int id)
 
     QString queryStr = QString("SELECT * FROM flash_algorithm "
                                "WHERE id=%1 LIMIT 1").arg(id);
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -271,7 +270,7 @@ QList<ProgAlgorithm> RequestManager::requestFlashAlgorithmList()
     QList<ProgAlgorithm> faList;
 
     QString queryStr = QString("SELECT * FROM flash_algorithm");
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -299,7 +298,7 @@ ProgAlgorithm RequestManager::getMcuFlashAlgorithm(int mcuId)
 
     QString queryStr = QString("SELECT * FROM mcu_has_flash_algorithm "
                                "WHERE mcuId=%1 LIMIT 1").arg(mcuId);
-    QSqlQuery result = db->sendQuery(queryStr);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
@@ -320,9 +319,9 @@ ProgAlgorithm RequestManager::getMcuFlashAlgorithm(int mcuId)
 //------------------------------------------------------------------------------
 void RequestManager::loadDataFromDb()
 {
-    if(db->isOpen())
+    if(DataBase::instance()->isOpen())
     {
-        disconnect(db,
+        disconnect(DataBase::instance(),
                    SIGNAL(dbConnected()),
                    this,
                    SLOT(loadDataFromDb()));
@@ -429,7 +428,7 @@ bool RequestManager::createManufacturer(QString newMan)
                                 arg(lastId + 1).
                                 arg(newMan);
 
-            QSqlQuery result = db->sendQuery(queryStr, &status);
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
@@ -500,7 +499,7 @@ bool RequestManager::createFamily(Manufacturer manufacturer, QString newFamily)
                                 arg(newFamily).
                                 arg(manufacturer.getId());
 
-            QSqlQuery result = db->sendQuery(queryStr, &status);
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
@@ -552,7 +551,7 @@ bool RequestManager::createSerie(Manufacturer man, Family fam, QString newSerie)
 
         //Поиск последнего айди
         QString queryStr = QString("SELECT MAX(id) FROM mcuseries");
-        QSqlQuery result = db->sendQuery(queryStr, &status);
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
         if(!status || !result.next())
         {
@@ -583,7 +582,7 @@ bool RequestManager::createSerie(Manufacturer man, Family fam, QString newSerie)
                                     arg(newSerie).
                                     arg(fam.getId());
 
-                QSqlQuery result = db->sendQuery(queryStr, &status);
+                QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
                 if(!status)
                 {
@@ -639,7 +638,7 @@ bool RequestManager::createMcu(Manufacturer man,
 
         //Поиск последнего айди
         QString queryStr = QString("SELECT MAX(id) FROM mcu");
-        QSqlQuery result = db->sendQuery(queryStr, &status);
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
         if(!status || !result.next())
         {
@@ -684,7 +683,7 @@ bool RequestManager::createMcu(Manufacturer man,
                                     arg("ae08a837-c4ed-4374-b372-caafd3dcf3cd").
                                     arg("0");
 
-                QSqlQuery result = db->sendQuery(queryStr, &status);
+                QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
                 if(!status)
                 {
@@ -764,7 +763,7 @@ bool RequestManager::createDebugAlgorithm(QString nameAlg)
                                 arg("da181949-d3d0-41f6-b16c-956433f00e0b").
                                 arg(3);
 
-            QSqlQuery result = db->sendQuery(queryStr, &status);
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
@@ -840,7 +839,7 @@ bool RequestManager::createFlashAlgorithm(QString nameAlg)
                                 arg("da181949-d3d0-41f6-b16c-956433f00e0b").
                                 arg(2);
 
-            QSqlQuery result = db->sendQuery(queryStr, &status);
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
@@ -879,7 +878,7 @@ bool RequestManager::removeMcu(Mcu mcu)
     {
         //Поиск последнего айди
         QString queryStr = QString("DELETE FROM mcu WHERE id='%1'").arg(mcu.getId());
-        QSqlQuery result = db->sendQuery(queryStr, &status);
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
         if(!status)
         {
@@ -937,7 +936,7 @@ bool RequestManager::removeSerie(Series serie)
         if(status)
         {
             QString queryStr = QString("DELETE FROM mcuseries WHERE id='%1'").arg(serie.getId());
-            QSqlQuery result = db->sendQuery(queryStr, &status);
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
@@ -994,7 +993,7 @@ bool RequestManager::removeFamily(Family family)
         if(status)
         {
             QString queryStr = QString("DELETE FROM mcufamily WHERE id='%1'").arg(family.getId());
-            QSqlQuery result = db->sendQuery(queryStr, &status);
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
@@ -1051,7 +1050,7 @@ bool RequestManager::removeManufacturer(Manufacturer manufacturer)
         if(status)
         {
             QString queryStr = QString("DELETE FROM mcumanufacturer WHERE id='%1'").arg(manufacturer.getId());
-            QSqlQuery result = db->sendQuery(queryStr, &status);
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
@@ -1088,7 +1087,7 @@ bool RequestManager::removeDebugAlgorithm(DebugAlgorithm da)
     {
         //Удаление  из таблицы
         QString queryStr = QString("DELETE FROM debug_algorithm WHERE id='%1'").arg(da.coId());
-        QSqlQuery result = db->sendQuery(queryStr, &status);
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
         if(!status)
         {
@@ -1124,7 +1123,7 @@ bool RequestManager::removeFlashAlgorithm(ProgAlgorithm fa)
     {
         //Удаление  из таблицы
         QString queryStr = QString("DELETE FROM flash_algorithm WHERE id='%1'").arg(fa.coId());
-        QSqlQuery result = db->sendQuery(queryStr, &status);
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
         if(!status)
         {
@@ -1175,7 +1174,7 @@ bool RequestManager::updateMcuInfo(Mcu mcu)
                             arg(QString(mcu.getMemInfo())).
                             arg(mcu.getId());
 
-        QSqlQuery result = db->sendQuery(queryStr, &status);
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
         if(!status)
         {
@@ -1194,7 +1193,7 @@ bool RequestManager::updateMcuInfo(Mcu mcu)
                             arg(mcu.getFlashAlgorithm()->coId()).
                             arg(mcu.getId());
 
-                result = db->sendQuery(queryStr, &status);
+                result = DataBase::instance()->sendQuery(queryStr, &status);
 
                 if(!status)
                 {
@@ -1210,7 +1209,7 @@ bool RequestManager::updateMcuInfo(Mcu mcu)
                                     arg(mcu.getId()).
                                     arg(mcu.getFlashAlgorithm()->coId());
 
-                result = db->sendQuery(queryStr, &status);
+                result = DataBase::instance()->sendQuery(queryStr, &status);
 
                 if(!status)
                 {

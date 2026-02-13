@@ -22,7 +22,6 @@ class RequestManager : public QObject
 private:
 
     QString idePath;
-    DataBase * db;
     QList<Manufacturer> manufacturers;
     QList<DebugAlgorithm> debugAlgList;
     QList<ProgAlgorithm> flashAlgList;
@@ -31,7 +30,7 @@ private:
     QList<ProgAlgorithm> newFlashAlgList;
 
 public:
-    explicit RequestManager(DataBase * db, QObject *parent = 0);
+    explicit RequestManager(QObject *parent = 0);
     ~RequestManager();
 
     int getManufacturerCount(){return this->manufacturers.length();}
@@ -187,7 +186,6 @@ public:
         Logger::instance()->addEvent(QString("The path to the IDE is set '%1'").arg(idePath));
 
         this->idePath = idePath;
-        db->setDbPath(Paths::instance()->coIdeDatabaseFile());
         Paths::instance()->setCoIdeDir(idePath);
     }
 

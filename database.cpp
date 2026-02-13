@@ -2,13 +2,15 @@
 #include "logger.h"
 #include "paths.h"
 
+DataBase* DataBase::_m_instance = nullptr;
+
 //------------------------------------------------------------------------------
 // Открыть соединение
 //------------------------------------------------------------------------------
 DataBase::DataBase() : QObject()
 {
     db = QSqlDatabase::addDatabase("QSQLITE");
-    tryOpen(Paths::instance()->coIdeDatabaseFile());
+    tryOpen();
 }
 
 //------------------------------------------------------------------------------
@@ -20,12 +22,25 @@ DataBase::~DataBase()
     {
         db.close();
     }
+
+    delete _m_instance;
+}
+
+//------------------------------------------------------------------------------
+// Создает единственный экземпляр класса
+//------------------------------------------------------------------------------
+DataBase *DataBase::instance()
+{
+    if(!_m_instance)
+        _m_instance = new DataBase();
+
+    return _m_instance;
 }
 
 //------------------------------------------------------------------------------
 // Открыть соединение
 //------------------------------------------------------------------------------
-bool DataBase::tryOpen(QString path_to_db)
+bool DataBase::tryOpen()
 {
     bool status = true;
 
@@ -33,12 +48,11 @@ bool DataBase::tryOpen(QString path_to_db)
 
     if(!db.isOpen())
     {
-        pathToDb = path_to_db;
-        QFile dbFile(path_to_db);
+        QFile dbFile(Paths::instance()->coIdeDatabaseFile());
 
         if(dbFile.exists())
         {
-            db.setDatabaseName(path_to_db);
+            db.setDatabaseName(Paths::instance()->coIdeDatabaseFile());
             status = db.open();
 
             if(status)
@@ -55,7 +69,7 @@ bool DataBase::tryOpen(QString path_to_db)
         else
         {
             Logger::instance()->addEvent("The database was not found");
-            emit errorOccured(tr("База данных не найдена"));
+            emit errorOccured(tr("The database was not found"));
             status = false;
         }
     }
@@ -72,7 +86,7 @@ QSqlQuery DataBase::sendQuery(QString queryString, bool * result)
 {
     QSqlQuery query;
 
-    if(db.isOpen())
+    if(db.isOpen() || this->tryOpen())
     {
         bool status;
         status = query.exec(queryString);
@@ -81,24 +95,14 @@ QSqlQuery DataBase::sendQuery(QString queryString, bool * result)
             *result = status;
         }
     }
-    else
-    {
-        this->tryOpen(pathToDb);
-    }
 
     return query;
 }
 
 //------------------------------------------------------------------------------
-// Задать путь к базе данных
+// Проверка открыта ли база данных
 //------------------------------------------------------------------------------
-void DataBase::setDbPath(QString path)
+bool DataBase::isOpen()
 {
-    if(db.isOpen())
-    {
-        db.close();
-    }
-
-    this->pathToDb = path;
-    this->tryOpen(path);
+    return db.isOpen();
 }
