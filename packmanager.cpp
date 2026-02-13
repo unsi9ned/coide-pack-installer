@@ -7,6 +7,7 @@
 #include "ziparchive.h"
 #include "pdscparser.h"
 #include "manufacturer.h"
+#include "requestmanager.h"
 
 PackManager::PackManager(QObject *parent) : QObject(parent)
 {
@@ -116,6 +117,20 @@ void PackManager::packInstall(PackDescription &pack)
             emit errorOccured(QString("An error occurred when creating the SVD database: %1").arg(errorString));
 
         return;
+    }
+
+    //
+    // Загружаем из базы данных информацию об устройствах
+    //
+    RequestManager * reqManager = RequestManager::instance();
+    reqManager->loadDataFromDb();
+
+    qInfo() << "Manufacturers:" << reqManager->getManufacturerCount();
+
+    for (int i = 0; i < reqManager->getManufacturerCount(); i++)
+    {
+        Manufacturer m = reqManager->getManufacturer(i);
+        qInfo() << m.getName();
     }
 
     //

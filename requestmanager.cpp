@@ -1,23 +1,21 @@
 #include "requestmanager.h"
 #include "logger.h"
 
-QString RequestManager::getIdePath() const
+RequestManager* RequestManager::_m_instance = nullptr;
+
+RequestManager *RequestManager::instance()
 {
-    return idePath;
+    if(!_m_instance)
+        _m_instance = new RequestManager();
+
+    return _m_instance;
 }
 
-RequestManager::RequestManager(QObject *parent) : QObject(parent),
-    idePath(Paths::instance()->coIdeDir())
+RequestManager::RequestManager() : QObject()
 {
     connect(DataBase::instance(),
             SIGNAL(errorOccured(QString)),
             SIGNAL(errorOccured(QString)));
-
-    connect(DataBase::instance(),
-            SIGNAL(dbConnected()),
-            this,
-            SLOT(saveIdePath()));
-
 
     if(DataBase::instance()->isOpen())
     {
@@ -35,6 +33,7 @@ RequestManager::RequestManager(QObject *parent) : QObject(parent),
 RequestManager::~RequestManager()
 {
     manufacturers.clear();
+    delete _m_instance;
 }
 
 //------------------------------------------------------------------------------

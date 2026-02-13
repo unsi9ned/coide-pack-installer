@@ -21,7 +21,6 @@ class RequestManager : public QObject
 
 private:
 
-    QString idePath;
     QList<Manufacturer> manufacturers;
     QList<DebugAlgorithm> debugAlgList;
     QList<ProgAlgorithm> flashAlgList;
@@ -29,9 +28,17 @@ private:
     QList<DebugAlgorithm> newDebugAlgList;
     QList<ProgAlgorithm> newFlashAlgList;
 
-public:
-    explicit RequestManager(QObject *parent = 0);
+    static RequestManager* _m_instance;
+
+    explicit RequestManager();
     ~RequestManager();
+
+public:
+
+    RequestManager(const RequestManager&) = delete;
+    RequestManager& operator=(const RequestManager&) = delete;
+
+    static RequestManager* instance();
 
     int getManufacturerCount(){return this->manufacturers.length();}
 
@@ -180,17 +187,6 @@ public:
         }
         return ProgAlgorithm();
     }
-
-    void changeIdePath(QString idePath)
-    {
-        Logger::instance()->addEvent(QString("The path to the IDE is set '%1'").arg(idePath));
-
-        this->idePath = idePath;
-        Paths::instance()->setCoIdeDir(idePath);
-    }
-
-
-    QString getIdePath() const;
 
 private:
 

@@ -29,9 +29,7 @@ MainForm::MainForm(QWidget *parent) :
 
     //Версия программы
     ui->labelAppVersion->setText(compilationVersion());
-#if 0
-    ui->lineEditIdePath->setText(mcuInfo.getIdePath());
-#endif
+    ui->lineEditIdePath->setText(Paths::instance()->coIdeDir());
 
     //Выбор производителя
     connect(ui->listWidgetManufacturer,
