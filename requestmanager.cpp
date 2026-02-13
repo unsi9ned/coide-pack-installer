@@ -1,12 +1,12 @@
-#include "mcuinfo.h"
+#include "requestmanager.h"
 #include "logger.h"
 
-QString McuInfo::getIdePath() const
+QString RequestManager::getIdePath() const
 {
     return idePath;
 }
 
-McuInfo::McuInfo(DataBase * db, QObject *parent) : QObject(parent),
+RequestManager::RequestManager(DataBase * db, QObject *parent) : QObject(parent),
     idePath(Paths::instance()->coIdeDir()),
     db(db)
 {
@@ -33,7 +33,7 @@ McuInfo::McuInfo(DataBase * db, QObject *parent) : QObject(parent),
     }
 }
 
-McuInfo::~McuInfo()
+RequestManager::~RequestManager()
 {
     manufacturers.clear();
 }
@@ -41,7 +41,7 @@ McuInfo::~McuInfo()
 //------------------------------------------------------------------------------
 // Запросить список производителей
 //------------------------------------------------------------------------------
-QList<Manufacturer> McuInfo::requestManufacturerList()
+QList<Manufacturer> RequestManager::requestManufacturerList()
 {
     QList<Manufacturer> manufact;
     QSqlQuery result = db->sendQuery("SELECT * FROM mcumanufacturer");
@@ -60,7 +60,7 @@ QList<Manufacturer> McuInfo::requestManufacturerList()
 //------------------------------------------------------------------------------
 // Запросить список семейств
 //------------------------------------------------------------------------------
-QList<Family> McuInfo::requestFamilyList(Manufacturer manufact)
+QList<Family> RequestManager::requestFamilyList(Manufacturer manufact)
 {
     QList<Family> fam;
     QString queryStr = QString("SELECT * FROM mcufamily "
@@ -81,7 +81,7 @@ QList<Family> McuInfo::requestFamilyList(Manufacturer manufact)
 //------------------------------------------------------------------------------
 // Запросить список семейств
 //------------------------------------------------------------------------------
-QList<Family> McuInfo::requestFamilyList()
+QList<Family> RequestManager::requestFamilyList()
 {
     QList<Family> fam;
     QString queryStr = QString("SELECT * FROM mcufamily");
@@ -102,7 +102,7 @@ QList<Family> McuInfo::requestFamilyList()
 //------------------------------------------------------------------------------
 // Запросить список семейств
 //------------------------------------------------------------------------------
-QList<Series> McuInfo::requestSeriesList(Family fam)
+QList<Series> RequestManager::requestSeriesList(Family fam)
 {
     QList<Series> series;
     QString queryStr = QString("SELECT * FROM mcuseries "
@@ -123,7 +123,7 @@ QList<Series> McuInfo::requestSeriesList(Family fam)
 //------------------------------------------------------------------------------
 // Запросить список микроконтроллеров
 //------------------------------------------------------------------------------
-QList<Mcu> McuInfo::requestMcuList(Series serie)
+QList<Mcu> RequestManager::requestMcuList(Series serie)
 {
     QList<Mcu> microcontrollers;
     QString queryStr = QString("SELECT * FROM mcu "
@@ -192,7 +192,7 @@ QList<Mcu> McuInfo::requestMcuList(Series serie)
 //------------------------------------------------------------------------------
 // Загрузить из базы алгоритм отладки
 //------------------------------------------------------------------------------
-QList<DebugAlgorithm> McuInfo::requestDebugAlgorithmList()
+QList<DebugAlgorithm> RequestManager::requestDebugAlgorithmList()
 {
     QList<DebugAlgorithm> daList;
 
@@ -218,7 +218,7 @@ QList<DebugAlgorithm> McuInfo::requestDebugAlgorithmList()
 //------------------------------------------------------------------------------
 // Загрузить из базы алгоритм отладки
 //------------------------------------------------------------------------------
-DebugAlgorithm McuInfo::requestDebugAlgorithm(int id)
+DebugAlgorithm RequestManager::requestDebugAlgorithm(int id)
 {
     DebugAlgorithm da;
 
@@ -242,7 +242,7 @@ DebugAlgorithm McuInfo::requestDebugAlgorithm(int id)
 //------------------------------------------------------------------------------
 // Загрузить из базы алгоритм программирования
 //------------------------------------------------------------------------------
-ProgAlgorithm McuInfo::requestFlashAlgorithm(int id)
+ProgAlgorithm RequestManager::requestFlashAlgorithm(int id)
 {
     ProgAlgorithm fa;
 
@@ -266,7 +266,7 @@ ProgAlgorithm McuInfo::requestFlashAlgorithm(int id)
 //------------------------------------------------------------------------------
 // Загрузить из базы список алгоритмов программирования
 //------------------------------------------------------------------------------
-QList<ProgAlgorithm> McuInfo::requestFlashAlgorithmList()
+QList<ProgAlgorithm> RequestManager::requestFlashAlgorithmList()
 {
     QList<ProgAlgorithm> faList;
 
@@ -292,7 +292,7 @@ QList<ProgAlgorithm> McuInfo::requestFlashAlgorithmList()
 //------------------------------------------------------------------------------
 // Узнать из базы алгоритм программирования микроконтроллера
 //------------------------------------------------------------------------------
-ProgAlgorithm McuInfo::getMcuFlashAlgorithm(int mcuId)
+ProgAlgorithm RequestManager::getMcuFlashAlgorithm(int mcuId)
 {
     ProgAlgorithm fa;
     int faId = -1;
@@ -318,7 +318,7 @@ ProgAlgorithm McuInfo::getMcuFlashAlgorithm(int mcuId)
 //------------------------------------------------------------------------------
 // Загрузить данные из базы по контроллерам
 //------------------------------------------------------------------------------
-void McuInfo::loadDataFromDb()
+void RequestManager::loadDataFromDb()
 {
     if(db->isOpen())
     {
@@ -368,7 +368,7 @@ void McuInfo::loadDataFromDb()
 //------------------------------------------------------------------------------
 // Загрузка алгоритмов отладки и программирования из базы
 //------------------------------------------------------------------------------
-void McuInfo::loadAlgorithmFromDb()
+void RequestManager::loadAlgorithmFromDb()
 {
     //Загрузка алгоритмов отладки
     this->debugAlgList.clear();
@@ -384,7 +384,7 @@ void McuInfo::loadAlgorithmFromDb()
 //------------------------------------------------------------------------------
 // Создать нового производителя
 //------------------------------------------------------------------------------
-bool McuInfo::createManufacturer(QString newMan)
+bool RequestManager::createManufacturer(QString newMan)
 {
     QString errorStr;
     bool status = true;
@@ -454,7 +454,7 @@ bool McuInfo::createManufacturer(QString newMan)
 //------------------------------------------------------------------------------
 // Создать новое семейство
 //------------------------------------------------------------------------------
-bool McuInfo::createFamily(Manufacturer manufacturer, QString newFamily)
+bool RequestManager::createFamily(Manufacturer manufacturer, QString newFamily)
 {
     QString errorStr;
     bool status = true;
@@ -530,7 +530,7 @@ bool McuInfo::createFamily(Manufacturer manufacturer, QString newFamily)
 //------------------------------------------------------------------------------
 // Создать новую серию
 //------------------------------------------------------------------------------
-bool McuInfo::createSerie(Manufacturer man, Family fam, QString newSerie)
+bool RequestManager::createSerie(Manufacturer man, Family fam, QString newSerie)
 {
     QString errorStr;
     bool status = true;
@@ -614,7 +614,7 @@ bool McuInfo::createSerie(Manufacturer man, Family fam, QString newSerie)
 //------------------------------------------------------------------------------
 // Создать новый микроконтроллер
 //------------------------------------------------------------------------------
-bool McuInfo::createMcu(Manufacturer man,
+bool RequestManager::createMcu(Manufacturer man,
                         Family fam,
                         Series ser,
                         QString mcuName)
@@ -715,7 +715,7 @@ bool McuInfo::createMcu(Manufacturer man,
 //------------------------------------------------------------------------------
 // Добавить алгоритм отладки в базу
 //------------------------------------------------------------------------------
-bool McuInfo::createDebugAlgorithm(QString nameAlg)
+bool RequestManager::createDebugAlgorithm(QString nameAlg)
 {
     QString errorStr;
     bool status = true;
@@ -789,7 +789,7 @@ bool McuInfo::createDebugAlgorithm(QString nameAlg)
 //------------------------------------------------------------------------------
 // Добавить алгоритм программирования в базу
 //------------------------------------------------------------------------------
-bool McuInfo::createFlashAlgorithm(QString nameAlg)
+bool RequestManager::createFlashAlgorithm(QString nameAlg)
 {
     QString errorStr;
     bool status = true;
@@ -865,7 +865,7 @@ bool McuInfo::createFlashAlgorithm(QString nameAlg)
 //------------------------------------------------------------------------------
 // Удаление контроллера из базы данных
 //------------------------------------------------------------------------------
-bool McuInfo::removeMcu(Mcu mcu)
+bool RequestManager::removeMcu(Mcu mcu)
 {
     QString errorStr;
     bool status = true;
@@ -903,7 +903,7 @@ bool McuInfo::removeMcu(Mcu mcu)
 //------------------------------------------------------------------------------
 // Удаление серии процессоров
 //------------------------------------------------------------------------------
-bool McuInfo::removeSerie(Series serie)
+bool RequestManager::removeSerie(Series serie)
 {
     QString errorStr;
     bool status = true;
@@ -960,7 +960,7 @@ bool McuInfo::removeSerie(Series serie)
 //------------------------------------------------------------------------------
 // Удаление семейства процессоров от выбранного производителя
 //------------------------------------------------------------------------------
-bool McuInfo::removeFamily(Family family)
+bool RequestManager::removeFamily(Family family)
 {
     QString errorStr;
     bool status = true;
@@ -1017,7 +1017,7 @@ bool McuInfo::removeFamily(Family family)
 //------------------------------------------------------------------------------
 // Удаление процессоров от выбранного производителя
 //------------------------------------------------------------------------------
-bool McuInfo::removeManufacturer(Manufacturer manufacturer)
+bool RequestManager::removeManufacturer(Manufacturer manufacturer)
 {
     QString errorStr;
     bool status = true;
@@ -1074,7 +1074,7 @@ bool McuInfo::removeManufacturer(Manufacturer manufacturer)
 //------------------------------------------------------------------------------
 // Удаление алгоритма отладки из базы
 //------------------------------------------------------------------------------
-bool McuInfo::removeDebugAlgorithm(DebugAlgorithm da)
+bool RequestManager::removeDebugAlgorithm(DebugAlgorithm da)
 {
     QString errorStr;
     bool status = true;
@@ -1110,7 +1110,7 @@ bool McuInfo::removeDebugAlgorithm(DebugAlgorithm da)
 //------------------------------------------------------------------------------
 // Удаление алгоритма программирования из базы
 //------------------------------------------------------------------------------
-bool McuInfo::removeFlashAlgorithm(ProgAlgorithm fa)
+bool RequestManager::removeFlashAlgorithm(ProgAlgorithm fa)
 {
     QString errorStr;
     bool status = true;
@@ -1146,7 +1146,7 @@ bool McuInfo::removeFlashAlgorithm(ProgAlgorithm fa)
 //------------------------------------------------------------------------------
 // Обновить информацию о процессоре
 //------------------------------------------------------------------------------
-bool McuInfo::updateMcuInfo(Mcu mcu)
+bool RequestManager::updateMcuInfo(Mcu mcu)
 {
     QString errorStr;
     bool status = true;
@@ -1234,7 +1234,7 @@ bool McuInfo::updateMcuInfo(Mcu mcu)
 //------------------------------------------------------------------------------
 // Поиск алгоритмов отладки, которые не прописаны в базе
 //------------------------------------------------------------------------------
-void McuInfo::searchNewDebugAlgorithm()
+void RequestManager::searchNewDebugAlgorithm()
 {
     QDir algDir(Paths::instance()->coIdeDebugAlgorithmDir());
 
@@ -1273,7 +1273,7 @@ void McuInfo::searchNewDebugAlgorithm()
 //------------------------------------------------------------------------------
 // Поиск алгоритмов программирования, которые не прописаны в базе
 //------------------------------------------------------------------------------
-void McuInfo::searchNewFlashAlgorithm()
+void RequestManager::searchNewFlashAlgorithm()
 {
     QDir algDir(Paths::instance()->coIdeFlashAlgorithmDir());
 

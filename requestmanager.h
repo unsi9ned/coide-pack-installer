@@ -15,7 +15,7 @@
 #include "logger.h"
 #include "paths.h"
 
-class McuInfo : public QObject
+class RequestManager : public QObject
 {
     Q_OBJECT
 
@@ -31,8 +31,8 @@ private:
     QList<ProgAlgorithm> newFlashAlgList;
 
 public:
-    explicit McuInfo(DataBase * db, QObject *parent = 0);
-    ~McuInfo();
+    explicit RequestManager(DataBase * db, QObject *parent = 0);
+    ~RequestManager();
 
     int getManufacturerCount(){return this->manufacturers.length();}
 
