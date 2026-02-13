@@ -19,6 +19,7 @@ const QMap<QString, int> Manufacturer::_keilVendorMap = {
     // Основные вендоры
     {"ABOV Semiconductor", 126},
     {"Actel", 56},
+    {"Active-Semi", 140},
     {"Altera", 85},
     {"Altium", 65},
     {"Ambiq Micro", 120},
@@ -86,6 +87,19 @@ Manufacturer::Manufacturer(int id, QString name)
 {
     this->id = id;
     this->name = name;
+
+    if(this->name.isEmpty())
+    {
+        for(auto it = _coVendorMap.begin(); it != _coVendorMap.end(); ++it)
+        {
+            if(it.value() == id)
+            {
+                this->name = it.key();
+                this->name = toKeilName();
+                break;
+            }
+        }
+    }
 }
 
 Manufacturer::Manufacturer(Manufacturer *m)
@@ -169,10 +183,10 @@ QString Manufacturer::toKeilName() const
 int Manufacturer::toKeilId() const
 {
     int keilId = 0;
-    QString keilName = toKeilName();
+    QString keilName = this->toKeilName();
 
     if(_keilVendorMap.contains(keilName))
-        keilId = _keilVendorMap.value(keilName);
+        keilId = _keilVendorMap.value(keilName) + 1000;
     else
         keilId = this->id;
 

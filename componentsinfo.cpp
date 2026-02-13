@@ -1,5 +1,6 @@
 #include "componentsinfo.h"
 #include "database.h"
+#include "manufacturer.h"
 
 ComponentsInfo* ComponentsInfo::_m_instance = nullptr;
 
@@ -95,6 +96,110 @@ QMap<int, Category> ComponentsInfo::requestSubcategoryMap()
     }
 
     return subcategoriesMap;
+}
+
+//------------------------------------------------------------------------------
+// Привести индентификаторы вендора в таблице `component_supports_mcumanufacturer`
+// к стандарту Keil
+//------------------------------------------------------------------------------
+bool ComponentsInfo::fixManufacturerIDs(QMap<int, Component> &components, QString &errorString)
+{
+    for(auto it = components.begin(); it != components.end(); ++it)
+    {
+        Component c = it.value();
+        QList<int> mList = c.getMcuManufacturerList();
+
+        // Временно удаляем пару Компонент-Производитель из базы
+        if(!deleteManufacturerList(c.getId(), errorString)) return false;
+
+        // Нечего добавлять в базу
+        if(mList.isEmpty()) continue;
+
+        // Исправляем ID внутри каждого компонента
+        for(int i = 0; i < mList.count(); i++)
+        {
+            if(!addManufacturer(c.getId(), Manufacturer(mList[i]).toKeilId(), errorString))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+bool ComponentsInfo::fixManufacturerIDs(QMap<int, Component> &components, QString *errorString)
+{
+    QString e;
+
+    if(errorString)
+        return fixManufacturerIDs(components, *errorString);
+    else
+        return fixManufacturerIDs(components, e);
+}
+
+bool ComponentsInfo::fixManufacturerIDs(QString *errorString)
+{
+    return fixManufacturerIDs(this->componentsMap, errorString);
+}
+
+bool ComponentsInfo::fixManufacturerIDs(QString &errorString)
+{
+    return fixManufacturerIDs(this->componentsMap, errorString);
+}
+
+//------------------------------------------------------------------------------
+// Удаляет из базы данных информацию о производителях, к которым применим компонент
+//------------------------------------------------------------------------------
+bool ComponentsInfo::deleteManufacturerList(int componentId, QString &errorString)
+{
+    bool status;
+    QString queryStr = QString("DELETE FROM component_supports_mcumanufacturer "
+                               "WHERE componentId = '%1';").arg(componentId);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+    if(!status)
+    {
+        errorString = result.lastError().text();
+    }
+
+    return status;
+}
+
+//------------------------------------------------------------------------------
+// Связать компонент с производителем чипа
+//------------------------------------------------------------------------------
+bool ComponentsInfo::addManufacturer(int componentId, int vendorId, QString &errorString)
+{
+    bool status;
+    QString queryStr = QString("INSERT INTO component_supports_mcumanufacturer "
+                               "VALUES ('%1','%2')").
+                        arg(componentId).
+                        arg(vendorId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+    if(!status)
+    {
+        errorString = result.lastError().text();
+    }
+
+    return status;
+}
+
+//------------------------------------------------------------------------------
+// Обновить список производителей, которые имеют доступ к компоненту
+//------------------------------------------------------------------------------
+bool ComponentsInfo::updateManufacturerList(const Component &component, QString& errorString)
+{
+    if(!deleteManufacturerList(component.getId(), errorString))
+        return false;
+
+    foreach (int vendorId, component.getMcuManufacturerList())
+    {
+        if(!addManufacturer(component.getId(), vendorId, errorString))
+            return false;
+    }
+
+    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -203,7 +308,7 @@ QMap<int, Component> ComponentsInfo::requestComponentsMap()
 //------------------------------------------------------------------------------
 // Загрузить данные о компонентах из базы данных
 //------------------------------------------------------------------------------
-void ComponentsInfo::loadDataFromDb()
+ComponentsInfo &ComponentsInfo::loadDataFromDb()
 {
     this->componentsMap = requestComponentsMap();
     this->categoriesMap = requestCategoryMap();
@@ -226,5 +331,5 @@ void ComponentsInfo::loadDataFromDb()
         ++subIterator;
     }
 
-    return;
+    return *this;
 }

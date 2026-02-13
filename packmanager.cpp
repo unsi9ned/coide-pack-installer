@@ -124,11 +124,15 @@ void PackManager::packInstall(PackDescription &pack)
     //
     RequestManager * reqManager = RequestManager::instance();
 
-    if(!reqManager->fixVendorNames(errorString))
-    {
-        qInfo() << errorString;
-    }
-    else if(!reqManager->fixVendorId(errorString))
+//    if(!reqManager->fixVendorNames(errorString))
+//    {
+//        qInfo() << errorString;
+//    }
+//    else if(!reqManager->fixVendorId(errorString))
+//    {
+//        qInfo() << errorString;
+//    }
+    if(!reqManager->fixVendor(errorString))
     {
         qInfo() << errorString;
     }
@@ -138,11 +142,11 @@ void PackManager::packInstall(PackDescription &pack)
 
         qInfo() << "Manufacturers:" << reqManager->getManufacturerCount();
 
-        for (int i = 0; i < reqManager->getManufacturerCount(); i++)
-        {
-            Manufacturer m = reqManager->getManufacturer(i);
-            qInfo() << QString("%2:%1").arg(m.getName()).arg(m.getId());
-        }
+//        for (int i = 0; i < reqManager->getManufacturerCount(); i++)
+//        {
+//            Manufacturer m = reqManager->getManufacturer(i);
+//            qInfo() << QString("%2:%1").arg(m.getName()).arg(m.getId());
+//        }
     }
 
     //

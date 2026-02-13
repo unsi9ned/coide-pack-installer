@@ -48,7 +48,7 @@ private:
 public:
 
     Manufacturer();
-    Manufacturer(int id, QString name);
+    Manufacturer(int id, QString name = QString());
     Manufacturer(Manufacturer* m);
 
     QMap<QString, Family>& families();

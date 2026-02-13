@@ -1320,6 +1320,47 @@ void RequestManager::searchNewFlashAlgorithm()
 }
 
 //------------------------------------------------------------------------------
+// Исправляет в БД имена вендоров и их идентификаторы и приводит к стандарту Keil
+//------------------------------------------------------------------------------
+bool RequestManager::fixVendor(QString& errorString)
+{
+    //
+    // Обновление таблицы `mcumanufacturer`
+    //
+    if(!fixVendorIDs(errorString))
+    {
+        return false;
+    }
+
+    //
+    // Обновление таблицы `mcufamily`
+    //
+    if(!fixFamilyVendorIDs(errorString))
+    {
+        return false;
+    }
+
+    //
+    // Обновление таблицы `component_supports_mcumanufacturer`
+    //
+    if(!ComponentsInfo::instance()->loadDataFromDb().fixManufacturerIDs(errorString))
+    {
+        return false;
+    }
+
+    //
+    // Обновление таблицы `board_supports_mcumanufacturer`
+    //
+    if(!fixBoardVendorIDs(errorString))
+    {
+        return false;
+    }
+
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
 // Исправляет в БД имена вендоров и приводит к стандарту Keil
 //------------------------------------------------------------------------------
 bool RequestManager::fixVendorNames(QString& errorString)
@@ -1353,30 +1394,60 @@ bool RequestManager::fixVendorNames(QString& errorString)
 bool RequestManager::fixVendorId(QString &errorString)
 {
     bool status = true;
+
+#if 0
     QList<Manufacturer> manList = requestManufacturerList();
-    QList<Family> familyList;
 
     if(manList.isEmpty())
         return false;
 
     foreach(Manufacturer m, manList)
     {
-        int keilId = m.toKeilId();
+        int keilVendorId = m.toKeilId();
 
-        if(keilId <= 0)
+        if(keilVendorId <= 0)
         {
-            errorString = QString("ID '%1' not found id Vendor Map").arg(keilId);
+            errorString = QString("ID '%1' not found id Vendor Map").arg(keilVendorId);
             return false;
         }
 
-        familyList = requestFamilyList(m);
+        //
+        // Обновление таблицы `mcufamily`
+        //
+        QList<Family> familyList = requestFamilyList(m);
 
         foreach(Family f, familyList)
         {
-            if(!updateFamilyTable(f, keilId, errorString))
+            if(!updateFamilyTable(f, keilVendorId, errorString))
                 return false;
         }
     }
+#else
+    //
+    // Обновление таблицы `mcufamily`
+    //
+    if(!fixFamilyVendorIDs(errorString))
+    {
+        return false;
+    }
+#endif
+
+    //
+    // Обновление таблицы `component_supports_mcumanufacturer`
+    //
+    if(!ComponentsInfo::instance()->loadDataFromDb().fixManufacturerIDs(errorString))
+    {
+        return false;
+    }
+
+    //
+    // Обновление таблицы `board_supports_mcumanufacturer`
+    //
+    if(!fixBoardVendorIDs(errorString))
+    {
+        return false;
+    }
+
 
     return status;
 }
@@ -1431,3 +1502,166 @@ bool RequestManager::updateFamilyTable(const Family &family,
 
     return status;
 }
+
+//------------------------------------------------------------------------------
+// Обновление ID вендора для платы
+//------------------------------------------------------------------------------
+bool RequestManager::fixBoardVendorIDs(QString &errorString)
+{
+    struct Board
+    {
+        int boardId;
+        int mcuManufacturerId;
+    };
+
+    bool status;
+    QList<Board> boards;
+    QSqlQuery result = DataBase::instance()->sendQuery("SELECT `boardId`, `mcuManufacturerId` "
+                                                       "FROM board_supports_mcumanufacturer",
+                                                       &status);
+
+    if(!status)
+    {
+        errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        Board b;
+        b.boardId = result.value(0).toInt();
+        b.mcuManufacturerId = result.value(1).toInt();
+
+        boards.append(b);
+    }
+
+    foreach(Board b, boards)
+    {
+        QString queryStr = QString("UPDATE board_supports_mcumanufacturer SET "
+                                   "boardId = '%1', "
+                                   "mcuManufacturerId = '%2' WHERE "
+                                   "boardId = %1;").
+                            arg(b.boardId).
+                            arg(Manufacturer(b.mcuManufacturerId).toKeilId());
+
+        result = DataBase::instance()->sendQuery(queryStr, &status);
+
+        if(!status)
+        {
+            errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Обновление ID вендора для семейств
+//------------------------------------------------------------------------------
+bool RequestManager::fixFamilyVendorIDs(QString &errorString)
+{
+    struct McuFamily
+    {
+        int id;
+        QString familyName;
+        int manufacturerId;
+    };
+
+    bool status;
+    QList<McuFamily> families;
+    QSqlQuery result = DataBase::instance()->sendQuery("SELECT `id`, `familyName`, `manufacturerId` "
+                                                       "FROM mcufamily",
+                                                       &status);
+
+    if(!status)
+    {
+        errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        McuFamily f;
+        f.id = result.value(0).toInt();
+        f.familyName = result.value(1).toString();
+        f.manufacturerId = result.value(2).toInt();
+
+        families.append(f);
+    }
+
+    foreach(McuFamily f, families)
+    {
+        QString queryStr = QString("UPDATE mcufamily SET "
+                                   "id = '%1', "
+                                   "familyName = '%2', "
+                                   "manufacturerId = '%3' WHERE "
+                                   "id = %1;").
+                            arg(f.id).
+                            arg(f.familyName).
+                            arg(Manufacturer(f.manufacturerId).toKeilId());
+
+        result = DataBase::instance()->sendQuery(queryStr, &status);
+
+        if(!status)
+        {
+            errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool RequestManager::fixVendorIDs(QString &errorString)
+{
+    struct Vendor
+    {
+        int id;
+        QString name;
+    };
+
+    bool status;
+    QList<Vendor> vendors;
+    QSqlQuery result = DataBase::instance()->sendQuery("SELECT `id`, `name` "
+                                                       "FROM mcumanufacturer",
+                                                       &status);
+
+    if(!status)
+    {
+        errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        Vendor v;
+        v.id = result.value(0).toInt();
+        v.name = result.value(1).toString();
+
+        vendors.append(v);
+    }
+
+    foreach(Vendor v, vendors)
+    {
+        Manufacturer m(v.id, v.name);
+        QString queryStr = QString("UPDATE mcumanufacturer SET "
+                                   "id = '%1', "
+                                   "name = '%2' WHERE "
+                                   "id = '%3';").
+                            arg(m.toKeilId()).
+                            arg(m.toKeilName()).
+                            arg(m.getId());
+
+        result = DataBase::instance()->sendQuery(queryStr, &status);
+
+        if(!status)
+        {
+            errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
