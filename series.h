@@ -114,6 +114,13 @@ public:
         return this->mcu(name).setName(name);
     }
 
+    Mcu& addMcu(const Mcu& m)
+    {
+        Mcu& newMcu = mcu(m.getName());
+        newMcu = m;
+        return newMcu;
+    }
+
     bool isValid()
     {
         return this->id > 0 && !this->_name.isEmpty();

@@ -102,8 +102,10 @@ QMap<int, Category> ComponentsInfo::requestSubcategoryMap()
 // Привести индентификаторы вендора в таблице `component_supports_mcumanufacturer`
 // к стандарту Keil
 //------------------------------------------------------------------------------
-bool ComponentsInfo::fixManufacturerIDs(QMap<int, Component> &components, QString &errorString)
+bool ComponentsInfo::fixManufacturerIDs(QString &errorString)
 {
+    auto components = requestComponentMap();
+
     for(auto it = components.begin(); it != components.end(); ++it)
     {
         Component c = it.value();
@@ -140,24 +142,14 @@ bool ComponentsInfo::fixManufacturerIDs(QMap<int, Component> &components, QStrin
     return true;
 }
 
-bool ComponentsInfo::fixManufacturerIDs(QMap<int, Component> &components, QString *errorString)
+bool ComponentsInfo::fixManufacturerIDs(QString *errorString)
 {
     QString e;
 
     if(errorString)
-        return fixManufacturerIDs(components, *errorString);
+        return fixManufacturerIDs(*errorString);
     else
-        return fixManufacturerIDs(components, e);
-}
-
-bool ComponentsInfo::fixManufacturerIDs(QString *errorString)
-{
-    return fixManufacturerIDs(this->componentsMap, errorString);
-}
-
-bool ComponentsInfo::fixManufacturerIDs(QString &errorString)
-{
-    return fixManufacturerIDs(this->componentsMap, errorString);
+        return fixManufacturerIDs(e);
 }
 
 //------------------------------------------------------------------------------
@@ -219,7 +211,7 @@ bool ComponentsInfo::updateManufacturerList(const Component &component, QString&
 //------------------------------------------------------------------------------
 // Загрузить данные о компонентах из базы данных
 //------------------------------------------------------------------------------
-QMap<int, Component> ComponentsInfo::requestComponentsMap()
+QMap<int, Component> ComponentsInfo::requestComponentMap()
 {
     QMap<int, Component> componentsMap;
     QSqlQuery result = DataBase::instance()->sendQuery("SELECT * FROM component");
@@ -322,9 +314,9 @@ QMap<int, Component> ComponentsInfo::requestComponentsMap()
 //------------------------------------------------------------------------------
 // Загрузить данные о компонентах из базы данных
 //------------------------------------------------------------------------------
-ComponentsInfo &ComponentsInfo::loadDataFromDb()
+void ComponentsInfo::loadDataFromDb()
 {
-    this->componentsMap = requestComponentsMap();
+    this->componentsMap = requestComponentMap();
     this->categoriesMap = requestCategoryMap();
     this->subcategoriesMap = requestSubcategoryMap();
 
@@ -344,6 +336,4 @@ ComponentsInfo &ComponentsInfo::loadDataFromDb()
 
         ++subIterator;
     }
-
-    return *this;
 }

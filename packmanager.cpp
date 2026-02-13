@@ -126,29 +126,25 @@ void PackManager::packInstall(PackDescription &pack)
     //
     RequestManager * reqManager = RequestManager::instance();
 
-//    if(!reqManager->fixVendorNames(errorString))
-//    {
-//        qInfo() << errorString;
-//    }
-//    else if(!reqManager->fixVendorId(errorString))
-//    {
-//        qInfo() << errorString;
-//    }
-    if(!reqManager->fixVendor(errorString))
+    if(!reqManager->fixVendorIDs(errorString))
     {
         qInfo() << errorString;
     }
     else
     {
-        reqManager->loadDataFromDb();
+#if 0
+        QMap<QString, Manufacturer> vendors;
+        reqManager->loadDataFromDb(vendors);
 
-        qInfo() << "Manufacturers:" << reqManager->getManufacturerCount();
+        qInfo() << "Manufacturers:" << vendors.count();
+#endif
 
 //        for (int i = 0; i < reqManager->getManufacturerCount(); i++)
 //        {
 //            Manufacturer m = reqManager->getManufacturer(i);
 //            qInfo() << QString("%2:%1").arg(m.getName()).arg(m.getId());
 //        }
+        qInfo() << "DONE!";
     }
 
     //

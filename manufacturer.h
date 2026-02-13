@@ -63,6 +63,9 @@ public:
     QString toKeilName() const;
     int toKeilId() const;
 
+    static QString co2keilName(const QString& coName);
+    static int co2keilId(int coId);
+
     //Узнать количество семейств в списке
     int getFamiliesCount();
 

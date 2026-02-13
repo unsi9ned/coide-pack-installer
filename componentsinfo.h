@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QList>
 #include <QMap>
+#include <QVector>
 
 #include "component.h"
 #include "database.h"
@@ -35,14 +36,12 @@ public:
     QMap<int, Category> * categories();
     QMap<int, Category> * subcategories();
 
-    QMap<int, Component> requestComponentsMap();
+    QMap<int, Component> requestComponentMap();
     QMap<int, Category> requestCategoryMap();
     QMap<int, Category> requestSubcategoryMap();
 
-    bool fixManufacturerIDs(QMap<int, Component>& components, QString * errorString = nullptr);
-    bool fixManufacturerIDs(QMap<int, Component>& components, QString& errorString);
-    bool fixManufacturerIDs(QString& errorString);
     bool fixManufacturerIDs(QString * errorString = nullptr);
+    bool fixManufacturerIDs(QString& errorString);
 
 private:
 
@@ -54,7 +53,7 @@ signals:
 
 public slots:
 
-    ComponentsInfo& loadDataFromDb();
+    void loadDataFromDb();
 };
 
 #endif // COMPONENTSINFO_H

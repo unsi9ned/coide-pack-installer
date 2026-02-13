@@ -194,6 +194,62 @@ int Manufacturer::toKeilId() const
 }
 
 //------------------------------------------------------------------------------
+// Преобразовать имя вендора CoIDE в валидное имя Keil
+//------------------------------------------------------------------------------
+QString Manufacturer::co2keilName(const QString &coName)
+{
+    QString keilName;
+
+    if (coName == "ST")
+    {
+        keilName = "STMicroelectronics";
+    }
+    else if (coName == "TI")
+    {
+        keilName = "Texas Instruments";
+    }
+    else
+    {
+        keilName = coName;
+    }
+
+    return keilName;
+}
+
+//------------------------------------------------------------------------------
+// Преобразовать ID вендора CoIDE в валидное ID Keil
+//------------------------------------------------------------------------------
+int Manufacturer::co2keilId(int coId)
+{
+    QString coName;
+
+    for(auto it = Manufacturer::_coVendorMap.begin(); it != Manufacturer::_coVendorMap.end(); ++it)
+    {
+        if(coId == it.value())
+        {
+            coName = it.key();
+            break;
+        }
+    }
+
+    if(coName.isEmpty())
+    {
+        return coId;
+    }
+    else
+    {
+        QString keilName = co2keilName(coName);
+
+        if(Manufacturer::_keilVendorMap.contains(keilName))
+            return Manufacturer::_keilVendorMap.value(keilName) + 1000;
+        else
+            return coId;
+    }
+
+    return coId;
+}
+
+//------------------------------------------------------------------------------
 // Задать ID производителя
 //------------------------------------------------------------------------------
 void Manufacturer::setId(int id){this->id = id;}
