@@ -86,10 +86,12 @@ public:
     //Возврат конкретного SVD
     SvdInfo * svd(const QString& path);
 
-    bool isValid();
+    bool isValid(QString * errorString = nullptr) const;
+    bool isNull();
 
 private:
 
+    bool isValid(QString& errorString) const;
     Family& createNewFamily(const QString& name);
 };
 

@@ -45,6 +45,7 @@ public:
     Mcu()
     {
         this->id = -1;
+        this->seriesId = -1;
     }
 
     Mcu(int id,

@@ -37,9 +37,9 @@ public:
 
     void loadDataFromDb(QMap<QString, Manufacturer>& vendorMap);
 
-    bool createManufacturer(QString m);
-    bool createFamily(Manufacturer manufacturer, QString f);
-    bool createSerie(Manufacturer man, Family fam,QString s);
+    bool createManufacturer(const Manufacturer& vendor);
+    bool createFamily(Family& family);
+    bool createSeries(Series& series);
     bool createMcu(Manufacturer man, Family fam, Series ser, QString m);
 
     bool createDebugAlgorithm(QString name);
@@ -67,10 +67,11 @@ private:
     bool updateFamilyTable(const Family& family, int vendorId, QString& errorString);
     bool updateBoardManufacturerTable(int boardId, int vendorId, QString& errorString);
 
+    Manufacturer requestManufacturer(int id, QString name = QString());
     QList<Manufacturer> requestManufacturerList();
-    QList<Family> requestFamilyList(Manufacturer man);
+    QList<Family> requestFamilyList(int vendorId);
     QList<Family> requestFamilyList();
-    QList<Series> requestSeriesList(Family fam);
+    QList<Series> requestSeriesList(int familyId);
     QList<Mcu> requestMcuList(Series serie);
     DebugAlgorithm requestDebugAlgorithm(int id);
     QList<DebugAlgorithm> requestDebugAlgorithmList();

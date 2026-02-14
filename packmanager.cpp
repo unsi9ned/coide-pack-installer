@@ -13,6 +13,8 @@ PackManager::PackManager(QObject *parent) : QObject(parent)
 {
     connect(this, SIGNAL(errorOccured(QString)), SLOT(debugPrintMessage(QString)));
     connect(this, SIGNAL(eventOccured(QString)), SLOT(debugPrintMessage(QString)));
+
+    connect(RequestManager::instance(), SIGNAL(errorOccured(QString)), SLOT(debugPrintMessage(QString)));
 }
 
 //------------------------------------------------------------------------------
@@ -128,9 +130,47 @@ void PackManager::packInstall(PackDescription &pack)
 
     if(!reqManager->fixVendorIDs(errorString))
     {
-        qInfo() << errorString;
+        if(errorString.isEmpty())
+            emit errorOccured("An error occurred during the fix of the manufacturer's ID");
+        else
+            emit errorOccured(QString("An error occurred during the fix of the manufacturer's ID: %1").arg(errorString));
+
+        return;
     }
-    else
+
+    //
+    // Создаем новых производителей (или обновляем существующие)
+    //
+    for(auto it = pack.vendors().begin(); it != pack.vendors().end(); ++it)
+    {
+        Manufacturer& m = it.value();
+
+        emit eventOccured(QString("Adding the manufacturer %1").arg(m.getName()));
+
+        if(!reqManager->createManufacturer(m))
+            break;
+
+        for(auto f = m.families().begin(); f != m.families().end(); ++f)
+        {
+            Family& fam = f.value();
+
+            emit eventOccured(QString("Adding the family %1").arg(fam.getName()));
+
+            if(!reqManager->createFamily(fam))
+                break;
+
+            for(auto s = fam.seriesMap().begin(); s!= fam.seriesMap().end(); ++s)
+            {
+                Series& series = s.value();
+
+                emit eventOccured(QString("Adding the series %1").arg(series.getName()));
+
+                if(!reqManager->createSeries(series))
+                    break;
+            }
+        }
+    }
+#if 0
     {
 #if 0
         QMap<QString, Manufacturer> vendors;
@@ -143,8 +183,8 @@ void PackManager::packInstall(PackDescription &pack)
 //            Manufacturer m = reqManager->getManufacturer(i);
 //            qInfo() << QString("%2:%1").arg(m.getName()).arg(m.getId());
 //        }
-        qInfo() << "DONE!";
     }
+#endif
 
     //
     // Завершение установки

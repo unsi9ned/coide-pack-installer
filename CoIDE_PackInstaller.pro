@@ -42,7 +42,9 @@ SOURCES += main.cpp\
     requestmanager.cpp \
     component.cpp \
     componentsinfo.cpp \
-    category.cpp
+    category.cpp \
+    family.cpp \
+    series.cpp
 
 HEADERS  += \
     pdscparser.h \

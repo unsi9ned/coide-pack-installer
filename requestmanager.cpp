@@ -51,12 +51,12 @@ void RequestManager::loadDataFromDb(QMap<QString, Manufacturer> &vendorMap)
         vendorMap.insert(m.getName(), m);
 
         Manufacturer& manufacturer = vendorMap[m.getName()];
-        QList<Family> families = requestFamilyList(m);
+        QList<Family> families = requestFamilyList(m.toKeilId());
 
         for(int f = 0; f < families.length(); f++)
         {
             Family fam = families.at(f);
-            QList<Series> series = requestSeriesList(fam);
+            QList<Series> series = requestSeriesList(fam.getId());
 
             for(int s = 0 ; s < series.length(); s++)
             {
@@ -93,13 +93,44 @@ QList<Manufacturer> RequestManager::requestManufacturerList()
 }
 
 //------------------------------------------------------------------------------
+// Достать из БД одного единственного производителя
+//------------------------------------------------------------------------------
+Manufacturer RequestManager::requestManufacturer(int id, QString name)
+{
+    Manufacturer manufact;
+    QString queryStr;
+
+    if(name.isEmpty())
+    {
+        queryStr = QString("SELECT * FROM mcumanufacturer "
+                           "WHERE id = '%1';").arg(id);
+    }
+    else
+    {
+        queryStr = QString("SELECT * FROM mcumanufacturer "
+                           "WHERE id = '%1' AND name = '%2';").
+                            arg(id).arg(name);
+    }
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
+
+    if(result.next())
+    {
+        manufact.setId(result.value(0).toInt());
+        manufact.setName(result.value(1).toString());
+    }
+
+    return manufact;
+}
+
+//------------------------------------------------------------------------------
 // Запросить список семейств
 //------------------------------------------------------------------------------
-QList<Family> RequestManager::requestFamilyList(Manufacturer manufact)
+QList<Family> RequestManager::requestFamilyList(int vendorId)
 {
     QList<Family> fam;
     QString queryStr = QString("SELECT * FROM mcufamily "
-                               "WHERE manufacturerId=%1").arg(manufact.getId());
+                               "WHERE manufacturerId=%1").arg(vendorId);
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
@@ -107,7 +138,7 @@ QList<Family> RequestManager::requestFamilyList(Manufacturer manufact)
         int id = result.value(0).toInt();
         QString familyName = result.value(1).toString();
 
-        fam.append(Family(id, familyName, manufact.getId()));
+        fam.append(Family(id, familyName, vendorId));
     }
 
     return fam;
@@ -137,11 +168,11 @@ QList<Family> RequestManager::requestFamilyList()
 //------------------------------------------------------------------------------
 // Запросить список семейств
 //------------------------------------------------------------------------------
-QList<Series> RequestManager::requestSeriesList(Family fam)
+QList<Series> RequestManager::requestSeriesList(int familyId)
 {
     QList<Series> series;
     QString queryStr = QString("SELECT * FROM mcuseries "
-                               "WHERE familyId=%1").arg(fam.getId());
+                               "WHERE familyId=%1").arg(familyId);
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
@@ -149,7 +180,7 @@ QList<Series> RequestManager::requestSeriesList(Family fam)
         int id = result.value(0).toInt();
         QString name = result.value(1).toString();
 
-        series.append(Series(id, name, fam.getId()));
+        series.append(Series(id, name, familyId));
     }
 
     return series;
@@ -353,50 +384,26 @@ ProgAlgorithm RequestManager::getMcuFlashAlgorithm(int mcuId)
 //------------------------------------------------------------------------------
 // Создать нового производителя
 //------------------------------------------------------------------------------
-bool RequestManager::createManufacturer(QString newMan)
+bool RequestManager::createManufacturer(const Manufacturer &vendor)
 {
     QString errorStr;
     bool status = true;
 
-    if(newMan.isEmpty())
+    if(!vendor.isValid(&errorStr))
     {
         status = false;
-        errorStr = tr("Название проиводителя имеет нулевую длину");
     }
     else
     {
-        //Загружаем производителей из базы и смотрим нет ли уже такого
-        //Заодно определяем последний id
-        bool isset = false;
-        int lastId = 0;
-        QList<Manufacturer> manufacturers = requestManufacturerList();
+        // Проверяем наличие производителя в базе данных
+        Manufacturer m = requestManufacturer(vendor.toKeilId(), vendor.toKeilName());
 
-        for(int m = 0; m < manufacturers.length(); m++)
-        {
-            Manufacturer man = manufacturers.at(m);
-
-            if(man.getId() > lastId)
-            {
-                lastId = man.getId();
-            }
-
-            if(man.getName().trimmed().toLower() == newMan.trimmed().toLower())
-            {
-                isset = true;
-            }
-        }
-
-        if(isset)
-        {
-            status = false;
-            errorStr = tr("Производитель с таким названием уже есть в базе");
-        }
-        else
+        if(m.isNull())
         {
             QString queryStr = QString("INSERT INTO mcumanufacturer "
                                        "VALUES ('%1','%2')").
-                                arg(lastId + 1).
-                                arg(newMan);
+                                arg(vendor.toKeilId()).
+                                arg(vendor.toKeilName());
 
             QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
@@ -418,63 +425,67 @@ bool RequestManager::createManufacturer(QString newMan)
 //------------------------------------------------------------------------------
 // Создать новое семейство
 //------------------------------------------------------------------------------
-bool RequestManager::createFamily(Manufacturer manufacturer, QString newFamily)
+bool RequestManager::createFamily(Family& family)
 {
     QString errorStr;
     bool status = true;
 
-    if(newFamily.isEmpty())
+    if(!family.isValid(&errorStr))
     {
         status = false;
-        errorStr = tr("Название семейства имеет нулевую длину");
-    }
-    else if(manufacturer.getId() < 0)
-    {
-        status = false;
-        errorStr = tr("Некорректный идентификатор производителя");
     }
     else
     {
         //Загружаем производителей из базы и смотрим нет ли уже такого
         //Заодно определяем последний id
+
         bool isset = false;
-        int lastId = 0;
-        QList<Family> families = requestFamilyList();
+
+        QList<Family> families = requestFamilyList(family.getManufacturerId());
 
         for(int f = 0; f < families.length(); f++)
         {
             Family currFam = families.at(f);
 
-            if(currFam.getId() > lastId)
+            if(currFam.getManufacturerId() == family.getManufacturerId() &&
+               currFam.getName().trimmed().toLower() == family.getName().trimmed().toLower())
             {
-                lastId = currFam.getId();
-            }
-            if((currFam.getManufacturerId() == manufacturer.getId()) &&
-                newFamily.trimmed().toLower() == currFam.getName().trimmed().toLower())
-            {
+                family.setId(currFam.getId());
                 isset = true;
+                break;
             }
         }
 
         if(!isset)
         {
-            QString queryStr = QString("INSERT INTO mcufamily "
-                                       "VALUES ('%1','%2','%3')").
-                                arg(lastId + 1).
-                                arg(newFamily).
-                                arg(manufacturer.getId());
+            int lastId = -1;
 
+            //Поиск последнего айди
+            QString queryStr = QString("SELECT MAX(id) FROM mcufamily");
             QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
-            if(!status)
+            if(!status || !result.next())
             {
                 errorStr = result.lastError().text();
             }
-        }
-        else
-        {
-            status = false;
-            errorStr = tr("Выбранный производитель уже содержит такое семейство");
+            else
+            {
+                lastId = result.value(0).toInt();
+                family.setId(lastId + 1);
+
+                queryStr = QString("INSERT INTO mcufamily "
+                                   "VALUES ('%1','%2','%3')").
+                                    arg(lastId + 1).
+                                    arg(family.getName()).
+                                    arg(family.getManufacturerId());
+
+                result = DataBase::instance()->sendQuery(queryStr, &status);
+
+                if(!status)
+                {
+                    errorStr = result.lastError().text();
+                }
+            }
         }
     }
 
@@ -489,20 +500,14 @@ bool RequestManager::createFamily(Manufacturer manufacturer, QString newFamily)
 //------------------------------------------------------------------------------
 // Создать новую серию
 //------------------------------------------------------------------------------
-bool RequestManager::createSerie(Manufacturer man, Family fam, QString newSerie)
+bool RequestManager::createSeries(Series& series)
 {
     QString errorStr;
     bool status = true;
 
-    if(newSerie.isEmpty())
+    if(!series.isValid(&errorStr))
     {
         status = false;
-        errorStr = tr("Название серии имеет нулевую длину");
-    }
-    else if(man.getId() < 0 || fam.getId() < 0)
-    {
-        status = false;
-        errorStr = tr("Некорректный идентификатор производителя или семейства");
     }
     else
     {
@@ -521,38 +526,36 @@ bool RequestManager::createSerie(Manufacturer man, Family fam, QString newSerie)
         {
             lastId = result.value(0).toInt();
 
-            QList<Series> series = requestSeriesList(fam);
+            QList<Series> seriesList = requestSeriesList(series.getFamilyId());
 
-            for(int s = 0; s < series.length(); s++)
+            for(int s = 0; s < seriesList.length(); s++)
             {
-                Series currSerie = series.at(s);
+                Series currSeries = seriesList.at(s);
 
-                if(currSerie.getName().trimmed().toLower() ==
-                   newSerie.trimmed().toLower())
+                if(currSeries.getName().trimmed().toLower() ==
+                   series.getName().trimmed().toLower())
                 {
+                    series.setId(currSeries.getId());
                     isset = true;
+                    break;
                 }
             }
 
             if(!isset)
             {
+                series.setId(lastId + 1);
+
                 QString queryStr = QString("INSERT INTO mcuseries "
                                            "VALUES ('%1','%2','%3')").
-                                    arg(lastId + 1).
-                                    arg(newSerie).
-                                    arg(fam.getId());
-
+                                    arg(series.getId()).
+                                    arg(series.getName()).
+                                    arg(series.getFamilyId());
                 QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
                 if(!status)
                 {
                     errorStr = result.lastError().text();
                 }
-            }
-            else
-            {
-                status = false;
-                errorStr = tr("Выбранный производитель уже содержит такую серию");
             }
         }
     }

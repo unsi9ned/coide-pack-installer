@@ -21,109 +21,44 @@ private:
 
 public:
 
-    //Конструкторы
-    //--------------------------------------------------------------------------
-    Family()
-    {
-        this->id = -1;
-    }
-
-    Family(int id, QString familyName, int manufacturerId)
-    {
-        this->id = id;
-        this->_name = familyName;
-        this->manufacturerId = manufacturerId;
-    }
-
-    Family(Family *f)
-    {
-        if(f == nullptr)
-            return;
-
-        this->id = f->getId();
-        this->_name = f->getName();
-        this->manufacturerId = f->getManufacturerId();
-
-        for(auto it = f->seriesMap().begin(); it != seriesMap().end(); ++it)
-        {
-            this->_seriesMap.insert(it.key(), it.value());
-        }
-    }
+    Family();
+    Family(int id, QString familyName, int manufacturerId);
+    Family(Family *f);
 
 
-    int getId() const {return id;}
-    QString getName() const {return _name;}
-    int getManufacturerId() const {return manufacturerId;}
+    int getId() const;
+    QString getName() const;
+    int getManufacturerId() const;
 
-    QMap<QString, Series>& seriesMap()
-    {
-        return this->_seriesMap;
-    }
+    QMap<QString, Series>& seriesMap();
 
-    bool hasSeries(){return !this->_seriesMap.isEmpty();}
+    bool hasSeries();
 
-    void setId(int id){this->id = id;}
-    void setManufacturerId(int id){this->manufacturerId = id;}
+    void setId(int id);
+    void setManufacturerId(int id);
 
-    Family& setName(QString name)
-    {
-        this->_name = name;
-        return *this;
-    }
+    Family &setName(QString name);
 
     //Количество серий процессоров в списке
-    int getSeriesCount(){return this->_seriesMap.count();}
+    int getSeriesCount();
 
     //Список идентификаторов серий
-    QStringList getSeriesKeys(){return this->_seriesMap.keys();}
+    QStringList getSeriesKeys();
 
     //Найти серию по идентификатору
-    Series getSeriesById(int i)
-    {
-        Series s;
-        QMap<QString,Series>::iterator seriesIterator = _seriesMap.begin();
-
-        while(seriesIterator != _seriesMap.end())
-        {
-            Series currSeries = seriesIterator.value();
-
-            if(currSeries.getId() == i)
-            {
-                s = currSeries;
-                break;
-            }
-
-            ++seriesIterator;
-        }
-
-        return s;
-    }
+    Series getSeriesById(int i);
 
     // Вернуть серию по имени
-    Series& series(QString name)
-    {
-        if(_seriesMap.contains(name))
-            return _seriesMap[name];
-        else
-            return createNewSeries(name);
-    }
+    Series& series(QString name);
 
-    Series& addSeries(const QString& name)
-    {
-        return this->series(name).setName(name);
-    }
+    Series& addSeries(const QString& name);
 
-    bool isValid()
-    {
-        return this->id > 0 && !this->_name.isEmpty();
-    }
+    bool isValid(QString * errorString = nullptr) const;
+    bool isNull() const;
 
 private:
-    Series& createNewSeries(const QString& seriesName)
-    {
-        this->_seriesMap.insert(seriesName, Series());
-        return this->_seriesMap[seriesName].setName(seriesName);
-    }
+    bool isValid(QString& errorString) const;
+    Series& createNewSeries(const QString& seriesName);
 };
 
 #endif // FAMILY_H

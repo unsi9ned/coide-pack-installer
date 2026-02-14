@@ -23,116 +23,49 @@ private:
 
 public:
 
-    Series()
-    {
-        this->id = -1;
-    }
+    Series();
 
-    Series(int id, QString serieName, int familyId)
-    {
-        this->id = id;
-        this->_name = serieName;
-        this->familyId = familyId;
-    }
+    Series(int id, QString serieName, int familyId);
 
-    Series(Series * s)
-    {
-        if(s == nullptr)
-            return;
+    Series(Series * s);
 
-        this->id = s->getId();
-        this->_name = s->getName();
-        this->familyId = s->getFamilyId();
+    int getId() const;
+    QString getName() const;
+    int getFamilyId() const;
 
-        for(auto it = s->mcuMap().begin(); it != s->mcuMap().end(); ++it)
-        {
-            this->_mcuMap.insert(it.key(), it.value());
-        }
-    }
+    void setId(int id);
 
-    int getId() const {return id;}
-    QString getName() const {return _name;}
-    int getFamilyId() const {return familyId;}
+    Series& setName(QString name);
 
-    void setId(int id){this->id = id;}
+    void setFamilyId(int id);
 
-    Series& setName(QString name)
-    {
-        this->_name = name;
-        return *this;
-    }
+    QMap<QString, Mcu>& mcuMap();
 
-    void setFamilyId(int id){this->familyId = id;}
-
-    QMap<QString, Mcu>& mcuMap()
-    {
-        return _mcuMap;
-    }
-
-    bool hasDevices(){return !this->_mcuMap.isEmpty();}
+    bool hasDevices();
 
     //Узнать количество процессоров в списке
-    int getMcuCount(){return this->_mcuMap.count();}
+    int getMcuCount();
 
     //Получить список идентификаторов процессоров данной серии
-    QStringList getMcuKeys(){return this->_mcuMap.keys();}
+    QStringList getMcuKeys();
 
     //Найти процессор по идентификатору
-    Mcu getMcuById(int i)
-    {
-        Mcu m;
-        QMap<QString,Mcu>::iterator mcuIterator = _mcuMap.begin();
-
-        while(mcuIterator != _mcuMap.end())
-        {
-            Mcu currentMcu = mcuIterator.value();
-
-            if(currentMcu.getId() == i)
-            {
-                m = currentMcu;
-                break;
-            }
-
-            ++mcuIterator;
-        }
-
-        return m;
-    }
+    Mcu getMcuById(int i);
 
     //Найти процессор по названию
-    Mcu& mcu(QString name)
-    {
-        if(_mcuMap.contains(name))
-            return _mcuMap[name];
-        else
-            return createNewMcu(name);
-    }
+    Mcu& mcu(QString name);
 
     //Добавить процессор в список
-    Mcu& addMcu(const QString& name)
-    {
-        return this->mcu(name).setName(name);
-    }
+    Mcu& addMcu(const QString& name);
 
-    Mcu& addMcu(const Mcu& m)
-    {
-        Mcu& newMcu = mcu(m.getName());
-        newMcu = m;
-        return newMcu;
-    }
+    Mcu& addMcu(const Mcu& m);
 
-    bool isValid()
-    {
-        return this->id > 0 && !this->_name.isEmpty();
-    }
+    bool isValid(QString * errorString = nullptr) const;
+    bool isNull() const;
 
 private:
-    Mcu& createNewMcu(const QString& mcuUniqueName)
-    {
-        Mcu newMcu;
-        this->_mcuMap.insert(mcuUniqueName, newMcu);
-        return this->_mcuMap[mcuUniqueName].setName(mcuUniqueName);
-    }
+    bool isValid(QString& errorString) const;
+    Mcu& createNewMcu(const QString& mcuUniqueName);
 };
 
 #endif // SERIE_H

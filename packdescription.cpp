@@ -104,8 +104,16 @@ Manufacturer &PackDescription::vendorByDvendor(const QString &Dvendor)
 {
     QStringList vendorParts = Dvendor.split(":") << "unknown" << "-1";
     QString vendorName = vendorParts.at(0);
+    int vendorId = vendorParts.at(1).toInt();
 
-    return vendor(vendorName);
+    Manufacturer& m = vendor(vendorName);
+
+    if(m.getId() == -1)
+    {
+        m.setId(vendorId);
+    }
+
+    return m;
 }
 
 QMap<QString, Manufacturer> &PackDescription::vendors()

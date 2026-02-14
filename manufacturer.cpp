@@ -343,9 +343,31 @@ Manufacturer::SvdInfo *Manufacturer::svd(const QString &path)
 //------------------------------------------------------------------------------
 // Проверка валидности объекта Manufacturer
 //------------------------------------------------------------------------------
-bool Manufacturer::isValid()
+bool Manufacturer::isValid(QString *errorString) const
 {
-    return this->id > 0 && !this->name.isEmpty();
+    QString e;
+
+    if(!errorString)
+        return isValid(&e);
+    else
+        return isValid(*errorString);
+}
+
+bool Manufacturer::isValid(QString &errorString) const
+{
+    if(this->id <= 0)
+        errorString = QString("Invalid manufacturer id = %1").arg(this->id);
+    else if(this->name.isEmpty())
+        errorString = QString("Manufacturer's name is not defined");
+    else
+        return true;
+
+    return false;
+}
+
+bool Manufacturer::isNull()
+{
+    return this->id == -1 && this->name.isEmpty() && this->familyMap.isEmpty();
 }
 
 //------------------------------------------------------------------------------
@@ -354,5 +376,8 @@ bool Manufacturer::isValid()
 Family &Manufacturer::createNewFamily(const QString &name)
 {
     this->familyMap.insert(name, Family());
-    return this->familyMap[name].setName(name);
+    Family& family = this->familyMap[name];
+    family.setName(name);
+    family.setManufacturerId(toKeilId());
+    return family;
 }
