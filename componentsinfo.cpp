@@ -2,44 +2,6 @@
 #include "database.h"
 #include "manufacturer.h"
 
-ComponentsInfo* ComponentsInfo::_m_instance = nullptr;
-
-//------------------------------------------------------------------------------
-// Конструктор
-//------------------------------------------------------------------------------
-ComponentsInfo::ComponentsInfo() : QObject()
-{
-    if(DataBase::instance()->isOpen())
-    {
-        loadDataFromDb();
-    }
-    else
-    {
-        connect(DataBase::instance(),
-                SIGNAL(dbConnected()),
-                this,
-                SLOT(loadDataFromDb()));
-    }
-}
-
-//------------------------------------------------------------------------------
-// Деструктор
-//------------------------------------------------------------------------------
-ComponentsInfo::~ComponentsInfo()
-{
-    componentsMap.clear();
-    categoriesMap.clear();
-    delete _m_instance;
-}
-
-ComponentsInfo *ComponentsInfo::instance()
-{
-    if(!_m_instance)
-        _m_instance = new ComponentsInfo();
-
-    return _m_instance;
-}
-
 QMap<int, Component> *ComponentsInfo::components()
 {
     return &this->componentsMap;
@@ -102,7 +64,7 @@ QMap<int, Category> ComponentsInfo::requestSubcategoryMap()
 // Привести индентификаторы вендора в таблице `component_supports_mcumanufacturer`
 // к стандарту Keil
 //------------------------------------------------------------------------------
-bool ComponentsInfo::fixManufacturerIDs(QString &errorString)
+bool ComponentsInfo::fixComponentManufacturerTable(QString &errorString)
 {
     auto components = requestComponentMap();
 
@@ -142,14 +104,14 @@ bool ComponentsInfo::fixManufacturerIDs(QString &errorString)
     return true;
 }
 
-bool ComponentsInfo::fixManufacturerIDs(QString *errorString)
+bool ComponentsInfo::fixComponentManufacturerTable(QString *errorString)
 {
     QString e;
 
     if(errorString)
-        return fixManufacturerIDs(*errorString);
+        return fixComponentManufacturerTable(*errorString);
     else
-        return fixManufacturerIDs(e);
+        return fixComponentManufacturerTable(e);
 }
 
 //------------------------------------------------------------------------------

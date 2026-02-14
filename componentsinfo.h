@@ -14,23 +14,21 @@ class ComponentsInfo : public QObject
 {
     Q_OBJECT
 
-private:
+protected:
 
     QMap<int, Component> componentsMap;
     QMap<int, Category> categoriesMap;
     QMap<int, Category> subcategoriesMap;
 
-    explicit ComponentsInfo();
-    ~ComponentsInfo();
+    ComponentsInfo() = default;
 
-    static ComponentsInfo* _m_instance;
-
-public:
-
+    // Запрещаем копирование
     ComponentsInfo(const ComponentsInfo&) = delete;
     ComponentsInfo& operator=(const ComponentsInfo&) = delete;
 
-    static ComponentsInfo* instance();
+public:
+
+    virtual ~ComponentsInfo() = default;
 
     QMap<int, Component> * components();
     QMap<int, Category> * categories();
@@ -40,8 +38,8 @@ public:
     QMap<int, Category> requestCategoryMap();
     QMap<int, Category> requestSubcategoryMap();
 
-    bool fixManufacturerIDs(QString * errorString = nullptr);
-    bool fixManufacturerIDs(QString& errorString);
+    bool fixComponentManufacturerTable(QString * errorString = nullptr);
+    bool fixComponentManufacturerTable(QString& errorString);
 
 private:
 
@@ -51,7 +49,7 @@ private:
 
 signals:
 
-public slots:
+protected slots:
 
     void loadDataFromDb();
 };

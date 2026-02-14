@@ -138,7 +138,6 @@ void PackManager::packInstall(PackDescription &pack)
 
         qInfo() << "Manufacturers:" << vendors.count();
 #endif
-
 //        for (int i = 0; i < reqManager->getManufacturerCount(); i++)
 //        {
 //            Manufacturer m = reqManager->getManufacturer(i);

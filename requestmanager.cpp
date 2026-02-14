@@ -4,7 +4,7 @@
 
 RequestManager* RequestManager::_m_instance = nullptr;
 
-RequestManager::RequestManager() : QObject()
+RequestManager::RequestManager() : ComponentsInfo()
 {
 #if 1
     // На время отладки создаем бекап базы данных
@@ -1158,7 +1158,7 @@ bool RequestManager::fixVendorIDs(QString& errorString)
     // Обновление таблицы `board_supports_mcumanufacturer`
     return fixManufacturerTable(errorString) &&
            fixFamilyTable(errorString) &&
-           ComponentsInfo::instance()->fixManufacturerIDs(errorString) &&
+           fixComponentManufacturerTable(errorString) &&
            fixBoardManufacturerTable(errorString);
 
 }

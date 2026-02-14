@@ -15,8 +15,9 @@
 #include "logger.h"
 #include "paths.h"
 #include "component.h"
+#include "componentsinfo.h"
 
-class RequestManager : public QObject
+class RequestManager : public ComponentsInfo
 {
     Q_OBJECT
 
@@ -26,10 +27,11 @@ private:
     explicit RequestManager();
     ~RequestManager();
 
-public:
-
+    // Запрет копирования
     RequestManager(const RequestManager&) = delete;
     RequestManager& operator=(const RequestManager&) = delete;
+
+public:
 
     static RequestManager* instance();
 
