@@ -370,8 +370,8 @@ Mcu &PdscParser::parseDevice(const QDomNode &deviceNode,
     //
     // Формирует ссылки на документацию и сайт
     //
-    newMcu.setDatasheetURL(QString("https://yandex.ru/search/?text=%1+datasheet").arg(devName).toLatin1());
-    newMcu.setWebPageURL(QString("https://yandex.ru/search/?text=%1").arg(vendorName).toLatin1());
+    newMcu.setDatasheetURL(QString("https://yandex.ru/search/?text=%1+datasheet").arg(devName.replace(' ', "+")));
+    newMcu.setWebPageURL(QString("https://yandex.ru/search/?text=%1").arg(vendorName.replace(' ', "+")));
 
     //
     // Парсинг описания
