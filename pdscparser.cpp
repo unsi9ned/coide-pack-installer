@@ -167,6 +167,10 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
         QDomNodeList familyElements = family.childNodes();
         QList<ProgAlgorithm> coreAlgorithms;
         QList<ProgAlgorithm> subFamilyAlgorithms;
+        QList<DeviceFeature> coreFeatures;
+        QList<DeviceFeature> subFamilyFeatures;
+        QStringList coreCompileOptions;
+        QStringList subFamilyCompileOptions;
         QString coreSVD;
         QString subFamilySVD;
 
@@ -194,6 +198,7 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                     else if(nodeName == "device")
                     {
                         QString devProcessor = node.namedItem("processor").attributes().namedItem("Dcore").nodeValue();
+                        QString definedSymbol = node.namedItem("compile").attributes().namedItem("define").nodeValue();
                         QString coreName;
 
                         if(devProcessor.isEmpty())
@@ -222,18 +227,36 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                         // Добавляем файл описание периферии, если он общий для семейства
                         //
                         if(newMcu.svdLocalPath().isEmpty())
+                        {
                             if(subFamilySVD.isEmpty())
                                 newMcu.setSvd(coreSVD);
                             else
                                 newMcu.setSvd(subFamilySVD);
+                        }
+
+                        //
+                        // Добавляем фичи, свойственные для подсемейства
+                        //
+                        foreach(DeviceFeature feat, subFamilyFeatures)
+                        {
+                            newMcu.addFeature(feat);
+                        }
+
+                        //
+                        // Добавляем defined symbols
+                        //
+                        foreach(QString def, subFamilyCompileOptions)
+                        {
+                            newMcu.addDefSymbol(def);
+                        }
+
+                        if(!definedSymbol.isEmpty())
+                            newMcu.addDefSymbol(definedSymbol);
                     }
                     else if(nodeName == "feature")
                     {
-                        QString coreName;
                         DeviceFeature devFeature = parseFeature(node.toElement());
-
-                        coreName = subFamilyProcessor.isEmpty() ? familyProcessor : subFamilyProcessor;
-                        pack.vendorByDvendor(vendorInfo).family(coreName).series(subFamilyName).addFeature(devFeature);
+                        subFamilyFeatures.append(devFeature);
                     }
                     else if(nodeName == "algorithm")
                     {
@@ -247,11 +270,19 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                     {
                         subFamilySVD = node.attributes().namedItem("svd").nodeValue();
                     }
+                    else if(nodeName == "compile")
+                    {
+                        QString define = node.attributes().namedItem("define").nodeValue();
+
+                        if(!define.isEmpty())
+                            subFamilyCompileOptions.append(define);
+                    }
                 }
             }
             else if(nodeName == "device")
             {
                 QString devProcessor = node.namedItem("processor").attributes().namedItem("Dcore").nodeValue();
+                QString definedSymbol = node.namedItem("compile").attributes().namedItem("define").nodeValue();
                 QString coreName;
 
                 coreName = devProcessor.isEmpty() ? familyProcessor : devProcessor;
@@ -274,11 +305,30 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                 //
                 if(newMcu.svdLocalPath().isEmpty())
                     newMcu.setSvd(coreSVD);
+
+                //
+                // Добавляем фичи, свойственные для ядра
+                //
+                foreach(DeviceFeature feat, coreFeatures)
+                {
+                    newMcu.addFeature(feat);
+                }
+
+                //
+                // Добавляем defined symbols
+                //
+                foreach(QString def, coreCompileOptions)
+                {
+                    newMcu.addDefSymbol(def);
+                }
+
+                if(!definedSymbol.isEmpty())
+                    newMcu.addDefSymbol(definedSymbol);
             }
             else if(nodeName == "feature" && !familyProcessor.isEmpty())
             {
                 DeviceFeature devFeature = parseFeature(node.toElement());
-                pack.vendorByDvendor(vendorInfo).family(familyProcessor).addFeature(devFeature);
+                coreFeatures.append(devFeature);
             }
             else if(nodeName == "algorithm")
             {
@@ -288,6 +338,13 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
             else if(nodeName == "debug")
             {
                 coreSVD = node.attributes().namedItem("svd").nodeValue();
+            }
+            else if(nodeName == "compile")
+            {
+                QString define = node.attributes().namedItem("define").nodeValue();
+
+                if(!define.isEmpty())
+                    coreCompileOptions.append(define);
             }
         }
     }

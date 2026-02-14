@@ -107,6 +107,11 @@ uint32_t Memory::startAddr() const
     return _startAddr;
 }
 
+QString Memory::startAddrHex() const
+{
+    return QString("0x%1").arg(_startAddr, 8, 16, QChar('0'));
+}
+
 void Memory::setStartAddr(const uint32_t &startAddr)
 {
     _startAddr = startAddr;
@@ -115,6 +120,11 @@ void Memory::setStartAddr(const uint32_t &startAddr)
 uint32_t Memory::size() const
 {
     return _size;
+}
+
+QString Memory::sizeHex() const
+{
+    return QString("0x%1").arg(_size, 8, 16, QChar('0'));
 }
 
 void Memory::setSize(const uint32_t &size)

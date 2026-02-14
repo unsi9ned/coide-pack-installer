@@ -7,10 +7,8 @@
 #include <QMap>
 
 #include "mcu.h"
-#include "featurecontainer.h"
-#include "algorithmcontainer.h"
 
-class Series : public FeatureContainer
+class Series
 {
 
 private:

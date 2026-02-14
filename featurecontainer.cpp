@@ -51,4 +51,25 @@ QStringList FeatureContainer::featuresSummary()
     return summary;
 }
 
+//------------------------------------------------------------------------------
+// Возвращает все характеристики в форматированном виде для базы данных CoIDE
+//------------------------------------------------------------------------------
+QString FeatureContainer::coFeaturesSummary() const
+{
+    QString summary = "[";
+
+    foreach(auto feat, _featureList)
+    {
+        summary += QString("\"%1\",").arg(feat.getFormattedDescription());
+    }
+
+    if (summary.endsWith(','))
+    {
+        summary.chop(1);
+    }
+
+    summary += "]";
+    return summary;
+}
+
 

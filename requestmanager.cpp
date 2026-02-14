@@ -61,7 +61,7 @@ void RequestManager::loadDataFromDb(QMap<QString, Manufacturer> &vendorMap)
             for(int s = 0 ; s < series.length(); s++)
             {
                 Series serie = series.at(s);
-                QList<Mcu> mcuList = requestMcuList(serie);
+                QList<Mcu> mcuList = requestMcuList(serie.getId());
 
                 for(int m = 0; m < mcuList.length(); m++)
                 {
@@ -189,11 +189,11 @@ QList<Series> RequestManager::requestSeriesList(int familyId)
 //------------------------------------------------------------------------------
 // Запросить список микроконтроллеров
 //------------------------------------------------------------------------------
-QList<Mcu> RequestManager::requestMcuList(Series serie)
+QList<Mcu> RequestManager::requestMcuList(int seriesId)
 {
     QList<Mcu> microcontrollers;
     QString queryStr = QString("SELECT * FROM mcu "
-                               "WHERE seriesId=%1").arg(serie.getId());
+                               "WHERE seriesId=%1").arg(seriesId);
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
@@ -271,9 +271,19 @@ QList<DebugAlgorithm> RequestManager::requestDebugAlgorithmList()
 
         int id = result.value(0).toInt();
         QString name = result.value(1).toString();
+        QString description = result.value(2).toString();
+        QString creatingDate = result.value(3).toString();
+        QString updateDate = result.value(4).toString();
+        QString timeUuid = result.value(5).toString();
+        int documentId = result.value(6).toInt();
 
         da.setCoId(id);
         da.setName(name);
+        da.setDescription(description);
+        da.setCreateDate(creatingDate);
+        da.setUpdateDate(updateDate);
+        da.setTimeUUID(timeUuid);
+        da.setDocumentId(documentId);
 
         daList.append(da);
     }
@@ -296,9 +306,52 @@ DebugAlgorithm RequestManager::requestDebugAlgorithm(int id)
     {
         id = result.value(0).toInt();
         QString name = result.value(1).toString();
+        QString description = result.value(2).toString();
+        QString creatingDate = result.value(3).toString();
+        QString updateDate = result.value(4).toString();
+        QString timeUuid = result.value(5).toString();
+        int documentId = result.value(6).toInt();
 
         da.setCoId(id);
         da.setName(name);
+        da.setDescription(description);
+        da.setCreateDate(creatingDate);
+        da.setUpdateDate(updateDate);
+        da.setTimeUUID(timeUuid);
+        da.setDocumentId(documentId);
+
+        break;
+    }
+
+    return da;
+}
+
+DebugAlgorithm RequestManager::requestDebugAlgorithm(const QString &name)
+{
+    DebugAlgorithm da;
+
+    QString queryStr = QString("SELECT * FROM debug_algorithm "
+                               "WHERE name = '%1' LIMIT 1").arg(name);
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
+
+    while(result.next())
+    {
+        int id = result.value(0).toInt();
+        QString name = result.value(1).toString();
+        QString description = result.value(2).toString();
+        QString creatingDate = result.value(3).toString();
+        QString updateDate = result.value(4).toString();
+        QString timeUuid = result.value(5).toString();
+        int documentId = result.value(6).toInt();
+
+        da.setCoId(id);
+        da.setName(name);
+        da.setDescription(description);
+        da.setCreateDate(creatingDate);
+        da.setUpdateDate(updateDate);
+        da.setTimeUUID(timeUuid);
+        da.setDocumentId(documentId);
+
         break;
     }
 
@@ -571,23 +624,14 @@ bool RequestManager::createSeries(Series& series)
 //------------------------------------------------------------------------------
 // Создать новый микроконтроллер
 //------------------------------------------------------------------------------
-bool RequestManager::createMcu(Manufacturer man,
-                        Family fam,
-                        Series ser,
-                        QString mcuName)
+bool RequestManager::createMcu(Mcu &device)
 {
     QString errorStr;
     bool status = true;
 
-    if(mcuName.isEmpty())
+    if(!device.isValid(&errorStr))
     {
         status = false;
-        errorStr = tr("Название контроллера имеет нулевую длину");
-    }
-    else if(man.getId() < 0 || fam.getId() < 0 || ser.getId() < 0)
-    {
-        status = false;
-        errorStr = tr("Некорректный идентификатор производителя, семейства или серии");
     }
     else
     {
@@ -606,40 +650,50 @@ bool RequestManager::createMcu(Manufacturer man,
         {
             lastId = result.value(0).toInt();
 
-            QList<Mcu> mcuList = requestMcuList(ser);
+            QList<Mcu> mcuList = requestMcuList(device.getSeriesId());
 
             for(int m = 0; m < mcuList.length(); m++)
             {
                 Mcu currMcu = mcuList.at(m);
 
                 if(currMcu.getName().trimmed().toLower() ==
-                   mcuName.trimmed().toLower())
+                   device.getName().trimmed().toLower())
                 {
                     isset = true;
+                    device.setId(currMcu.getId());
+                    break;
                 }
             }
 
             if(!isset)
             {
-                QString memInfo = "[\"{\\\"type\\\":\\\"FLASH\\\",\\\"id\\\":0,\\\"start\\\":\\\"0x08000000\\\",\\\"size\\\":\\\"0x00020000\\\"}\",\"{\\\"type\\\":\\\"RAM\\\",\\\"id\\\":0,\\\"start\\\":\\\"0x20000000\\\",\\\"size\\\":\\\"0x00008000\\\"}\"]";
+                /*
+                QString memInfo = "[\"{\\\"type\\\":\\\"FLASH\\\",\\\"id\\\":0,"
+                                  "\\\"start\\\":\\\"0x08000000\\\","
+                                  "\\\"size\\\":\\\"0x00020000\\\"}\","
+                                  "\"{\\\"type\\\":\\\"RAM\\\","
+                                  "\\\"id\\\":0,\\\"start\\\":\\\"0x20000000\\\","
+                                  "\\\"size\\\":\\\"0x00008000\\\"}\"]";
+                */
+                device.setId(lastId + 1);
 
                 QString queryStr = QString("INSERT INTO mcu "
                                            "VALUES ('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12','%13','%14','%15')").
-                                    arg(lastId + 1).
-                                    arg(ser.getId()).
-                                    arg(USER_ID_COOCOX).
-                                    arg(1).
-                                    arg(mcuName).
-                                    arg("Desription").
-                                    arg("[\"Features\"]").
-                                    arg("[\"http://google.com/\"]").
-                                    arg("[\"http://google.com/datasheet\"]").
-                                    arg(memInfo).
-                                    arg(ser.getName()).
-                                    arg("0").
-                                    arg("0").
-                                    arg("ae08a837-c4ed-4374-b372-caafd3dcf3cd").
-                                    arg("0");
+                                    arg(device.getId()).
+                                    arg(device.getSeriesId()).
+                                    arg(device.getUserId()).
+                                    arg(device.getDebugAlgorithm().coId()).
+                                    arg(device.getName()).
+                                    arg(device.coDescription()).
+                                    arg(device.coFeaturesSummary()).
+                                    arg(device.coWebPageUrl()).
+                                    arg(device.coDatasheetURL()).
+                                    arg(device.coMemInfo()).
+                                    arg(device.defSym2coMicro()).
+                                    arg(device.getAdvertising()).
+                                    arg(device.getPrice()).
+                                    arg(device.getTimeuuid()).
+                                    arg(device.getHits());
 
                 QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
@@ -647,11 +701,6 @@ bool RequestManager::createMcu(Manufacturer man,
                 {
                     errorStr = result.lastError().text();
                 }
-            }
-            else
-            {
-                status = false;
-                errorStr = tr("Микроконтроллер с такой маркировкой уже существует");
             }
         }
     }
@@ -667,15 +716,15 @@ bool RequestManager::createMcu(Manufacturer man,
 //------------------------------------------------------------------------------
 // Добавить алгоритм отладки в базу
 //------------------------------------------------------------------------------
-bool RequestManager::createDebugAlgorithm(QString nameAlg)
+bool RequestManager::createDebugAlgorithm(DebugAlgorithm &algo)
 {
     QString errorStr;
     bool status = true;
 
-    if(nameAlg.isEmpty())
+    if(algo.isNull())
     {
         status = false;
-        errorStr = tr("Название алгоритма имеет нулевую длину");
+        errorStr = tr("Algorithm name is not defined");
     }
     else
     {
@@ -693,28 +742,27 @@ bool RequestManager::createDebugAlgorithm(QString nameAlg)
                 lastId = da.coId();
             }
 
-            if(da.name().trimmed().toLower() == nameAlg.trimmed().toLower())
+            if(da.name().trimmed().toLower() == algo.name().trimmed().toLower())
             {
                 isset = true;
+                algo = da;
+                break;
             }
         }
 
-        if(isset)
+        if(!isset)
         {
-            status = false;
-            errorStr = tr("Алгоритм %1 уже есть в базе").arg(nameAlg);
-        }
-        else
-        {
+            algo.setCoId(lastId + 1);
+
             QString queryStr = QString("INSERT INTO debug_algorithm "
                                        "VALUES ('%1','%2','%3','%4','%5','%6','%7')").
-                                arg(lastId + 1).
-                                arg(nameAlg).
-                                arg("").
-                                arg("2012-10-30 18:09:28.0").
-                                arg("2012-10-30 18:09:28.0").
-                                arg("da181949-d3d0-41f6-b16c-956433f00e0b").
-                                arg(3);
+                                       arg(algo.coId()).
+                                       arg(algo.name()).
+                                       arg(algo.description()).
+                                       arg(algo.creationDate("yyyy-MM-dd HH:mm:ss.z")).
+                                       arg(algo.creationDate("yyyy-MM-dd HH:mm:ss.z")).
+                                       arg(algo.timeUUID()).
+                                       arg(algo.documentId());
 
             QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 

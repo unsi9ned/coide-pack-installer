@@ -15,6 +15,8 @@ MainForm::MainForm(QWidget *parent) :
 #elif 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1.pack");
 #elif 1
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.1.0.pack");
+#elif 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack");
 #elif 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.2.11.0.pack");
@@ -577,8 +579,8 @@ void MainForm::showFeatures(QModelIndex index)
 
     if(codeMemory)
     {
-        ui->lineEditFlashStart->setText(QString("0x%1").arg(codeMemory->startAddr(), 8, 16, QChar('0')));
-        ui->lineEditFlashSize->setText(QString("0x%1").arg(codeMemory->size(), 8, 16, QChar('0')));
+        ui->lineEditFlashStart->setText(codeMemory->startAddrHex());
+        ui->lineEditFlashSize->setText(codeMemory->sizeHex());
     }
     else
     {
@@ -588,8 +590,8 @@ void MainForm::showFeatures(QModelIndex index)
 
     if(dataMemory)
     {
-        ui->lineEditRamStart->setText(QString("0x%1").arg(dataMemory->startAddr(), 8, 16, QChar('0')));
-        ui->lineEditRamSize->setText(QString("0x%1").arg(dataMemory->size(), 8, 16, QChar('0')));
+        ui->lineEditRamStart->setText(dataMemory->startAddrHex());
+        ui->lineEditRamSize->setText(dataMemory->sizeHex());
     }
     else
     {
@@ -600,30 +602,33 @@ void MainForm::showFeatures(QModelIndex index)
     //
     // Загрузка данных о фичах
     //
-    QStringList coreFeatures = devCore.featuresSummary();
-    QStringList seriesFeatures = devSeries.featuresSummary();
+#if 1
     QStringList deviceFeatures = device.featuresSummary();
-
     QString featuresText;
-
-    if(!coreFeatures.isEmpty())
-        featuresText += coreFeatures.join('\n') + "\n";
-
-    if(!seriesFeatures.isEmpty())
-        featuresText += seriesFeatures.join('\n') + "\n";
 
     if(!deviceFeatures.isEmpty())
         featuresText += deviceFeatures.join('\n');
 
     ui->plainTextEditFeatures->setPlainText(featuresText);
+#else
+    ui->plainTextEditFeatures->setPlainText(device.coFeaturesSummary());
+#endif
 
     //
     // Загрузка описания
     //
+#if 1
     if(!device.getDescription().isEmpty())
         ui->plainTextEditDescription->setPlainText(device.getDescription());
+    else if(!device.coDescription().isEmpty())
+        ui->plainTextEditDescription->setPlainText(device.coDescription());
     else
         ui->plainTextEditDescription->setPlainText(pack.description());
+#elif 0
+    ui->plainTextEditDescription->setPlainText(device.coMemInfo());
+#else
+    ui->plainTextEditDescription->setPlainText(device.defSym2coMicro());
+#endif
 
     //
     // Загрузка алгоритмов программирования

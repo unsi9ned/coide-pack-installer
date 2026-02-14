@@ -83,20 +83,23 @@ private:
 public:
     Memory();
 
-    Memory& setName(const QString& name);
-    void setId(const QString& id);
     QString name() const;
     uint32_t startAddr() const;
-    void setStartAddr(const uint32_t &startAddr);
+    QString startAddrHex() const;
     uint32_t size() const;
-    void setSize(const uint32_t &size);
+    QString sizeHex() const;
     QString access() const;
-    void setAccess(const QString &access);
     bool isStartup() const;
-    void setStartup(bool isStartup);
     bool isInit() const;
-    void setInit(bool isInit);
     bool isDefault() const;
+
+    Memory& setName(const QString& name);
+    void setId(const QString& id);
+    void setStartAddr(const uint32_t &startAddr);
+    void setSize(const uint32_t &size);
+    void setAccess(const QString &access);
+    void setStartup(bool isStartup);
+    void setInit(bool isInit);
     void setDefault(bool state);
 
     bool isCodeMemory();

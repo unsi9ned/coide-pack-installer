@@ -44,7 +44,8 @@ SOURCES += main.cpp\
     componentsinfo.cpp \
     category.cpp \
     family.cpp \
-    series.cpp
+    series.cpp \
+    mcu.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -69,7 +70,8 @@ HEADERS  += \
     requestmanager.h \
     component.h \
     componentsinfo.h \
-    category.h
+    category.h \
+    constants.h
 
 FORMS    += \
     mainform.ui

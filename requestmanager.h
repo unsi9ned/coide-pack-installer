@@ -40,9 +40,9 @@ public:
     bool createManufacturer(const Manufacturer& vendor);
     bool createFamily(Family& family);
     bool createSeries(Series& series);
-    bool createMcu(Manufacturer man, Family fam, Series ser, QString m);
+    bool createMcu(Mcu& device);
 
-    bool createDebugAlgorithm(QString name);
+    bool createDebugAlgorithm(DebugAlgorithm& algo);
     bool createFlashAlgorithm(QString name);
 
     bool removeMcu(Mcu mcu);
@@ -72,8 +72,9 @@ private:
     QList<Family> requestFamilyList(int vendorId);
     QList<Family> requestFamilyList();
     QList<Series> requestSeriesList(int familyId);
-    QList<Mcu> requestMcuList(Series serie);
+    QList<Mcu> requestMcuList(int seriesId);
     DebugAlgorithm requestDebugAlgorithm(int id);
+    DebugAlgorithm requestDebugAlgorithm(const QString& name);
     QList<DebugAlgorithm> requestDebugAlgorithmList();
     ProgAlgorithm requestFlashAlgorithm(int id);
     QList<ProgAlgorithm> requestFlashAlgorithmList();

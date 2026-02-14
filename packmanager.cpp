@@ -167,6 +167,24 @@ void PackManager::packInstall(PackDescription &pack)
 
                 if(!reqManager->createSeries(series))
                     break;
+
+                for(auto dev = series.mcuMap().begin(); dev != series.mcuMap().end(); ++dev)
+                {
+                    Mcu& mcu = dev.value();
+                    DebugAlgorithm& algorithm = mcu.getDebugAlgorithm();
+
+                    emit eventOccured(QString("Adding the Debug algorithm '%1'").arg(mcu.getDebugAlgorithm().name()));
+
+                    if(!reqManager->createDebugAlgorithm(algorithm))
+                        break;
+                    else
+                        mcu.setDebugAlgorithmId(algorithm.coId());
+
+                    emit eventOccured(QString("Adding the MCU = %1").arg(mcu.getName()));
+
+                    if(!reqManager->createMcu(mcu))
+                        break;
+                }
             }
         }
     }

@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QString>
 #include <QByteArray>
+#include <QUuid>
+#include <QDateTime>
 
 #include "debugalgorithm.h"
 #include "progalgorithm.h"
@@ -11,8 +13,6 @@
 #include "devicefeature.h"
 #include "featurecontainer.h"
 #include "algorithmcontainer.h"
-
-#define USER_ID_COOCOX  (2)
 
 class Mcu : public FeatureContainer, public AlgorithmContainer
 {
@@ -25,10 +25,10 @@ private:
     int debugAlgorithmId;
     QString name;
     QString description;
-    QByteArray keyParameter;
-    QByteArray webPageURL;
-    QByteArray datasheetURL;
-    QByteArray memInfo;
+    QString keyParameter;
+    QString webPageURL;
+    QString datasheetURL;
+    QString memInfo;
     QString micro;
     QString advertising;
     QString price;
@@ -40,24 +40,14 @@ private:
     ProgAlgorithm flashAlgorithm;
 
     QMap<QString, Memory> _memoryMap;
+    QStringList _definedSymbols;
 
 public:
-    Mcu()
-    {
-        this->id = -1;
-        this->seriesId = -1;
-    }
-
+    Mcu();
     Mcu(int id,
         int seriesId,
         int debugAlgorithmId,
-        int userId = USER_ID_COOCOX)
-    {
-        this->id = id;
-        this->seriesId = seriesId;
-        this->debugAlgorithmId = debugAlgorithmId;
-        this->userId = userId;
-    }
+        int userId = CoUser::USER_COOCOX);
 
     int getId() const {return id;}
     int getSeriesId() const {return seriesId;}
@@ -65,32 +55,31 @@ public:
     int getDebugAlgorithmId() const {return debugAlgorithmId;}
     QString getName() const {return name;}
     QString getDescription() const {return description;}
-    QByteArray getKeyParameter() const {return keyParameter;}
-    QByteArray getWebPageURL() const {return webPageURL;}
-    QByteArray getDatasheetURL() const {return datasheetURL;}
-    QByteArray getMemInfo() const {return memInfo;}
+    QString getKeyParameter() const {return keyParameter;}
+    QString getWebPageURL() const {return webPageURL;}
+    QString coWebPageUrl() const {return "[\"" + webPageURL + "\"]";}
+    QString getDatasheetURL() const {return datasheetURL;}
+    QString coDatasheetURL() const {return "[\"" + datasheetURL + "\"]";}
+    QString getMemInfo() const {return memInfo;}
+    QString coMemInfo();
     QString getMicro() const {return micro;}
     QString getAdvertising() const {return advertising;}
     QString getPrice() const {return price;}
     QString getTimeuuid() const {return timeuuid;}
     int getHits() const {return hits;}
     QString svdLocalPath() const { return _svd;}
-    DebugAlgorithm getDebugAlgorithm() const {return this->debugAlgorithm;}
+    DebugAlgorithm& getDebugAlgorithm() {return this->debugAlgorithm;}
 
     void setId(int id){this->id = id;}
     void setSeriesId(int id){this->seriesId = id;}
     void setUserId(int id){this->userId = id;}
-    void setDebugAlgorithmId(int id){this->debugAlgorithmId = id;}
-    Mcu& setName(QString s)
-    {
-        this->name = s;
-        return *this;
-    }
+    void setDebugAlgorithmId(int id);
+    Mcu& setName(QString s);
     void setDescription(QString s){this->description = s;}
-    void setKeyParameter(QByteArray s){this->keyParameter = s;}
-    void setWebPageURL(QByteArray s){this->webPageURL = s;}
-    void setDatasheetURL(QByteArray s){this->datasheetURL = s;}
-    void setMemInfo(QByteArray i){this->memInfo = i;}
+    void setKeyParameter(const QString s){this->keyParameter = s;}
+    void setWebPageURL(const QString url){this->webPageURL = url;}
+    void setDatasheetURL(const QString& url){this->datasheetURL = url;}
+    void setMemInfo(const QString& info){this->memInfo = info;}
     void setMicro(QString s){this->micro = s;}
     void setAdvertising(QString s){this->advertising = s;}
     void setPrice(QString s){this->price = s;}
@@ -100,71 +89,28 @@ public:
     void setDebugAlgorithm(DebugAlgorithm da){this->debugAlgorithm = da;}
     void setFlashAlgorithm(ProgAlgorithm da){this->flashAlgorithm = da;}
 
-    Mcu& setCoreDebugAlgorithm(const QString& coreName)
-    {
-        debugAlgorithm.setProcessor(coreName);
-        return *this;
-    }
+    Mcu& setCoreDebugAlgorithm(const QString& coreName);
 
-    bool isValid()
-    {
-        if(this->id <= 0 ||
-           this->seriesId <= 0 ||
-           this->name.isEmpty() ||
-           this->memInfo.isEmpty())
-        {
-            return false;
-        }
-        else
-            return true;
-    }
+    bool isValid(QString* errorString = nullptr);
+    bool isNull();
 
-    QMap<QString, Memory>& memoryRegions()
-    {
-        return this->_memoryMap;
-    }
+    QMap<QString, Memory>& memoryRegions();
 
-    Memory& memory(const QString& name)
-    {
-        if(_memoryMap.contains(name))
-            return _memoryMap[name];
-        else
-            return createMemoryRegion(name);
-    }
+    Memory& memory(const QString& name);
+    Memory& addMemoryRegion(const QString name);
+    Memory* getCodeMemory();
+    Memory* getDataMemory();
 
-    Memory& addMemoryRegion(const QString name)
-    {
-        return memory(name);
-    }
+    static QString generateTimeUUID();
 
-    Memory* getCodeMemory()
-    {
-        for(auto it = _memoryMap.begin(); it != _memoryMap.end(); ++it)
-        {
-            if(it.value().isCodeMemory())
-                return &_memoryMap[it.key()];
-        }
-
-        return nullptr;
-    }
-
-    Memory* getDataMemory()
-    {
-        for(auto it = _memoryMap.begin(); it != _memoryMap.end(); ++it)
-        {
-            if(it.value().isDataMemory())
-                return &_memoryMap[it.key()];
-        }
-
-        return nullptr;
-    }
+    void addDefSymbol(const QString& symbol) {this->_definedSymbols.append(symbol);}
+    QStringList definedSymbols() {return this->_definedSymbols;}
+    QString defSym2coMicro();
+    QString coDescription();
 
 private:
-    Memory& createMemoryRegion(const QString regionName)
-    {
-        _memoryMap.insert(regionName, Memory());
-        return _memoryMap[regionName].setName(regionName);
-    }
+    bool isValid(QString& errorString);
+    Memory& createMemoryRegion(const QString regionName);
 };
 
 #endif // MCU_H

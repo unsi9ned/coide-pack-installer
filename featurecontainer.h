@@ -19,6 +19,7 @@ public:
     void addFeature(const QString& type);
     void addFeature(const DeviceFeature& feature);
     QStringList featuresSummary();
+    QString coFeaturesSummary() const;
 
 private:
 

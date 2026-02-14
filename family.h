@@ -9,7 +9,7 @@
 #include "featurecontainer.h"
 #include "algorithmcontainer.h"
 
-class Family : public FeatureContainer
+class Family
 {
 private:
 
