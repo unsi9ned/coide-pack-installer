@@ -1,0 +1,197 @@
+#include <QFile>
+#include <QDebug>
+#include "dbgarbagecollector.h"
+#include "database.h"
+#include "paths.h"
+
+//------------------------------------------------------------------------------
+// Класс очистки БД от ненужных данных и таблиц
+//------------------------------------------------------------------------------
+DBGarbageCollector::DBGarbageCollector() : QObject()
+{
+#if 1
+    // На время отладки создаем бекап базы данных
+    QFile dbFile(Paths::instance()->coIdeDatabaseFile());
+    QFile dbBackup(Paths::instance()->coIdeDatabaseFile() + ".bak");
+
+    if(dbFile.exists() && !dbBackup.exists())
+    {
+        QFile::copy(dbFile.fileName(), dbBackup.fileName());
+    }
+#endif
+
+    connect(this, SIGNAL(eventOccured(QString)), SLOT(printEvents(QString)));
+    connect(this, SIGNAL(errorOccured(QString)), SLOT(printEvents(QString)));
+}
+
+//------------------------------------------------------------------------------
+// Очистка БД от ненужных мусорных данных
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::deleteObsoleteData()
+{
+    if(!cleanUsers())
+    {
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаление из БД не используемых таблиц
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::deleteUnnecessaryTables()
+{
+    QStringList tables =
+    {
+        "Education", "Group_has_User", "Groups", "Industry",
+        "Nationality", "Position", "comment",
+        "component_not_supports_mcu", "component_not_supports_mcufamily",
+        "component_not_supports_mcumanufacturer", "component_not_supports_mcuseries",
+        "solution", "solution_has_component",
+        "solution_has_example", "solution_has_keyword", "solution_has_category",
+        "solution_has_subcategory", "solutioncategory", "solutionsubcategory",
+        "user_glorification"
+    };
+
+    foreach (QString table, tables)
+    {
+        bool status = false;
+        QString sql = QString("DROP TABLE IF EXISTS `%1`;").arg(table);
+        QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+        emit eventOccured(QString("Delete table %1: %2").arg(table).arg(sql));
+
+        if(!status)
+        {
+            _errorString = result.lastError().text();
+            emit errorOccured(QString("Error: %1").arg(_errorString));
+            return false;
+        }
+    }
+
+    emit eventOccured(QString("Delete Unnecessary Tables DONE"));
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+// Вывод текста последней ошибки
+//------------------------------------------------------------------------------
+QString DBGarbageCollector::errorString()
+{
+    return _errorString;
+}
+
+//------------------------------------------------------------------------------
+// Удаление пользователей, которые не задействованы в других таблицах
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::cleanUsers()
+{
+    struct User
+    {
+        int id;
+        QString name;
+        int level;
+        int componentsCount;
+        int examplesCount;
+        int mcuCount;
+    };
+
+    QList<User> users;
+
+    bool status = false;
+    QString sql = QString("SELECT `id`, `name`, `level` FROM user;");
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        _errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        User u;
+        u.id = result.value(0).toInt();
+        u.name = result.value(1).toString();
+        u.level = result.value(2).toInt();
+
+        users.append(u);
+    }
+
+    foreach (User u, users)
+    {
+        sql = QString("SELECT COUNT(*) FROM `component` WHERE authorId = '%1';").arg(u.id);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status || !result.next())
+        {
+            _errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            u.componentsCount = result.value(0).toInt();
+        }
+
+        sql = QString("SELECT COUNT(*) FROM `example` WHERE userId = '%1';").arg(u.id);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status || !result.next())
+        {
+            _errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            u.examplesCount = result.value(0).toInt();
+        }
+
+        sql = QString("SELECT COUNT(*) FROM `mcu` WHERE userId = '%1';").arg(u.id);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status || !result.next())
+        {
+            _errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            u.mcuCount = result.value(0).toInt();
+        }
+
+        if(u.componentsCount == 0 && u.examplesCount == 0 && u.mcuCount == 0 && u.level == 0)
+        {
+            sql = QString("DELETE FROM `user` WHERE id = '%1';").arg(u.id);
+            result = DataBase::instance()->sendQuery(sql, &status);
+
+            emit eventOccured(QString("Remove User %1 with %2 components, %3 examples, %4 MCUs: %5").
+                              arg(u.name).
+                              arg(u.componentsCount).
+                              arg(u.examplesCount).
+                              arg(u.mcuCount).
+                              arg(sql));
+
+            if(!status)
+            {
+                _errorString = result.lastError().text();
+                emit errorOccured(QString("Error: %1").arg(_errorString));
+                return false;
+            }
+        }
+    }
+
+    emit eventOccured(QString("Clean `user` table DONE"));
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Вывод сообщений об ошибках
+//------------------------------------------------------------------------------
+void DBGarbageCollector::printEvents(QString e)
+{
+    qInfo() << e;
+}
+

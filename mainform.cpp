@@ -3,6 +3,7 @@
 #include "paths.h"
 #include "ziparchive.h"
 #include "packmanager.h"
+#include "dbgarbagecollector.h"
 
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
@@ -10,7 +11,7 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if 0
+#if 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
 #elif 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1.pack");
@@ -971,4 +972,16 @@ int MainForm::extractIdFromItemText(QString text)
 QString MainForm::extractNameFromItemText(QString text)
 {
     return text.mid(text.indexOf(" - ") + 3);
+}
+
+void MainForm::on_pushButtonDbOptimize_clicked()
+{
+    ui->pushButtonDbOptimize->setEnabled(false);
+
+    DBGarbageCollector gbCollector;
+    gbCollector.deleteUnnecessaryTables();
+    gbCollector.deleteObsoleteData();
+
+
+    ui->pushButtonDbOptimize->setEnabled(true);
 }

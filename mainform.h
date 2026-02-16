@@ -69,6 +69,8 @@ private slots:
     void on_pushButtonSetIdePath_clicked();
 
 
+    void on_pushButtonDbOptimize_clicked();
+
 private:
     int extractIdFromItemText(QString text);
     QString extractNameFromItemText(QString text);

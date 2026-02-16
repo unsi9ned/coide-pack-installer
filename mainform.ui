@@ -455,6 +455,19 @@
          </rect>
         </property>
        </widget>
+       <widget class="QPushButton" name="pushButtonDbOptimize">
+        <property name="geometry">
+         <rect>
+          <x>474</x>
+          <y>570</y>
+          <width>111</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Оптимизация БД</string>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="tabAlgorithm">
        <attribute name="title">
