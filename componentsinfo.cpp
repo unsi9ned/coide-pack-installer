@@ -176,7 +176,14 @@ bool ComponentsInfo::updateManufacturerList(const Component &component, QString&
 QMap<int, Component> ComponentsInfo::requestComponentMap()
 {
     QMap<int, Component> componentsMap;
-    QSqlQuery result = DataBase::instance()->sendQuery("SELECT * FROM component");
+    QString sql = QString("SELECT component.*, "
+                          "status.shouldupdate, "
+                          "status.hasdownloaded, "
+                          "status.hasdeleted, "
+                          "status.auditstatus "
+                          "FROM component, status "
+                          "WHERE component.Component_Status_id == status.id;");
+    QSqlQuery result = DataBase::instance()->sendQuery(sql);
 
     while(result.next())
     {
@@ -204,6 +211,16 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
         newComponent.setCreateDate(result.value(19).toString());
         newComponent.setUpdateDate(result.value(20).toString());
         newComponent.setTags(result.value(21).toString());
+
+        //Чтение статуса компонента
+        Component::ComponentStatus status;
+
+        status.statusId = result.value(3).toInt();
+        status.shouldUpdate = result.value(22).toInt();
+        status.hasDownloaded = result.value(23).toInt();
+        status.hasDeleted = result.value(24).toInt();
+        status.auditStatus = result.value(25).toInt();
+        newComponent.setStatus(status);
 
         componentsMap.insert(newComponent.getId(), newComponent);
     }

@@ -295,40 +295,29 @@ void Component::appendMcuManufacturer(int id)
     mcuManufacturerList.append(id);
 }
 
+Component::ComponentStatus Component::getStatus()
+{
+    return _status;
+}
+
+void Component::setStatus(Component::ComponentStatus status)
+{
+    _status = status;
+}
+
+bool Component::isDownloaded()
+{
+    return _status.hasDownloaded;
+}
+
+bool Component::isDriver()
+{
+    return type == ComponentType::DRIVER;
+}
+
 Component::Component()
 {
 
-}
-
-Component::Component(const Component &c)
-{
-    this->id = c.getId();
-    this->authorId = c.getAuthorId();
-    this->layerId = c.getLayerId();
-    this->componentStatusId = c.getComponentStatusId();
-    this->shareDocumentId = c.getShareDocumentId();
-    this->type = c.getType();
-    this->name = c.getName();
-    this->description = c.getDescription();
-    this->advertisingWord = c.getAdvertisingWord();
-    this->advertisingURL = c.getAdvertisingURL();
-    this->uuid = c.getUuid();
-    this->timeuuid = c.getTimeuuid();
-    this->repoUser = c.getRepoUser();
-    this->repoPass = c.getRepoPass();
-    this->micro = c.getMicro();
-    this->cox = c.getCox();
-    this->version = c.getVersion();
-    this->publishStatus = c.getPublishStatus();
-    this->hits = c.getHits();
-    this->createDate = c.getCreateDate();
-    this->updateDate = c.getUpdateDate();
-    this->tags = c.getTags();
-    this->children = c.getChildren();
-    this->mcuListId = c.getMcuListId();
-    this->mcuFamilyList = c.getMcuFamilyList();
-    this->mcuSeriesList = c.getMcuSeriesList();
-    this->mcuManufacturerList = c.getMcuManufacturerList();
 }
 
 Component::Component(Component *c)
@@ -362,33 +351,3 @@ Component::Component(Component *c)
     this->mcuManufacturerList = c->getMcuManufacturerList();
 }
 
-void Component::operator =(const Component &c)
-{
-    this->id = c.getId();
-    this->authorId = c.getAuthorId();
-    this->layerId = c.getLayerId();
-    this->componentStatusId = c.getComponentStatusId();
-    this->shareDocumentId = c.getShareDocumentId();
-    this->type = c.getType();
-    this->name = c.getName();
-    this->description = c.getDescription();
-    this->advertisingWord = c.getAdvertisingWord();
-    this->advertisingURL = c.getAdvertisingURL();
-    this->uuid = c.getUuid();
-    this->timeuuid = c.getTimeuuid();
-    this->repoUser = c.getRepoUser();
-    this->repoPass = c.getRepoPass();
-    this->micro = c.getMicro();
-    this->cox = c.getCox();
-    this->version = c.getVersion();
-    this->publishStatus = c.getPublishStatus();
-    this->hits = c.getHits();
-    this->createDate = c.getCreateDate();
-    this->updateDate = c.getUpdateDate();
-    this->tags = c.getTags();
-    this->children = c.getChildren();
-    this->mcuListId = c.getMcuListId();
-    this->mcuFamilyList = c.getMcuFamilyList();
-    this->mcuSeriesList = c.getMcuSeriesList();
-    this->mcuManufacturerList = c.getMcuManufacturerList();
-}

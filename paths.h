@@ -16,6 +16,9 @@ private:
     static constexpr const char* CO_DATA_DIR = "data";
     static constexpr const char* CO_PACK_DIR = "pack";
     static constexpr const char* CO_TEMP_DIR = "temp";
+    static constexpr const char* CO_REPO_DIR = "repo";
+    static constexpr const char* CO_COMPONENTS_DIR = "Components";
+    static constexpr const char* CO_DRIVERS_DIR = "Drivers";
     static constexpr const char* APP_SETTINGS = "config.dat";
     static constexpr const char* APP_UTILS_DIR = "utils";
     static constexpr const char* SEVEN_ZIP = "7z.exe";
@@ -44,9 +47,14 @@ public:
     QString coIdeDebugAlgorithmFileName(const QString& coreName);
     QString coIdeDebugAlgorithmFile(const QString& coreName);
     QString coIdeDataDir();
-    QString coIdePackDir();
+    QString coIdePacketsDir();
     QString coIdePackDir(const QString& vendor, const QString& release);
     QString coIdeTempDir();
+    QString coIdeRepositoryDir();
+    QString coIdeComponentsDir();
+    QString coIdeComponentDir(int id, const QString& name);
+    QString coIdeDriversDir();
+    QString coIdeDriverDir(int id, const QString& name);
 
     void setCoIdeDir(const QString& dir);
 

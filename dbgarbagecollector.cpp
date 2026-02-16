@@ -1,8 +1,10 @@
 #include <QFile>
 #include <QDebug>
+#include <QDir>
 #include "dbgarbagecollector.h"
 #include "database.h"
 #include "paths.h"
+#include "requestmanager.h"
 
 //------------------------------------------------------------------------------
 // Класс очистки БД от ненужных данных и таблиц
@@ -29,12 +31,11 @@ DBGarbageCollector::DBGarbageCollector() : QObject()
 //------------------------------------------------------------------------------
 bool DBGarbageCollector::deleteObsoleteData()
 {
-    if(!cleanUsers())
-    {
-        return false;
-    }
+    if(cleanComponents())
+        if(cleanUsers())
+            return true;
 
-    return true;
+    return false;
 }
 
 //------------------------------------------------------------------------------
@@ -183,6 +184,61 @@ bool DBGarbageCollector::cleanUsers()
     }
 
     emit eventOccured(QString("Clean `user` table DONE"));
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаление из базы несуществующих в локальном репозитории компонентов
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::cleanComponents()
+{
+    RequestManager * reqManager = RequestManager::instance();
+    QMap<int, Component> components = reqManager->requestComponentMap();
+
+    for(auto it = components.begin(); it != components.end(); ++it)
+    {
+        Component c = it.value();
+        QString componentPath;
+        QDir componentDir;
+
+        if(c.isDriver())
+        {
+            componentPath = Paths::instance()->coIdeDriverDir(c.getId(), c.getName());
+        }
+        else
+        {
+            componentPath = Paths::instance()->coIdeComponentDir(c.getId(), c.getName());
+        }
+
+        componentDir.setPath(componentPath);
+
+        // Статус компонента прочитан неверно либо отсутствует в базе данных
+        if(c.getStatus().isNull())
+        {
+            qInfo() << QString("Status %1 NULL").arg(it.key());
+        }
+        // Каталог существует, но в базе помечен как не скачанный
+        else if(componentDir.exists() && !c.isDownloaded())
+        {
+            //qInfo() << "Wrong status" << componentPath;
+        }
+        // Каталог не существует, но в базе помечен как скачанный
+        else if(!componentDir.exists() && c.isDownloaded())
+        {
+            //qInfo() << "Not found" << componentPath;
+        }
+        // И каталог не существует, и в базе помечен как не скачанный
+        else if(!componentDir.exists() && !c.isDownloaded())
+        {
+            //qInfo() << "Not exists" << componentPath;
+        }
+        // Каталог существует и статус верный
+        else if(componentDir.exists() && c.isDownloaded())
+        {
+            //qInfo() << "Status OK" << componentPath;
+        }
+    }
 
     return true;
 }

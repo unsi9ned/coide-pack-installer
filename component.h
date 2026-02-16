@@ -7,6 +7,36 @@
 
 class Component
 {
+public:
+
+    enum ComponentType
+    {
+        DRIVER = 1,
+        COMPONENT = 2,
+    };
+
+    struct ComponentStatus
+    {
+        int statusId;
+        int shouldUpdate;
+        int hasDownloaded;
+        int hasDeleted;
+        int auditStatus;
+
+        ComponentStatus()
+        {
+            statusId = 0;
+            shouldUpdate = 0;
+            hasDownloaded = 0;
+            hasDeleted = 0;
+            auditStatus = 0;
+        }
+
+        bool isNull()
+        {
+            return statusId == 0;
+        }
+    };
 
 private:
 
@@ -39,11 +69,11 @@ private:
     QList<int> mcuSeriesList;
     QList<int> mcuManufacturerList;
 
+    ComponentStatus _status;
+
 public:
     Component();
-    Component(const Component &c);
     Component(Component * c);
-    void operator =(const Component &c);
 
     int getId() const;
     void setId(int value);
@@ -104,6 +134,11 @@ public:
     QList<int> getMcuManufacturerList() const;
     void setMcuManufacturerList(const QList<int> &value);
     void appendMcuManufacturer(int id);
+
+    ComponentStatus getStatus();
+    void setStatus(ComponentStatus status);
+    bool isDownloaded();
+    bool isDriver();
 };
 
 #endif // COMPONENT_H

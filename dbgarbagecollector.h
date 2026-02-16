@@ -21,6 +21,7 @@ public:
 private:
 
     bool cleanUsers();
+    bool cleanComponents();
 
 signals:
     void eventOccured(QString e);

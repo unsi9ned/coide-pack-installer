@@ -142,7 +142,7 @@ QString Paths::coIdeDataDir()
 //------------------------------------------------------------------------------
 // Возвращает путь к каталогу пакетов DFP
 //------------------------------------------------------------------------------
-QString Paths::coIdePackDir()
+QString Paths::coIdePacketsDir()
 {
     return coIdeDir() + "/" + Paths::CO_PACK_DIR;
 }
@@ -153,7 +153,7 @@ QString Paths::coIdePackDir()
 QString Paths::coIdePackDir(const QString &vendor,
                             const QString &release)
 {
-    return coIdePackDir() + "/" + vendor + "/" + release;
+    return coIdePacketsDir() + "/" + vendor + "/" + release;
 }
 
 //------------------------------------------------------------------------------
@@ -162,6 +162,46 @@ QString Paths::coIdePackDir(const QString &vendor,
 QString Paths::coIdeTempDir()
 {
     return coIdeDir() + "/" + Paths::CO_TEMP_DIR;
+}
+
+//------------------------------------------------------------------------------
+// Путь к репозиторию
+//------------------------------------------------------------------------------
+QString Paths::coIdeRepositoryDir()
+{
+    return coIdeDir() + "/" + Paths::CO_REPO_DIR;
+}
+
+//------------------------------------------------------------------------------
+// Путь к каталогу компонентов
+//------------------------------------------------------------------------------
+QString Paths::coIdeComponentsDir()
+{
+    return coIdeRepositoryDir() + "/" + Paths::CO_COMPONENTS_DIR;
+}
+
+//------------------------------------------------------------------------------
+// Путь к конкретному компоненту
+//------------------------------------------------------------------------------
+QString Paths::coIdeComponentDir(int id, const QString &name)
+{
+    return coIdeComponentsDir() + "/" + QString("%1_%2").arg(id).arg(name);
+}
+
+//------------------------------------------------------------------------------
+// Путь к каталогу драйверов
+//------------------------------------------------------------------------------
+QString Paths::coIdeDriversDir()
+{
+    return coIdeRepositoryDir() + "/" + Paths::CO_DRIVERS_DIR;
+}
+
+//------------------------------------------------------------------------------
+// Путь к конкретному драйверу
+//------------------------------------------------------------------------------
+QString Paths::coIdeDriverDir(int id, const QString &name)
+{
+    return coIdeDriversDir() + "/" + QString("%1_%2").arg(id).arg(name);
 }
 
 //------------------------------------------------------------------------------
