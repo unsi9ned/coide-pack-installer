@@ -661,6 +661,7 @@ bool RequestManager::createMcu(Mcu &device)
                 {
                     isset = true;
                     device.setId(currMcu.getId());
+                    device.setTimeuuid(currMcu.getTimeuuid());
                     break;
                 }
             }
