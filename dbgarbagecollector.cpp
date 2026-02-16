@@ -194,6 +194,12 @@ bool DBGarbageCollector::cleanUsers()
 bool DBGarbageCollector::cleanComponents()
 {
     RequestManager * reqManager = RequestManager::instance();
+
+    emit eventOccured("Remove phantom relations in `component_depends_component`");
+
+    if(!reqManager->removeComponentPhantomRelations(&_errorString))
+        return false;
+
     QMap<int, Component> components = reqManager->requestComponentMap();
 
     for(auto it = components.begin(); it != components.end(); ++it)
@@ -213,28 +219,40 @@ bool DBGarbageCollector::cleanComponents()
 
         componentDir.setPath(componentPath);
 
+        QStringList componentEntryList = componentDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+        bool componentExists = componentDir.exists();
+
+        if(componentEntryList.isEmpty() || ((componentEntryList.count() == 1 &&
+                                             componentEntryList.first().toLower() == "doc")))
+            componentExists = false;
+
         // Статус компонента прочитан неверно либо отсутствует в базе данных
         if(c.getStatus().isNull())
         {
-            qInfo() << QString("Status %1 NULL").arg(it.key());
+            emit eventOccured(QString("Component %1 is NULL").arg(it.key()));
         }
         // Каталог существует, но в базе помечен как не скачанный
-        else if(componentDir.exists() && !c.isDownloaded())
+        else if(componentExists && !c.isDownloaded())
         {
-            //qInfo() << "Wrong status" << componentPath;
+            qInfo() << "Wrong status" << componentPath;
         }
         // Каталог не существует, но в базе помечен как скачанный
-        else if(!componentDir.exists() && c.isDownloaded())
+        else if(!componentExists && c.isDownloaded())
         {
-            //qInfo() << "Not found" << componentPath;
+            qInfo() << "Not found" << componentPath;
         }
-        // И каталог не существует, и в базе помечен как не скачанный
-        else if(!componentDir.exists() && !c.isDownloaded())
+        // И каталог не существует на диске, и в базе помечен как не скачанный
+        else if(!componentExists && !c.isDownloaded())
         {
-            //qInfo() << "Not exists" << componentPath;
+            emit eventOccured(QString("Deleting a non-existent component '%1_%2'").
+                              arg(c.getId()).
+                              arg(c.getName()));
+
+            if(!reqManager->removeComponent(c.getId(), &_errorString))
+                return false;
         }
         // Каталог существует и статус верный
-        else if(componentDir.exists() && c.isDownloaded())
+        else if(componentExists && c.isDownloaded())
         {
             //qInfo() << "Status OK" << componentPath;
         }

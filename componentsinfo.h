@@ -40,6 +40,14 @@ public:
 
     bool fixComponentManufacturerTable(QString * errorString = nullptr);
     bool fixComponentManufacturerTable(QString& errorString);
+    bool removeComponentsRelation(int parentId, int childId, QString * errorString = nullptr);
+    bool removeComponentsRelation(QMap<int, int> pairs, QString * errorString = nullptr);
+    bool removeComponent(int componentId, QString * errorString = nullptr);
+    bool removeComponent(const Component& component, QString * errorString = nullptr);
+    bool removeComponents(QVector<int> componentIds, QString * errorString = nullptr);
+    bool removeComponentStatus(int statusId, QString * errorString = nullptr);
+    bool removeComponentStatuses(QVector<int> statusIdList, QString * errorString = nullptr);
+    bool removeComponentPhantomRelations(QString *errorString = nullptr);
 
 private:
 

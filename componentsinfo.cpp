@@ -115,6 +115,229 @@ bool ComponentsInfo::fixComponentManufacturerTable(QString *errorString)
 }
 
 //------------------------------------------------------------------------------
+// Удаляет связи между компонентами в таблице component_depends_component
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeComponentsRelation(int parentId, int childId, QString * errorString)
+{
+    bool status = true;
+    QString sql = QString("DELETE FROM component_depends_component "
+                          "WHERE parentComponentId = '%1' "
+                          "AND childComponentId = '%2';").
+                  arg(parentId).
+                  arg(childId);
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет связи между компонентами в таблице component_depends_component
+// key = parentId,
+// value = childId
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeComponentsRelation(QMap<int, int> pairs, QString *errorString)
+{
+    for(auto it = pairs.begin(); it != pairs.end(); ++it)
+    {
+        if(!removeComponentsRelation(it.key(), it.value(), errorString))
+            return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет из базы данных информацию о компоненте
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeComponent(int componentId, QString *errorString)
+{
+    bool status = true;
+    QString sql = QString("DELETE FROM component WHERE id = '%1';").arg(componentId);
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    QStringList tables =
+    {
+        "component_depends_coxinterface",
+        "component_has_category",
+        "component_has_example",
+        "component_has_keyword",
+        "component_has_subcategory",
+        "component_implements_coxinterface",
+        "component_supports_externaldevice",
+        "component_supports_mcu",
+        "component_supports_mcufamily",
+        "component_supports_mcumanufacturer",
+        "component_supports_mcuseries",
+        "component_uses_communicationinterface",
+    };
+
+    foreach(QString t, tables)
+    {
+        sql = QString("DELETE FROM `%1` WHERE componentId = '%2';").arg(t).arg(componentId);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool ComponentsInfo::removeComponent(const Component &component, QString *errorString)
+{
+    if(removeComponent(component.getId(), errorString))
+        if(removeComponentStatus(component.getComponentStatusId(), errorString))
+            return true;
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет из базы данных информацию о нескольких компонентах
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeComponents(QVector<int> componentIds, QString *errorString)
+{
+    QStringList idList;
+
+    foreach(int id, componentIds)
+    {
+        idList << QString::number(id, 10);
+    }
+
+    bool status = true;
+    QString sql = QString("DELETE FROM component WHERE id IN (%1);").arg(idList.join(", "));
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    QStringList tables =
+    {
+        "component_depends_coxinterface",
+        "component_has_category",
+        "component_has_example",
+        "component_has_keyword",
+        "component_has_subcategory",
+        "component_implements_coxinterface",
+        "component_supports_externaldevice",
+        "component_supports_mcu",
+        "component_supports_mcufamily",
+        "component_supports_mcumanufacturer",
+        "component_supports_mcuseries",
+        "component_uses_communicationinterface",
+    };
+
+    foreach(QString t, tables)
+    {
+        sql = QString("DELETE FROM `%1` WHERE componentId IN (%2);").arg(t).arg(idList.join(", "));
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет статус компонента из БД
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeComponentStatus(int statusId, QString *errorString)
+{
+    bool status = true;
+    QString sql = QString("DELETE FROM status WHERE id = %1;").arg(statusId);
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет несколько статусов компонентов из БД
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeComponentStatuses(QVector<int> statusIdList, QString *errorString)
+{
+    QStringList idList;
+
+    foreach(int id, statusIdList)
+    {
+        idList << QString::number(id, 10);
+    }
+
+    bool status = true;
+    QString sql = QString("DELETE FROM status WHERE id IN (%1);").arg(idList.join(", "));
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+bool ComponentsInfo::removeComponentPhantomRelations(QString *errorString)
+{
+    bool status = false;
+    QString sql = QString("SELECT parentComponentId, childComponentId "
+                          "FROM component_depends_component "
+                          "WHERE parentComponentId NOT IN (SELECT id FROM component) "
+                          "OR childComponentId NOT IN (SELECT id FROM component);");
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    QMap<int, int> pairs;
+
+    while(result.next())
+    {
+        pairs.insert(result.value("parentComponentId").toInt(),
+                     result.value("childComponentId").toInt());
+    }
+
+    return removeComponentsRelation(pairs, errorString);
+}
+
+//------------------------------------------------------------------------------
 // Удаляет из базы данных информацию о производителях, к которым применим компонент
 //------------------------------------------------------------------------------
 bool ComponentsInfo::deleteManufacturerList(int componentId, QString &errorString)
@@ -182,7 +405,8 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
                           "status.hasdeleted, "
                           "status.auditstatus "
                           "FROM component, status "
-                          "WHERE component.Component_Status_id == status.id;");
+                          "WHERE component.Component_Status_id = status.id;");
+
     QSqlQuery result = DataBase::instance()->sendQuery(sql);
 
     while(result.next())
@@ -232,11 +456,15 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
     {
         int parentComponentId = result.value(0).toInt();
         int childComponentId = result.value(1).toInt();
+        Component* parentComponent = nullptr, *childComponent = nullptr;
 
-        Component *parentComponent = &componentsMap[parentComponentId];
-        Component *childComponent = &componentsMap[childComponentId];
-
-        parentComponent->appendChild(childComponent);
+        if(componentsMap.contains(parentComponentId) &&
+           componentsMap.contains(childComponentId))
+        {
+            parentComponent = &componentsMap[parentComponentId];
+            childComponent = &componentsMap[childComponentId];
+            parentComponent->appendChild(childComponent);
+        }
     }
 
     //Загрузка списка процессоров для каждого компонента
