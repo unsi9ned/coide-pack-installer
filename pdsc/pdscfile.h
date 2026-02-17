@@ -34,30 +34,31 @@ private:
 public:
     PdscFile();
     PdscCondition condition() const;
-    void setCondition(const PdscCondition &condition);
     QString language() const;
-    void setLanguage(const QString &language);
     QString scope() const;
-    void setScope(const QString &scope);
     QString attr() const;
-    void setAttr(const QString &attr);
     QString select() const;
-    void setSelect(const QString &select);
     QString path() const;
-    void setPath(const QString &path);
     QString copy() const;
-    void setCopy(const QString &copy);
     QString version() const;
-    void setVersion(const QString &version);
     QString src() const;
-    void setSrc(const QString &src);
     bool isPublic() const;
-    void setPublic(bool _public);
     QString projectpath() const;
-    void setProjectpath(const QString &projectpath);
     FileCategory category() const;
-    void setCategory(const FileCategory &category);
     QString name() const;
+
+    void setCondition(const PdscCondition &condition);
+    void setLanguage(const QString &language);
+    void setScope(const QString &scope);
+    void setAttr(const QString &attr);
+    void setSelect(const QString &select);
+    void setPath(const QString &path);
+    void setCopy(const QString &copy);
+    void setVersion(const QString &version);
+    void setSrc(const QString &src);
+    void setPublic(bool _public);
+    void setProjectpath(const QString &projectpath);
+    void setCategory(const FileCategory &category);
     void setName(const QString &name);
 };
 

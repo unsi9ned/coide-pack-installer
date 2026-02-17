@@ -4,6 +4,7 @@
 #include <QString>
 #include <QDomDocument>
 #include "packdescription.h"
+#include "pdsccomponent.h"
 
 class PdscParser
 {
@@ -25,6 +26,12 @@ private:
                      PackDescription& pack);
     DeviceFeature parseFeature(const QDomElement &featureElem);
     ProgAlgorithm parseAlgorithm(const QDomElement &algorithmElement);
+    PdscCondition parseCondition(const QDomNode &condition);
+    PdscRequirement parseRequirement(const QDomNode &requireNode);
+    PdscComponent parseComponent(const QDomNode& componentNode,
+                                 const QList<PdscCondition>& conditionList);
+    PdscFile parseFile(const QDomNode& fileNode,
+                       const QList<PdscCondition>& conditionList);
 };
 
 #endif // PDSCPARSER_H

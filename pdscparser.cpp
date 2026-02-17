@@ -66,6 +66,8 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         return;
     }
 
+    // Корневой элемент документа (<package>)
+    QDomElement root = doc->documentElement();
     QDomNodeList rootChildren = doc->childNodes();
     QDomNodeList children;
 
@@ -129,6 +131,37 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
             }
         }
     }
+
+    QDomElement conditionsElem = root.firstChildElement("conditions");
+    QDomElement componentsElem = root.firstChildElement("components");
+    QList<PdscCondition> conditionList;
+    QList<PdscComponent> componentList;
+
+    if(!conditionsElem.isNull())
+    {
+        QDomNodeList conditions = conditionsElem.childNodes();
+
+        for(int i = 0; i < conditions.count(); i++)
+        {
+            QDomNode conditionNode = conditions.at(i);
+            PdscCondition cond = parseCondition(conditionNode);
+            conditionList.append(cond);
+        }
+    }
+
+    if (!componentsElem.isNull())
+    {
+        QDomNodeList components = componentsElem.childNodes();
+
+        for(int i = 0; i < components.count(); i++)
+        {
+            QDomNode componentNode = components.at(i);
+            PdscComponent component = parseComponent(componentNode, conditionList);
+            componentList.append(component);
+        }
+    }
+
+    //componentList.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -547,4 +580,218 @@ ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
         algo.setDefault(false);
 
     return algo;
+}
+
+//------------------------------------------------------------------------------
+// Парсинг блока condition
+//------------------------------------------------------------------------------
+PdscCondition PdscParser::parseCondition(const QDomNode &conditionNode)
+{
+    PdscCondition condition;
+    QString condId = conditionNode.attributes().namedItem("id").nodeValue();
+    QString condDescription = conditionNode.firstChildElement("description").text();
+
+    condition.setId(condId);
+    condition.setDescription(condDescription);
+
+    if(!conditionNode.firstChildElement("require").isNull())
+    {
+        QDomNodeList requires = conditionNode.toElement().elementsByTagName("require");
+
+        for (int i = 0; i < requires.count(); i++)
+        {
+            QDomNode require = requires.at(i);
+            QString conditionId = require.attributes().namedItem("condition").nodeValue();
+
+            // Вложенный condition
+            if(!conditionId.isEmpty())
+            {
+                QDomNode conditionsNode = conditionNode.parentNode();
+                QDomNodeList conditions = conditionsNode.childNodes();
+
+                for(int j = 0; j < conditions.count(); j++)
+                {
+                    QDomNode currNode = conditions.at(j);
+                    QString id = currNode.attributes().namedItem("id").nodeValue();
+
+                    if(id == conditionId)
+                    {
+                        PdscCondition nestedCond = parseCondition(currNode);
+                        condition.addCondition(nestedCond);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                PdscRequirement requirement = parseRequirement(require);
+                condition.addRequirement(requirement);
+            }
+        }
+    }
+
+    if(!conditionNode.firstChildElement("accept").isNull())
+    {
+        QDomNodeList requires = conditionNode.toElement().elementsByTagName("accept");
+
+        for (int i = 0; i < requires.count(); i++)
+        {
+            QDomNode require = requires.at(i);
+            PdscRequirement requirement = parseRequirement(require);
+            condition.addRequirement(requirement);
+        }
+    }
+
+    if(!conditionNode.firstChildElement("deny").isNull())
+    {
+        QDomNodeList requires = conditionNode.toElement().elementsByTagName("deny");
+
+        for (int i = 0; i < requires.count(); i++)
+        {
+            QDomNode require = requires.at(i);
+            PdscRequirement requirement = parseRequirement(require);
+            condition.addRequirement(requirement);
+        }
+    }
+
+    return condition;
+}
+
+//------------------------------------------------------------------------------
+// Парсинг блоков require, accept, deny
+//------------------------------------------------------------------------------
+PdscRequirement PdscParser::parseRequirement(const QDomNode &requireNode)
+{
+    PdscRequirement requirement;
+    QString nodeName = requireNode.nodeName();
+
+    if(nodeName == "require")
+        requirement.setType(PdscRequirement::Require);
+    else if(nodeName == "accept")
+        requirement.setType(PdscRequirement::Accept);
+    else if(nodeName == "deny")
+        requirement.setType(PdscRequirement::Deny);
+
+    // Device requirements
+    requirement.setDname(requireNode.attributes().namedItem("Dname").nodeValue());
+    requirement.setDfamily(requireNode.attributes().namedItem("Dfamily").nodeValue());
+    requirement.setDsubFamily(requireNode.attributes().namedItem("DsubFamily").nodeValue());  // Заглавная F!
+    requirement.setDcore(requireNode.attributes().namedItem("Dcore").nodeValue());
+    requirement.setDfpu(requireNode.attributes().namedItem("Dfpu").nodeValue());
+    requirement.setDmpu(requireNode.attributes().namedItem("Dmpu").nodeValue());
+    requirement.setDdsp(requireNode.attributes().namedItem("Ddsp").nodeValue());
+    requirement.setDvendor(requireNode.attributes().namedItem("Dvendor").nodeValue());
+    requirement.setDvariant(requireNode.attributes().namedItem("Dvariant").nodeValue());
+
+    // Component requirements
+    requirement.setCclass(requireNode.attributes().namedItem("Cclass").nodeValue());
+    requirement.setCgroup(requireNode.attributes().namedItem("Cgroup").nodeValue());
+    requirement.setCsub(requireNode.attributes().namedItem("Csub").nodeValue());
+    requirement.setCvariant(requireNode.attributes().namedItem("Cvariant").nodeValue());
+    requirement.setCversion(requireNode.attributes().namedItem("Cversion").nodeValue());
+
+    // Compiler requirements
+    requirement.setTcompiler(requireNode.attributes().namedItem("Tcompiler").nodeValue());
+    requirement.setTversion(requireNode.attributes().namedItem("Tversion").nodeValue());
+
+    // Pack requirements
+    requirement.setPvendor(requireNode.attributes().namedItem("Pvendor").nodeValue());
+    requirement.setPname(requireNode.attributes().namedItem("Pname").nodeValue());
+    requirement.setPversion(requireNode.attributes().namedItem("Pversion").nodeValue());
+
+    return requirement;
+}
+
+//------------------------------------------------------------------------------
+// Парсинг блока component
+//------------------------------------------------------------------------------
+PdscComponent PdscParser::parseComponent(const QDomNode &componentNode,
+                                         const QList<PdscCondition> &conditionList)
+{
+    PdscComponent component;
+    QDomNamedNodeMap attr = componentNode.attributes();
+    QString conditionId = attr.namedItem("condition").nodeValue();
+
+    // Устанавливаем все атрибуты компонента
+    component.attributes().setCvendor(attr.namedItem("Cvendor").nodeValue());
+    component.attributes().setCbundle(attr.namedItem("Cbundle").nodeValue());
+    component.attributes().setCclass(attr.namedItem("Cclass").nodeValue());
+    component.attributes().setCgroup(attr.namedItem("Cgroup").nodeValue());
+    component.attributes().setCsub(attr.namedItem("Csub").nodeValue());
+    component.attributes().setCvariant(attr.namedItem("Cvariant").nodeValue());
+    component.attributes().setCversion(attr.namedItem("Cversion").nodeValue());
+    component.attributes().setCapiversion(attr.namedItem("Capiversion").nodeValue());
+    component.attributes().setInstances(attr.namedItem("instances").nodeValue());
+
+    component.setDescription(componentNode.firstChildElement("description").text());
+
+    // У компонента есть условия
+    if(!conditionId.isEmpty())
+    {
+        foreach(PdscCondition c, conditionList)
+        {
+            if(c.id() == conditionId)
+            {
+                component.setCondition(c);
+                break;
+            }
+        }
+    }
+
+    // Компонент содержит файлы
+    if(!componentNode.firstChildElement("files").isNull())
+    {
+        QDomNodeList fileList = componentNode.firstChildElement("files").childNodes();
+
+        for(int i = 0; i < fileList.count(); i++)
+        {
+            QDomNode fileNode = fileList.at(i);
+
+            if(fileNode.nodeName() == "file")
+            {
+                PdscFile file = parseFile(fileNode, conditionList);
+                component.files().append(file);
+            }
+        }
+    }
+
+    return component;
+}
+
+//------------------------------------------------------------------------------
+// Парсинг блока file
+//------------------------------------------------------------------------------
+PdscFile PdscParser::parseFile(const QDomNode &fileNode,
+                               const QList<PdscCondition> &conditionList)
+{
+    PdscFile file;
+    QDomNamedNodeMap attr = fileNode.attributes();
+    QString conditionId = attr.namedItem("condition").nodeValue();
+
+    if(!conditionId.isEmpty())
+    {
+        foreach(PdscCondition c, conditionList)
+        {
+            if(c.id() == conditionId)
+            {
+                file.setCondition(c);
+                break;
+            }
+        }
+    }
+
+    file.setLanguage(attr.namedItem("language").nodeValue());
+    file.setScope(attr.namedItem("scope").nodeValue());
+    file.setAttr(attr.namedItem("attr").nodeValue());
+    file.setSelect(attr.namedItem("select").nodeValue());
+    file.setPath(attr.namedItem("path").nodeValue());
+    file.setCopy(attr.namedItem("copy").nodeValue());
+    file.setVersion(attr.namedItem("version").nodeValue());
+    file.setSrc(attr.namedItem("src").nodeValue());
+    file.setPublic(attr.namedItem("public").nodeValue() == "1");
+    file.setProjectpath(attr.namedItem("projectpath").nodeValue());
+    file.setName(attr.namedItem("name").nodeValue());
+    file.setCategory(FileCategory(attr.namedItem("category").nodeValue()));
+
+    return file;
 }

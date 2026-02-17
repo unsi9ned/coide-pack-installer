@@ -90,6 +90,9 @@ HEADERS  += \
     pdsc/pdsccondition.h \
     pdsc/pdscrequirement.h
 
+INCLUDEPATH += \
+    pdsc/
+
 FORMS    += \
     mainform.ui
 

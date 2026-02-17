@@ -20,7 +20,7 @@ void PdscComponent::setCondition(const PdscCondition &condition)
     m_condition = condition;
 }
 
-PdscComponentAttributes PdscComponent::attributes() const
+PdscComponentAttributes& PdscComponent::attributes()
 {
     return m_attributes;
 }
@@ -28,6 +28,11 @@ PdscComponentAttributes PdscComponent::attributes() const
 void PdscComponent::setAttributes(const PdscComponentAttributes &attributes)
 {
     m_attributes = attributes;
+}
+
+QList<PdscFile>& PdscComponent::files()
+{
+    return m_files;
 }
 
 PdscComponent::PdscComponent() : PdscElement()

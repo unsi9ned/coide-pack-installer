@@ -5,8 +5,6 @@
 #include <QList>
 #include "pdscelement.h"
 
-class PdscCondition;
-
 class PdscRequirement : public PdscElement
 {
 
@@ -18,7 +16,18 @@ public:
         Deny      // NOT - ни одного true
     };
 
+    enum RequireTarget
+    {
+        Unknown,
+        Device,      // Dname, Dcore, Dfamily, Dvendor...
+        Component,   // Cclass, Cgroup, Csub...
+        Compiler,    // Tcompiler, Tversion
+        Pack         // Pvendor, Pname, Pversion
+    };
+
 private:
+    RequirementType m_type;
+    RequireTarget m_target;
 
     // Device requirements
     QString m_Dname;
@@ -47,11 +56,63 @@ private:
     QString m_Pname;
     QString m_Pversion;
 
-    // Reference to another condition
-    QList<PdscCondition*> m_conditions;
-
 public:
-    PdscRequirement();
+    PdscRequirement(RequirementType type = Require);
+
+    bool isDeviceRequirement();
+    bool isComponentRequirement();
+    bool isCompilerRequirement();
+    bool isPackRequirement();
+
+    void setDname(const QString &Dname);
+    void setDfamily(const QString &Dfamily);
+    void setDsubFamily(const QString &DsubFamily);
+    void setDcore(const QString &Dcore);
+    void setDfpu(const QString &Dfpu);
+    void setDmpu(const QString &Dmpu);
+    void setDdsp(const QString &Ddsp);
+    void setDvendor(const QString &Dvendor);
+    void setDvariant(const QString &Dvariant);
+
+    void setCclass(const QString &Cclass);
+    void setCgroup(const QString &Cgroup);
+    void setCsub(const QString &Csub);
+    void setCvariant(const QString &Cvariant);
+    void setCversion(const QString &Cversion);
+
+    void setTcompiler(const QString &Tcompiler);
+    void setTversion(const QString &Tversion);
+
+    void setPvendor(const QString &Pvendor);
+    void setPname(const QString &Pname);
+    void setPversion(const QString &Pversion);
+
+    void setType(const RequirementType &type);
+    RequirementType type() const;
+
+    QString Dname() const;
+    QString Dfamily() const;
+    QString DsubFamily() const;
+    QString Dcore() const;
+    QString Dfpu() const;
+    QString Dmpu() const;
+    QString Ddsp() const;
+    QString Dvendor() const;
+    QString Dvariant() const;
+
+    QString Cclass() const;
+    QString Cgroup() const;
+    QString Csub() const;
+    QString Cvariant() const;
+    QString Cversion() const;
+
+    QString Tcompiler() const;
+    QString Tversion() const;
+
+    QString Pvendor() const;
+    QString Pname() const;
+    QString Pversion() const;
+
 };
 
 #endif // PDSCREQUIREMENT_H

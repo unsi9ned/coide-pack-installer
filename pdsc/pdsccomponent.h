@@ -12,16 +12,20 @@ private:
     PdscComponentAttributes m_attributes;
     PdscCondition m_condition;
     QString m_description;
-    QList<PdscFile> files;
+    QList<PdscFile> m_files;
 
 public:
     PdscComponent();
+
     QString description() const;
-    void setDescription(const QString &description);
     PdscCondition condition() const;
+    PdscComponentAttributes& attributes();
+    QList<PdscFile>& files();
+
+    void setDescription(const QString &description);
     void setCondition(const PdscCondition &condition);
-    PdscComponentAttributes attributes() const;
     void setAttributes(const PdscComponentAttributes &attributes);
+
 };
 
 #endif // PDSCCOMPONENT_H
