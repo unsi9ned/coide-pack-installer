@@ -1,3 +1,5 @@
+Спецификацию читать здесь: https://open-cmsis-pack.github.io/Open-CMSIS-Pack-Spec/main/html/index.html
+
 Не в каждом файле <processor> находится внутри <device>. Иногда он объявлен глобально внутри <family>
 
 Некоторые устройства, такие как STM32 содержат внутри <family> ветку <subFamily>, в то время как Nordic такой ветки не содержит

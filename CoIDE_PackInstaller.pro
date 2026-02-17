@@ -47,7 +47,12 @@ SOURCES += main.cpp\
     series.cpp \
     mcu.cpp \
     dbgarbagecollector.cpp \
-    example.cpp
+    example.cpp \
+    pdsc/pdscelement.cpp \
+    pdsc/pdscfile.cpp \
+    pdsc/pdsccomponentattr.cpp \
+    pdsc/pdsccomponent.cpp \
+    pdsc/pdsccondition.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -75,7 +80,13 @@ HEADERS  += \
     category.h \
     constants.h \
     dbgarbagecollector.h \
-    example.h
+    example.h \
+    pdsc/pdscelement.h \
+    pdsc/pdscfile.h \
+    pdsc/pdscfilecategory.h \
+    pdsc/pdsccomponentattr.h \
+    pdsc/pdsccomponent.h \
+    pdsc/pdsccondition.h
 
 FORMS    += \
     mainform.ui
