@@ -338,6 +338,51 @@ bool ComponentsInfo::removeComponentPhantomRelations(QString *errorString)
 }
 
 //------------------------------------------------------------------------------
+// Обновить поля статуса компонента в БД
+//------------------------------------------------------------------------------
+bool ComponentsInfo::updateComponentStatus(int statusId,
+                                           const Component::ComponentStatus &upd,
+                                           QString *errorString)
+{
+    bool status;
+    QString queryStr = QString("UPDATE status SET "
+                               "id = '%1', "
+                               "shouldupdate = '%2', "
+                               "hasdownloaded = '%3', "
+                               "hasdeleted = '%4', "
+                               "auditstatus = '%5' "
+                               "WHERE id = %1;").
+                       arg(statusId).
+                       arg(upd.shouldUpdate).
+                       arg(upd.hasDownloaded).
+                       arg(upd.hasDeleted).
+                       arg(upd.auditStatus);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+bool ComponentsInfo::setComponentStatusOK(int statusId, QString *errorString)
+{
+    Component::ComponentStatus upd;
+    upd.statusId = statusId;
+    upd.shouldUpdate = 0;
+    upd.hasDownloaded = 1;
+    upd.hasDeleted = 0;
+    upd.auditStatus = 1;
+
+    return updateComponentStatus(statusId, upd, errorString);
+}
+
+//------------------------------------------------------------------------------
 // Удаляет из базы данных информацию о производителях, к которым применим компонент
 //------------------------------------------------------------------------------
 bool ComponentsInfo::deleteManufacturerList(int componentId, QString &errorString)

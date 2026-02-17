@@ -48,6 +48,10 @@ public:
     bool removeComponentStatus(int statusId, QString * errorString = nullptr);
     bool removeComponentStatuses(QVector<int> statusIdList, QString * errorString = nullptr);
     bool removeComponentPhantomRelations(QString *errorString = nullptr);
+    bool updateComponentStatus(int statusId,
+                               const Component::ComponentStatus& upd,
+                               QString * errorString = nullptr);
+    bool setComponentStatusOK(int statusId, QString * errorString = nullptr);
 
 private:
 

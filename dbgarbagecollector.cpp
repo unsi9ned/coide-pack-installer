@@ -234,12 +234,20 @@ bool DBGarbageCollector::cleanComponents()
         // Каталог существует, но в базе помечен как не скачанный
         else if(componentExists && !c.isDownloaded())
         {
-            qInfo() << "Wrong status" << componentPath;
+            emit eventOccured(QString("Fixed the component status %1").arg(c.getId()));
+
+            if(!reqManager->setComponentStatusOK(c.getComponentStatusId(), &_errorString))
+                return false;
         }
         // Каталог не существует, но в базе помечен как скачанный
         else if(!componentExists && c.isDownloaded())
         {
-            qInfo() << "Not found" << componentPath;
+            emit eventOccured(QString("Deleting a phantom component '%1_%2'").
+                              arg(c.getId()).
+                              arg(c.getName()));
+
+            if(!reqManager->removeComponent(c, &_errorString))
+                return false;
         }
         // И каталог не существует на диске, и в базе помечен как не скачанный
         else if(!componentExists && !c.isDownloaded())
@@ -248,7 +256,7 @@ bool DBGarbageCollector::cleanComponents()
                               arg(c.getId()).
                               arg(c.getName()));
 
-            if(!reqManager->removeComponent(c.getId(), &_errorString))
+            if(!reqManager->removeComponent(c, &_errorString))
                 return false;
         }
         // Каталог существует и статус верный
@@ -258,7 +266,54 @@ bool DBGarbageCollector::cleanComponents()
         }
     }
 
+    emit eventOccured("Remove phantom relations in `component_depends_component`");
+
+    if(!reqManager->removeComponentPhantomRelations(&_errorString))
+        return false;
+
     return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет каталог вместе со всем содержимым
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::removeDirectory(const QString &dirPath)
+{
+    QDir dir(dirPath);
+
+    // Если каталог не существует - считаем успехом
+    if (!dir.exists()) {
+        return true;
+    }
+
+    // Удаляем все файлы и подкаталоги
+    QFileInfoList entries = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
+
+    foreach (QFileInfo entry, entries)
+    {
+        QString path = entry.absoluteFilePath();
+
+        if (entry.isDir())
+        {
+            // Рекурсивно удаляем подкаталог
+            if (!removeDirectory(path))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            // Удаляем файл
+            if (!QFile::remove(path))
+            {
+                _errorString = QString("Failed to delete file: %1").arg(path);
+                return false;
+            }
+        }
+    }
+
+    // Удаляем сам каталог
+    return dir.rmdir(".");
 }
 
 //------------------------------------------------------------------------------
