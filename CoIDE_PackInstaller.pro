@@ -46,7 +46,8 @@ SOURCES += main.cpp\
     family.cpp \
     series.cpp \
     mcu.cpp \
-    dbgarbagecollector.cpp
+    dbgarbagecollector.cpp \
+    example.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -73,7 +74,8 @@ HEADERS  += \
     componentsinfo.h \
     category.h \
     constants.h \
-    dbgarbagecollector.h
+    dbgarbagecollector.h \
+    example.h
 
 FORMS    += \
     mainform.ui

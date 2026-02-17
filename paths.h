@@ -19,6 +19,7 @@ private:
     static constexpr const char* CO_REPO_DIR = "repo";
     static constexpr const char* CO_COMPONENTS_DIR = "Components";
     static constexpr const char* CO_DRIVERS_DIR = "Drivers";
+    static constexpr const char* CO_EXAMPLES_DIR = "Examples";
     static constexpr const char* APP_SETTINGS = "config.dat";
     static constexpr const char* APP_UTILS_DIR = "utils";
     static constexpr const char* SEVEN_ZIP = "7z.exe";
@@ -55,6 +56,8 @@ public:
     QString coIdeComponentDir(int id, const QString& name);
     QString coIdeDriversDir();
     QString coIdeDriverDir(int id, const QString& name);
+    QString coIdeExamplesDir();
+    QString coIdeExampleDir(int id, const QString& name);
 
     void setCoIdeDir(const QString& dir);
 

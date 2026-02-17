@@ -22,6 +22,7 @@ private:
 
     bool cleanUsers();
     bool cleanComponents();
+    bool cleanExamples();
     bool removeDirectory(const QString &dirPath);
 
 signals:

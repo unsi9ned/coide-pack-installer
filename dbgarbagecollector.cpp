@@ -32,8 +32,14 @@ DBGarbageCollector::DBGarbageCollector() : QObject()
 bool DBGarbageCollector::deleteObsoleteData()
 {
     if(cleanComponents())
-        if(cleanUsers())
-            return true;
+        if(cleanExamples())
+        {
+            emit eventOccured("Remove phantom relations in `status`");
+
+            if(RequestManager::instance()->removeStatusPhantomRelations(&_errorString))
+                if(cleanUsers())
+                    return true;
+        }
 
     return false;
 }
@@ -269,6 +275,81 @@ bool DBGarbageCollector::cleanComponents()
     emit eventOccured("Remove phantom relations in `component_depends_component`");
 
     if(!reqManager->removeComponentPhantomRelations(&_errorString))
+        return false;
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаление из базы несуществующих в локальном репозитории примеров
+// и удаление фантомных связей
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::cleanExamples()
+{
+    RequestManager * reqManager = RequestManager::instance();
+
+    emit eventOccured("Remove phantom relations in `example_depends_component`");
+
+    if(!reqManager->removeExamplePhantomRelations(&_errorString))
+        return false;
+
+    QMap<int, Example> examples = reqManager->requestExampleMap();
+
+    for(auto it = examples.begin(); it != examples.end(); ++it)
+    {
+        Example ex = it.value();
+        QString examplePath;
+        QDir exampleDir;
+
+        examplePath = Paths::instance()->coIdeExampleDir(ex.getId(), ex.getName());
+        exampleDir.setPath(examplePath);
+
+        QStringList exampleEntryList = exampleDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+        bool exampleExists = exampleDir.exists() && !exampleEntryList.isEmpty();
+
+        // Статус компонента прочитан неверно либо отсутствует в базе данных
+        if(ex.getStatus().isNull())
+        {
+            emit eventOccured(QString("Example %1 is NULL").arg(it.key()));
+        }
+        // Каталог существует, но в базе помечен как не скачанный
+        else if(exampleExists && !ex.isDownloaded())
+        {
+            emit eventOccured(QString("Fixed the example status %1").arg(ex.getId()));
+
+            if(!reqManager->setComponentStatusOK(ex.getStatusId(), &_errorString))
+                return false;
+        }
+        // Каталог не существует, но в базе помечен как скачанный
+        else if(!exampleExists && ex.isDownloaded())
+        {
+            emit eventOccured(QString("Deleting a phantom example '%1_%2'").
+                              arg(ex.getId()).
+                              arg(ex.getName()));
+
+            if(!reqManager->removeExample(ex, &_errorString))
+                return false;
+        }
+        // И каталог не существует на диске, и в базе помечен как не скачанный
+        else if(!exampleExists && !ex.isDownloaded())
+        {
+            emit eventOccured(QString("Deleting a non-existent example '%1_%2'").
+                              arg(ex.getId()).
+                              arg(ex.getName()));
+
+            if(!reqManager->removeExample(ex, &_errorString))
+                return false;
+        }
+        // Каталог существует и статус верный
+        else if(exampleExists && ex.isDownloaded())
+        {
+            //qInfo() << "Status OK" << componentPath;
+        }
+    }
+
+    emit eventOccured("Remove phantom relations in `example_depends_component`");
+
+    if(!reqManager->removeExamplePhantomRelations(&_errorString))
         return false;
 
     return true;

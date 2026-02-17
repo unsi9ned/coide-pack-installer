@@ -154,6 +154,45 @@ bool ComponentsInfo::removeComponentsRelation(QMap<int, int> pairs, QString *err
 }
 
 //------------------------------------------------------------------------------
+// Удаляет связи между компонентами и примерами в таблице example_depends_component
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeExampleRelation(int exampleId, int componentId, QString *errorString)
+{
+    bool status = true;
+    QString sql = QString("DELETE FROM example_depends_component "
+                          "WHERE exampleId = '%1' "
+                          "AND componentId = '%2';").
+                  arg(exampleId).
+                  arg(componentId);
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет связи между компонентами и примерами в таблице example_depends_component
+// key = exampleId,
+// value = componentId
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeExampleRelation(QMap<int, int> pairs, QString *errorString)
+{
+    for(auto it = pairs.begin(); it != pairs.end(); ++it)
+    {
+        if(!removeExampleRelation(it.key(), it.value(), errorString))
+            return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
 // Удаляет из базы данных информацию о компоненте
 //------------------------------------------------------------------------------
 bool ComponentsInfo::removeComponent(int componentId, QString *errorString)
@@ -205,6 +244,53 @@ bool ComponentsInfo::removeComponent(const Component &component, QString *errorS
 {
     if(removeComponent(component.getId(), errorString))
         if(removeComponentStatus(component.getComponentStatusId(), errorString))
+            return true;
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет из базы данных информацию о примере
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeExample(int exampleId, QString *errorString)
+{
+    bool status = true;
+    QString sql = QString("DELETE FROM example WHERE id = '%1';").arg(exampleId);
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    QStringList tables =
+    {
+        "board_has_example",
+        "component_has_example",
+    };
+
+    foreach(QString t, tables)
+    {
+        sql = QString("DELETE FROM `%1` WHERE exampleId = '%2';").arg(t).arg(exampleId);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool ComponentsInfo::removeExample(const Example &example, QString *errorString)
+{
+    if(removeExample(example.getId(), errorString))
+        if(removeComponentStatus(example.getStatusId(), errorString))
             return true;
 
     return false;
@@ -310,6 +396,9 @@ bool ComponentsInfo::removeComponentStatuses(QVector<int> statusIdList, QString 
     return true;
 }
 
+//------------------------------------------------------------------------------
+// Удаление фантомных связей между компонентами
+//------------------------------------------------------------------------------
 bool ComponentsInfo::removeComponentPhantomRelations(QString *errorString)
 {
     bool status = false;
@@ -335,6 +424,36 @@ bool ComponentsInfo::removeComponentPhantomRelations(QString *errorString)
     }
 
     return removeComponentsRelation(pairs, errorString);
+}
+
+//------------------------------------------------------------------------------
+// Удаление фантомных связей между примерами и компонентами
+//------------------------------------------------------------------------------
+bool ComponentsInfo::removeExamplePhantomRelations(QString *errorString)
+{
+    bool status = false;
+    QString sql = QString("SELECT exampleId, componentId "
+                          "FROM example_depends_component "
+                          "WHERE exampleId NOT IN (SELECT id FROM example) "
+                          "OR componentId NOT IN (SELECT id FROM component);");
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    QMap<int, int> pairs;
+
+    while(result.next())
+    {
+        pairs.insert(result.value("exampleId").toInt(),
+                     result.value("componentId").toInt());
+    }
+
+    return removeExampleRelation(pairs, errorString);
 }
 
 //------------------------------------------------------------------------------
@@ -380,6 +499,33 @@ bool ComponentsInfo::setComponentStatusOK(int statusId, QString *errorString)
     upd.auditStatus = 1;
 
     return updateComponentStatus(statusId, upd, errorString);
+}
+
+bool ComponentsInfo::removeStatusPhantomRelations(QString *errorString)
+{
+    bool status = false;
+    QString sql = QString("SELECT id "
+                          "FROM status "
+                          "WHERE id NOT IN (SELECT component.Component_Status_id FROM component) "
+                          "AND id NOT IN (SELECT example.statusId FROM example) "
+                          "AND id NOT IN (SELECT document.Component_Status_id FROM document);");
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    QVector<int> statusIDs;
+
+    while(result.next())
+    {
+        statusIDs.append(result.value("id").toInt());
+    }
+
+    return removeComponentStatuses(statusIDs, errorString);
 }
 
 //------------------------------------------------------------------------------
@@ -561,6 +707,71 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
     }
 
     return componentsMap;
+}
+
+//------------------------------------------------------------------------------
+// Загрузить данные о примерах из базы данных
+//------------------------------------------------------------------------------
+QMap<int, Example> ComponentsInfo::requestExampleMap()
+{
+    QMap<int, Example> exampleMap;
+    QString sql = QString("SELECT example.*, "
+                          "status.shouldupdate, "
+                          "status.hasdownloaded, "
+                          "status.hasdeleted, "
+                          "status.auditstatus "
+                          "FROM example, status "
+                          "WHERE example.statusId = status.id;");
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql);
+
+    while(result.next())
+    {
+        Example newExample;
+
+        newExample.setId(result.value("id").toInt());
+        newExample.setUserId(result.value("userId").toInt());
+        newExample.setStatusId(result.value("statusId").toInt());
+        newExample.setName(result.value("name").toString());
+        newExample.setDescription(result.value("description").toString());
+        newExample.setType(result.value("type").toInt());
+        newExample.setUuid(result.value("uuid").toString());
+        newExample.setTimeuuid(result.value("timeuuid").toString());
+        newExample.setRepoUser(result.value("repo_user").toString());
+        newExample.setRepoPassword(result.value("repo_password").toString());
+        newExample.setCreateDate(result.value("create_date").toString());
+        newExample.setUpdateDate(result.value("update_date").toString());
+        newExample.setHits(result.value("hits").toInt());
+
+        //Чтение статуса компонента
+        Component::ComponentStatus status;
+
+        status.statusId = result.value("statusId").toInt();
+        status.shouldUpdate = result.value("shouldupdate").toInt();
+        status.hasDownloaded = result.value("hasdownloaded").toInt();
+        status.hasDeleted = result.value("hasdeleted").toInt();
+        status.auditStatus = result.value("auditstatus").toInt();
+        newExample.setStatus(status);
+
+        exampleMap.insert(newExample.getId(), newExample);
+    }
+
+    //Установка связи между компонентами и примерами
+    result = DataBase::instance()->sendQuery("SELECT * FROM example_depends_component");
+
+    while(result.next())
+    {
+        int exampleId = result.value(0).toInt();
+        int componentId = result.value(1).toInt();
+
+        // В таблице могут быть ID не существующих примеров
+        if(exampleMap.contains(exampleId))
+        {
+            exampleMap[exampleId].addParentComponent(componentId);
+        }
+    }
+
+    return exampleMap;
 }
 
 //------------------------------------------------------------------------------
