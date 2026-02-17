@@ -1,11 +1,11 @@
 #include "pdscfile.h"
 
-QString PdscFile::condition() const
+PdscCondition PdscFile::condition() const
 {
     return _condition;
 }
 
-void PdscFile::setCondition(const QString &condition)
+void PdscFile::setCondition(const PdscCondition &condition)
 {
     _condition = condition;
 }

@@ -52,7 +52,8 @@ SOURCES += main.cpp\
     pdsc/pdscfile.cpp \
     pdsc/pdsccomponentattr.cpp \
     pdsc/pdsccomponent.cpp \
-    pdsc/pdsccondition.cpp
+    pdsc/pdsccondition.cpp \
+    pdsc/pdscrequirement.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -86,7 +87,8 @@ HEADERS  += \
     pdsc/pdscfilecategory.h \
     pdsc/pdsccomponentattr.h \
     pdsc/pdsccomponent.h \
-    pdsc/pdsccondition.h
+    pdsc/pdsccondition.h \
+    pdsc/pdscrequirement.h
 
 FORMS    += \
     mainform.ui

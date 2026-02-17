@@ -5,6 +5,7 @@
 #include <QMap>
 #include "pdscelement.h"
 #include "pdscfilecategory.h"
+#include "pdsccondition.h"
 
 class PdscFile : public PdscElement
 {
@@ -12,7 +13,7 @@ private:
     //
     // Не обязательные параметры
     //
-    QString _condition;
+    PdscCondition _condition;
     QString _language;
     QString _scope;
     QString _attr;
@@ -32,8 +33,8 @@ private:
 
 public:
     PdscFile();
-    QString condition() const;
-    void setCondition(const QString &condition);
+    PdscCondition condition() const;
+    void setCondition(const PdscCondition &condition);
     QString language() const;
     void setLanguage(const QString &language);
     QString scope() const;

@@ -10,6 +10,26 @@ void PdscComponent::setDescription(const QString &description)
     m_description = description;
 }
 
+PdscCondition PdscComponent::condition() const
+{
+    return m_condition;
+}
+
+void PdscComponent::setCondition(const PdscCondition &condition)
+{
+    m_condition = condition;
+}
+
+PdscComponentAttributes PdscComponent::attributes() const
+{
+    return m_attributes;
+}
+
+void PdscComponent::setAttributes(const PdscComponentAttributes &attributes)
+{
+    m_attributes = attributes;
+}
+
 PdscComponent::PdscComponent() : PdscElement()
 {
 
