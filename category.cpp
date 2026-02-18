@@ -45,27 +45,43 @@ void Category::appendChild(Category *child)
     this->children.insert(child->getId(), child);
 }
 
+void Category::setSubCategory(const Category &subCategory)
+{
+    subCategoryId = subCategory.getId();
+    subCategoryName = subCategory.getName();
+}
+
+void Category::setSubCategory(const QString &subCategory, int id)
+{
+    subCategoryId = id;
+    subCategoryName = subCategory;
+}
+
+Category Category::subCategory()
+{
+    return Category(subCategoryId, subCategoryName);
+}
+
+bool Category::isNull()
+{
+    return this->name.isEmpty();
+}
+
+bool Category::isValid()
+{
+    return this->id != -1 && !this->name.isEmpty();
+}
+
+bool Category::hasSubCategory()
+{
+    return (!subCategoryName.isEmpty());
+}
+
 Category::Category()
 {
     this->id = -1;
     this->parentId = -1;
     this->name = "";
-}
-
-Category::Category(const Category &c)
-{
-    this->id = c.id;
-    this->name = c.name;
-    this->parentId = c.parentId;
-    this->children = c.getChildren();
-}
-
-Category::Category(Category *c)
-{
-    this->id = c->id;
-    this->name = c->name;
-    this->parentId = c->parentId;
-    this->children = c->getChildren();
 }
 
 Category::Category(int id, QString name, int parentId)
@@ -75,10 +91,4 @@ Category::Category(int id, QString name, int parentId)
     this->parentId = parentId;
 }
 
-void Category::operator =(const Category &c)
-{
-    this->id = c.id;
-    this->name = c.name;
-    this->parentId = c.parentId;
-    this->children = c.getChildren();
-}
+

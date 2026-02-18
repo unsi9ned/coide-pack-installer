@@ -5,6 +5,7 @@
 #include <QDomNode>
 #include <QDomNodeList>
 #include <QList>
+#include <QRegularExpression>
 #include "pdscparser.h"
 
 //------------------------------------------------------------------------------
@@ -117,10 +118,6 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         {
             pack.setUrl(text);
         }
-        else if(nodeName == "devices")
-        {
-            parseDevFamilies(node, pack);
-        }
         else if(nodeName == "releases")
         {
             QDomElement lastRelease = node.firstChildElement("release");
@@ -134,8 +131,14 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
 
     QDomElement conditionsElem = root.firstChildElement("conditions");
     QDomElement componentsElem = root.firstChildElement("components");
+    QDomElement devicesElem = root.firstChildElement("devices");
     QList<PdscCondition> conditionList;
     QList<PdscComponent> componentList;
+
+    if(!devicesElem.isNull())
+    {
+        parseDevFamilies(devicesElem, pack);
+    }
 
     if(!conditionsElem.isNull())
     {
@@ -161,7 +164,7 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         }
     }
 
-    //componentList.clear();
+    loadComponents(componentList, pack);
 }
 
 //------------------------------------------------------------------------------
@@ -795,3 +798,219 @@ PdscFile PdscParser::parseFile(const QDomNode &fileNode,
 
     return file;
 }
+
+//------------------------------------------------------------------------------
+// Формирование компонентов и связь с устройствами
+//------------------------------------------------------------------------------
+void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
+                                PackDescription &pack)
+{
+    if(pack.vendors().isEmpty())
+        return;
+
+    foreach (PdscComponent pComponent, componentList)
+    {
+        // Проверка, что компонент соответствует пакету и его версии
+        if(!checkRequirements(pack, pComponent, componentList))
+            continue;
+
+        QMap<QString, Manufacturer>& vendors = pack.vendors();
+
+        for(auto v = vendors.begin(); v != vendors.end(); ++v)
+        {
+            Manufacturer& vendor = v.value();
+            QMap<QString, Family>& families = vendor.families();
+
+            for(auto f = families.begin(); f != families.end(); ++f)
+            {
+                Family& family = f.value();
+                QMap<QString, Series>& seriesMap = family.seriesMap();
+
+                for(auto s = seriesMap.begin(); s != seriesMap.end(); ++s)
+                {
+                    Series& series = s.value();
+                    QMap<QString, Mcu>& devices = series.mcuMap();
+
+                    for(auto d = devices.begin(); d != devices.end(); ++d)
+                    {
+                        Mcu& device = d.value();
+
+                        //
+                        // Компонент предназначен для данного устройства
+                        //
+                        if(checkRequirements(pack, vendor, family, series, device, pComponent, componentList))
+                        {
+                            Component coComponent;
+                            Category coCategory;
+
+                            coCategory.setName(pComponent.attributes().getCclass());
+                            coCategory.setSubCategory(pack.release());
+
+                            coComponent.setName(pComponent.attributes().getCgroup());
+
+                            if(pComponent.attributes().getCversion().isEmpty())
+                                coComponent.setVersion(pack.release());
+                            else
+                                coComponent.setVersion(pComponent.attributes().getCversion());
+
+                            coComponent.setCategory(coCategory);
+                            coComponent.files().clear();
+                            coComponent.files().append(getFilteredFiles(pack,
+                                                                        vendor,
+                                                                        family,
+                                                                        series,
+                                                                        device,
+                                                                        pComponent,
+                                                                        componentList));
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// Проверить соответствует ли компонент требованиям и принадлежности к MCU
+//------------------------------------------------------------------------------
+bool PdscParser::checkRequirements(const PackDescription& pack,
+                                   const Manufacturer &vendor,
+                                   const Family &family,
+                                   const Series &series,
+                                   const Mcu &device,
+                                   const PdscComponent &component,
+                                   const QList<PdscComponent> &componentList)
+{
+//    Q_UNUSED(pack)
+//    Q_UNUSED(vendor)
+//    Q_UNUSED(family)
+//    Q_UNUSED(series)
+//    Q_UNUSED(componentList)
+
+    auto requirementMap = component.condition().requirementsMap();
+
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Device))
+    {
+        if(!r.isValid())
+            continue;
+
+        if(device.getName() != r.Dname() && !device.getName().contains(QRegExp(r.Dname())))
+            return false;
+    }
+
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Accept].value(PdscRequirement::Device))
+    {
+        if(!r.isValid())
+            continue;
+
+        if(device.getName() == r.Dname() || device.getName().contains(QRegExp(r.Dname())))
+            return true;
+    }
+
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Deny].value(PdscRequirement::Device))
+    {
+        if(!r.isValid())
+            continue;
+
+        if(device.getName() == r.Dname() || device.getName().contains(QRegExp(r.Dname())))
+            return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Проверить соответствует ли компонент общим требованиям к пакету и компилятору
+//------------------------------------------------------------------------------
+bool PdscParser::checkRequirements(const PackDescription &pack,
+                                   const PdscComponent &component,
+                                   const QList<PdscComponent> &componentList)
+{
+    auto requirementMap = component.condition().requirementsMap();
+
+    //
+    // Проверка наличия компонентов, от которых зависит данный компонент
+    //
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Component))
+    {
+        bool found = false;
+
+        if(!r.isValid())
+            continue;
+
+        foreach(PdscComponent c, componentList)
+        {
+            if(r.Cclass() == c.attributes().getCclass() &&
+               r.Cgroup() == c.attributes().getCgroup())
+            {
+                found = true;
+                break;
+            }
+        }
+
+        //TODO пока игнорируем CMSIS
+        if(!found && r.Cclass() != "CMSIS" && r.Cgroup() != "CORE")
+            return false;
+    }
+
+    //
+    // Проверка соответствия пакету и его версии (глупо, но всё же :-)))
+    //
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Pack))
+    {
+        if(!r.isValid())
+            continue;
+
+        if(r.Pname() != pack.name() || r.Pvendor() != pack.packVendor() || r.Pversion() != pack.release())
+            return false;
+    }
+
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Deny].value(PdscRequirement::Pack))
+    {
+        if(!r.isValid())
+            continue;
+
+        if(r.Pname() == pack.name() && r.Pvendor() == pack.packVendor() && r.Pversion() == pack.release())
+            return false;
+    }
+
+    //
+    // Проверка подходит ли компилятор GCC к данному компоненту
+    //
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Deny].value(PdscRequirement::Compiler))
+    {
+        if(!r.isValid())
+            continue;
+
+        if(r.Tcompiler() == "GCC")
+            return false;
+    }
+
+    foreach(PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Compiler))
+    {
+        if(!r.isValid())
+            continue;
+
+        if(r.Tcompiler() != "GCC")
+            return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Выводит список файлов компонента, которые соответствуют всем требованиям
+//------------------------------------------------------------------------------
+QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
+                                         const Manufacturer &vendor,
+                                         const Family &family,
+                                         const Series &series,
+                                         const Mcu &device,
+                                         const PdscComponent &component,
+                                         const QList<PdscComponent> &componentList)
+{
+    QStringList files;
+
+    return files;
+}
+

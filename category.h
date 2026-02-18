@@ -13,25 +13,34 @@ private:
     int id;
     int parentId;
     QString name;
-    QMap<int, Category*> children;
+    QMap<int, Category*> children; //deprecated
+
+    int subCategoryId;
+    QString subCategoryName;
 
 public:
 
     Category();
-    Category(const Category &c);
-    Category(Category * c);
     Category(int id, QString name, int parentId = -1);
-    void operator =(const Category &c);
 
     int getId() const;
-    void setId(int value);
     QString getName() const;
-    void setName(const QString &value);
     int getParentId() const;
-    void setParentId(int value);
     QMap<int, Category *> getChildren() const;
+
+    void setId(int value);
+    void setName(const QString &value);
+    void setParentId(int value);
     void setChildren(const QMap<int, Category *> &value);
     void appendChild(Category * child);
+
+    void setSubCategory(const Category& subCategory);
+    void setSubCategory(const QString& subCategory, int id = -1);
+    Category subCategory();
+
+    bool isNull();
+    bool isValid();
+    bool hasSubCategory();
 };
 
 #endif // CATEGORY_H

@@ -21,6 +21,8 @@ public:
     PdscCondition condition() const;
     PdscComponentAttributes& attributes();
     QList<PdscFile>& files();
+    bool hasCondition();
+    QStringList fileList();
 
     void setDescription(const QString &description);
     void setCondition(const PdscCondition &condition);

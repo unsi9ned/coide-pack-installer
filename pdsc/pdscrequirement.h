@@ -89,6 +89,7 @@ public:
 
     void setType(const RequirementType &type);
     RequirementType type() const;
+    RequireTarget target() const;
 
     QString Dname() const;
     QString Dfamily() const;
@@ -112,6 +113,8 @@ public:
     QString Pvendor() const;
     QString Pname() const;
     QString Pversion() const;
+
+    bool isValid();
 
 };
 

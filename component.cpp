@@ -220,19 +220,19 @@ void Component::setTags(const QString &value)
     tags = value;
 }
 
-QList<Component *> Component::getChildren() const
+QList<Component *> Component::getDependencies() const
 {
-    return children;
+    return dependencies;
 }
 
-void Component::setChildren(const QList<Component *> &value)
+void Component::setDependencies(const QList<Component *> &value)
 {
-    children = value;
+    dependencies = value;
 }
 
-void Component::appendChild(Component *child)
+void Component::addDependence(Component *child)
 {
-    children.append(child);
+    dependencies.append(child);
 }
 
 QList<int> Component::getMcuListId() const
@@ -295,6 +295,11 @@ void Component::appendMcuManufacturer(int id)
     mcuManufacturerList.append(id);
 }
 
+QStringList &Component::files()
+{
+    return _files;
+}
+
 Component::ComponentStatus Component::getStatus()
 {
     return _status;
@@ -315,7 +320,22 @@ bool Component::isDriver()
     return type == ComponentType::DRIVER;
 }
 
-Component::Component()
+bool Component::isNull()
+{
+    return id == -1;
+}
+
+Category Component::getCategory() const
+{
+    return _category;
+}
+
+void Component::setCategory(const Category &category)
+{
+    _category = category;
+}
+
+Component::Component() : id(-1)
 {
 
 }
@@ -344,7 +364,7 @@ Component::Component(Component *c)
     this->createDate = c->getCreateDate();
     this->updateDate = c->getUpdateDate();
     this->tags = c->getTags();
-    this->children = c->getChildren();
+    this->dependencies = c->getDependencies();
     this->mcuListId = c->getMcuListId();
     this->mcuFamilyList = c->getMcuFamilyList();
     this->mcuSeriesList = c->getMcuSeriesList();

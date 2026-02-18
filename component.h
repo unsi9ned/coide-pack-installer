@@ -4,6 +4,7 @@
 #include <QString>
 #include <QList>
 #include <QList>
+#include "category.h"
 
 class Component
 {
@@ -63,13 +64,15 @@ private:
     QString updateDate;
     QString tags;
 
-    QList<Component*> children;
+    QList<Component*> dependencies;
     QList<int> mcuListId;
     QList<int> mcuFamilyList;
     QList<int> mcuSeriesList;
     QList<int> mcuManufacturerList;
 
     ComponentStatus _status;
+    QStringList _files;
+    Category _category;
 
 public:
     Component();
@@ -119,9 +122,9 @@ public:
     void setUpdateDate(const QString &value);
     QString getTags() const;
     void setTags(const QString &value);
-    QList<Component *> getChildren() const;
-    void setChildren(const QList<Component *> &value);
-    void appendChild(Component * child);
+    QList<Component *> getDependencies() const;
+    void setDependencies(const QList<Component *> &value);
+    void addDependence(Component * child);
     QList<int> getMcuListId() const;
     void setMcuListId(const QList<int> &value);
     void appendMcuId(int id);
@@ -134,11 +137,18 @@ public:
     QList<int> getMcuManufacturerList() const;
     void setMcuManufacturerList(const QList<int> &value);
     void appendMcuManufacturer(int id);
+    QStringList& files();
+
+    Category getCategory() const;
+    void setCategory(const Category &category);
 
     ComponentStatus getStatus();
     void setStatus(ComponentStatus status);
+
     bool isDownloaded();
     bool isDriver();
+    bool isNull();
+
 };
 
 #endif // COMPONENT_H

@@ -23,7 +23,7 @@ private:
 public:
     PackDescription();
 
-    QString packVendor();
+    QString packVendor() const;
     QString name() const;
     QString url();
     QString description();

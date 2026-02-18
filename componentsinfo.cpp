@@ -654,7 +654,7 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
         {
             parentComponent = &componentsMap[parentComponentId];
             childComponent = &componentsMap[childComponentId];
-            parentComponent->appendChild(childComponent);
+            parentComponent->addDependence(childComponent);
         }
     }
 

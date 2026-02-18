@@ -46,6 +46,7 @@ public:
     QString projectpath() const;
     FileCategory category() const;
     QString name() const;
+    bool hasCondition();
 
     void setCondition(const PdscCondition &condition);
     void setLanguage(const QString &language);

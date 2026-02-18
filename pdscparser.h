@@ -32,6 +32,27 @@ private:
                                  const QList<PdscCondition>& conditionList);
     PdscFile parseFile(const QDomNode& fileNode,
                        const QList<PdscCondition>& conditionList);
+    void loadComponents(const QList<PdscComponent>& componentList, PackDescription& pack);
+
+    bool checkRequirements(const PackDescription& pack,
+                           const Manufacturer& vendor,
+                           const Family& family,
+                           const Series& series,
+                           const Mcu& device,
+                           const PdscComponent& component,
+                           const QList<PdscComponent> &componentList);
+
+    bool checkRequirements(const PackDescription& pack,
+                           const PdscComponent& component,
+                           const QList<PdscComponent> &componentList);
+
+    QStringList getFilteredFiles(const PackDescription& pack,
+                                 const Manufacturer& vendor,
+                                 const Family& family,
+                                 const Series& series,
+                                 const Mcu& device,
+                                 const PdscComponent& component,
+                                 const QList<PdscComponent> &componentList);
 };
 
 #endif // PDSCPARSER_H

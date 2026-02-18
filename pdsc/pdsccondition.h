@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QList>
+#include <QMap>
 #include "pdscelement.h"
 #include "pdscrequirement.h"
 
@@ -20,14 +21,21 @@ public:
 
     QString id() const;
     QString description() const;
-    QList<PdscCondition> conditions() const;
-    QList<PdscRequirement> requirements() const;
+    QList<PdscCondition> nestedConditions() const;
+    QList<PdscRequirement> requirements();
+    QMap<PdscRequirement::RequirementType, QMap<PdscRequirement::RequireTarget, QList<PdscRequirement> > > requirementsMap();
     bool isNull();
 
     void setId(const QString &id);
     void setDescription(const QString &description);
     void addCondition(const PdscCondition& condition);
     void addRequirement(const PdscRequirement& requirement);
+
+private:
+    void combineRequirements(QList<PdscRequirement>& requirements,
+                             const PdscCondition& condition);
+
+    QList<PdscRequirement> currRequirements() const;
 };
 
 #endif // PDSCCONDITION_H

@@ -3,55 +3,73 @@
 void PdscRequirement::setDname(const QString &Dname)
 {
     m_Dname = Dname;
-    m_target = PdscRequirement::Device;
+
+    if(!Dname.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDfamily(const QString &Dfamily)
 {
     m_Dfamily = Dfamily;
-    m_target = PdscRequirement::Device;
+
+    if(!Dfamily.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDsubFamily(const QString &DsubFamily)
 {
     m_DsubFamily = DsubFamily;
-    m_target = PdscRequirement::Device;
+
+    if(!DsubFamily.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDcore(const QString &Dcore)
 {
     m_Dcore = Dcore;
-    m_target = PdscRequirement::Device;
+
+    if(!Dcore.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDfpu(const QString &Dfpu)
 {
     m_Dfpu = Dfpu;
-    m_target = PdscRequirement::Device;
+
+    if(!Dfpu.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDmpu(const QString &Dmpu)
 {
     m_Dmpu = Dmpu;
-    m_target = PdscRequirement::Device;
+
+    if(!Dmpu.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDdsp(const QString &Ddsp)
 {
     m_Ddsp = Ddsp;
-    m_target = PdscRequirement::Device;
+
+    if(!Ddsp.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDvendor(const QString &Dvendor)
 {
     m_Dvendor = Dvendor;
-    m_target = PdscRequirement::Device;
+
+    if(!Dvendor.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setDvariant(const QString &Dvariant)
 {
     m_Dvariant = Dvariant;
-    m_target = PdscRequirement::Device;
+
+    if(!Dvariant.isEmpty())
+        m_target = PdscRequirement::Device;
 }
 
 bool PdscRequirement::isDeviceRequirement()
@@ -77,66 +95,91 @@ bool PdscRequirement::isPackRequirement()
 void PdscRequirement::setCclass(const QString &Cclass)
 {
     m_Cclass = Cclass;
-    m_target = PdscRequirement::Component;
+
+    if(!Cclass.isEmpty())
+        m_target = PdscRequirement::Component;
 }
 
 void PdscRequirement::setCgroup(const QString &Cgroup)
 {
     m_Cgroup = Cgroup;
-    m_target = PdscRequirement::Component;
+
+    if(!Cgroup.isEmpty())
+        m_target = PdscRequirement::Component;
 }
 
 void PdscRequirement::setCsub(const QString &Csub)
 {
     m_Csub = Csub;
-    m_target = PdscRequirement::Component;
+
+    if(!Csub.isEmpty())
+        m_target = PdscRequirement::Component;
 }
 
 void PdscRequirement::setCvariant(const QString &Cvariant)
 {
     m_Cvariant = Cvariant;
-    m_target = PdscRequirement::Component;
+
+    if(!Cvariant.isEmpty())
+        m_target = PdscRequirement::Component;
 }
 
 void PdscRequirement::setCversion(const QString &Cversion)
 {
     m_Cversion = Cversion;
-    m_target = PdscRequirement::Component;
+
+    if(!Cversion.isEmpty())
+        m_target = PdscRequirement::Component;
 }
 
 void PdscRequirement::setTcompiler(const QString &Tcompiler)
 {
     m_Tcompiler = Tcompiler;
-    m_target = PdscRequirement::Compiler;
+
+    if(!Tcompiler.isEmpty())
+        m_target = PdscRequirement::Compiler;
 }
 
 void PdscRequirement::setTversion(const QString &Tversion)
 {
     m_Tversion = Tversion;
-    m_target = PdscRequirement::Compiler;
+
+    if(!Tversion.isEmpty())
+        m_target = PdscRequirement::Compiler;
 }
 
 void PdscRequirement::setPvendor(const QString &Pvendor)
 {
     m_Pvendor = Pvendor;
-    m_target = PdscRequirement::Pack;
+
+    if(!Pvendor.isEmpty())
+        m_target = PdscRequirement::Pack;
 }
 
 void PdscRequirement::setPname(const QString &Pname)
 {
     m_Pname = Pname;
-    m_target = PdscRequirement::Pack;
+
+    if(!Pname.isEmpty())
+        m_target = PdscRequirement::Pack;
 }
 
 void PdscRequirement::setPversion(const QString &Pversion)
 {
     m_Pversion = Pversion;
-    m_target = PdscRequirement::Pack;
+
+    if(!Pversion.isEmpty())
+        m_target = PdscRequirement::Pack;
 }
 
 PdscRequirement::RequirementType PdscRequirement::type() const
 {
     return m_type;
+}
+
+PdscRequirement::RequireTarget PdscRequirement::target() const
+{
+    return m_target;
 }
 
 QString PdscRequirement::Dname() const
@@ -232,6 +275,36 @@ QString PdscRequirement::Pname() const
 QString PdscRequirement::Pversion() const
 {
     return m_Pversion;
+}
+
+bool PdscRequirement::isValid()
+{
+    bool valid = true;
+
+    switch(m_target)
+    {
+        case PdscRequirement::Component:
+            valid = (!m_Cclass.isEmpty() && !m_Cgroup.isEmpty());
+        break;
+
+        case PdscRequirement::Pack:
+            valid = (!m_Pvendor.isEmpty() && !m_Pname.isEmpty() && !m_Pversion.isEmpty());
+        break;
+
+        case PdscRequirement::Compiler:
+            valid = (!m_Tcompiler.isEmpty());
+        break;
+
+        case PdscRequirement::Device:
+            valid = (!m_Dname.isEmpty());
+        break;
+
+        default:
+            valid = true;
+        break;
+    }
+
+    return valid;
 }
 
 void PdscRequirement::setType(const RequirementType &type)

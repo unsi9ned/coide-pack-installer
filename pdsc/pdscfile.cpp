@@ -125,6 +125,11 @@ QString PdscFile::name() const
     return _name;
 }
 
+bool PdscFile::hasCondition()
+{
+    return !_condition.isNull();
+}
+
 void PdscFile::setName(const QString &name)
 {
     _name = name;

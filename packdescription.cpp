@@ -8,7 +8,7 @@ PackDescription::PackDescription()
 
 }
 
-QString PackDescription::packVendor()
+QString PackDescription::packVendor() const
 {
     return this->_vendor;
 }
