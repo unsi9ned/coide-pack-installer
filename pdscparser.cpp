@@ -862,6 +862,7 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                                                                         device,
                                                                         pComponent,
                                                                         componentList));
+                            qInfo() << coComponent.files();
                         }
                     }
                 }
@@ -1006,10 +1007,22 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
                                          const Family &family,
                                          const Series &series,
                                          const Mcu &device,
-                                         const PdscComponent &component,
+                                         PdscComponent &component,
                                          const QList<PdscComponent> &componentList)
 {
     QStringList files;
+    QStringList allowedCategories =
+    {
+        "header", "include", "library", "source", "sourceC", "sourceCpp", "sourceAsm", "linkerScript"
+    };
+
+    foreach(PdscFile f, component.files())
+    {
+        if(!f.hasCondition() && allowedCategories.contains(f.category().name()))
+        {
+            files.append(f.name());
+        }
+    }
 
     return files;
 }

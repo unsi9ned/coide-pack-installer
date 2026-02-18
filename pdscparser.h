@@ -51,7 +51,7 @@ private:
                                  const Family& family,
                                  const Series& series,
                                  const Mcu& device,
-                                 const PdscComponent& component,
+                                 PdscComponent& component,
                                  const QList<PdscComponent> &componentList);
 };
 

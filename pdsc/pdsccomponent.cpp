@@ -40,21 +40,6 @@ bool PdscComponent::hasCondition()
     return !m_condition.isNull();
 }
 
-//------------------------------------------------------------------------------
-// Вывод списка файлов, входящих в компонент. С соблюдением условий
-//------------------------------------------------------------------------------
-QStringList PdscComponent::fileList()
-{
-    QStringList fileList;
-
-    foreach (PdscFile f, m_files)
-    {
-
-    }
-
-    return fileList;
-}
-
 PdscComponent::PdscComponent() : PdscElement()
 {
 
