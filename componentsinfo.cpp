@@ -623,7 +623,7 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
         newComponent.setVersion(result.value(16).toString());
         newComponent.setPublishStatus(result.value(17).toString());
         newComponent.setHits(result.value(18).toInt());
-        newComponent.setCreateDate(result.value(19).toString());
+        newComponent.setCreationDate(result.value(19).toString());
         newComponent.setUpdateDate(result.value(20).toString());
         newComponent.setTags(result.value(21).toString());
 

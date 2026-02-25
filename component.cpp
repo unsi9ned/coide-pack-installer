@@ -1,4 +1,7 @@
+#include <QUuid>
+#include <QDateTime>
 #include "component.h"
+#include "constants.h"
 
 int Component::getId() const
 {
@@ -190,24 +193,34 @@ void Component::setHits(int value)
     hits = value;
 }
 
-QString Component::getCreateDate() const
+QString Component::getCreationDate(QString dtFormat) const
 {
-    return createDate;
+    QDateTime dt = this->createDate;
+
+    if(!dt.isValid())
+        dt = QDateTime::currentDateTime();
+
+    return dt.toString(dtFormat);
 }
 
-void Component::setCreateDate(const QString &value)
+QString Component::getUpdateDate(QString dtFormat) const
 {
-    createDate = value;
+    QDateTime dt = this->updateDate;
+
+    if(!dt.isValid())
+        dt = QDateTime::currentDateTime();
+
+    return dt.toString(dtFormat);
 }
 
-QString Component::getUpdateDate() const
+void Component::setCreationDate(const QString &value)
 {
-    return updateDate;
+    this->createDate = QDateTime::fromString(value, "yyyy-MM-dd HH:mm:ss");
 }
 
 void Component::setUpdateDate(const QString &value)
 {
-    updateDate = value;
+    this->updateDate = QDateTime::fromString(value, "yyyy-MM-dd HH:mm:ss");
 }
 
 QString Component::getTags() const
@@ -325,6 +338,19 @@ bool Component::isNull()
     return id == -1;
 }
 
+QString Component::generateTimeUUID()
+{
+    QString str = QUuid::createUuid().toString();
+
+    // Удаляем фигурные скобки в начале и конце
+    if (str.startsWith('{') && str.endsWith('}'))
+    {
+        str = str.mid(1, str.length() - 2);
+    }
+
+    return str;
+}
+
 Category Component::getCategory() const
 {
     return _category;
@@ -335,39 +361,26 @@ void Component::setCategory(const Category &category)
     _category = category;
 }
 
-Component::Component() : id(-1)
+Component::Component() :
+    id(-1),
+    authorId(CoUser::USER_COOCOX),
+    layerId(ComponentLayer::LAYER_USER),
+    componentStatusId(0),
+    shareDocumentId(0),
+    type(ComponentType::COMPONENT),
+    uuid(Component::generateTimeUUID()),
+    timeuuid(Component::generateTimeUUID()),
+    repoUser("admin"),
+    repoPass("omvmUMnmnac="),
+    cox(0),
+    version("1.0.0"),
+    publishStatus("stable"),
+    hits(0),
+    createDate(QDateTime::currentDateTime()),
+    updateDate(QDateTime::currentDateTime()),
+    _status(ComponentStatus::ok())
 {
 
 }
 
-Component::Component(Component *c)
-{
-    this->id = c->getId();
-    this->authorId = c->getAuthorId();
-    this->layerId = c->getLayerId();
-    this->componentStatusId = c->getComponentStatusId();
-    this->shareDocumentId = c->getShareDocumentId();
-    this->type = c->getType();
-    this->name = c->getName();
-    this->description = c->getDescription();
-    this->advertisingWord = c->getAdvertisingWord();
-    this->advertisingURL = c->getAdvertisingURL();
-    this->uuid = c->getUuid();
-    this->timeuuid = c->getTimeuuid();
-    this->repoUser = c->getRepoUser();
-    this->repoPass = c->getRepoPass();
-    this->micro = c->getMicro();
-    this->cox = c->getCox();
-    this->version = c->getVersion();
-    this->publishStatus = c->getPublishStatus();
-    this->hits = c->getHits();
-    this->createDate = c->getCreateDate();
-    this->updateDate = c->getUpdateDate();
-    this->tags = c->getTags();
-    this->dependencies = c->getDependencies();
-    this->mcuListId = c->getMcuListId();
-    this->mcuFamilyList = c->getMcuFamilyList();
-    this->mcuSeriesList = c->getMcuSeriesList();
-    this->mcuManufacturerList = c->getMcuManufacturerList();
-}
 

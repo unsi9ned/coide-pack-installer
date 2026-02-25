@@ -835,6 +835,13 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                     {
                         Mcu& device = d.value();
 
+#if 0
+                        if(device.getName() == "nRF52840_xxAA" && pComponent.attributes().getCgroup() == "StartupConfig")
+                        {
+                            qInfo() << "StartupConfig";
+                        }
+#endif
+
                         //
                         // Компонент предназначен для данного устройства
                         //
@@ -854,6 +861,7 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                                 coComponent.setVersion(pComponent.attributes().getCversion());
 
                             coComponent.setCategory(coCategory);
+                            coComponent.setDescription(pComponent.description());
                             coComponent.files().clear();
                             coComponent.files().append(getFilteredFiles(pack,
                                                                         vendor,
@@ -862,8 +870,23 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                                                                         device,
                                                                         pComponent,
                                                                         componentList));
-                            qInfo() << coComponent.files();
+                            device.components().append(coComponent);
+#if 0
+                            if(device.getName() == "nRF52832_xxAA")
+                                qInfo() << device.getName() <<
+                                           pComponent.attributes().getCclass() <<
+                                           pComponent.attributes().getCgroup() <<
+                                           coComponent.files() << "Depend of" <<
+                                           pComponent.condition().id();
+#endif
                         }
+#if 0
+                        else
+                        {
+                            if(device.getName() == "nRF52840_xxAA")
+                                qInfo() << "SKIP ---->" << device.getName() << pComponent.attributes().getCclass() << pComponent.attributes().getCgroup() << pComponent.condition().id();
+                        }
+#endif
                     }
                 }
             }
@@ -888,6 +911,7 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
 //    Q_UNUSED(series)
 //    Q_UNUSED(componentList)
 
+    bool status = true;
     auto requirementMap = component.condition().requirementsMap();
 
     foreach(PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Device))
@@ -896,7 +920,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
             continue;
 
         if(device.getName() != r.Dname() && !device.getName().contains(QRegExp(r.Dname())))
-            return false;
+        {
+            status = false;
+            break;
+        }
     }
 
     foreach(PdscRequirement r, requirementMap[PdscRequirement::Accept].value(PdscRequirement::Device))
@@ -905,7 +932,12 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
             continue;
 
         if(device.getName() == r.Dname() || device.getName().contains(QRegExp(r.Dname())))
-            return true;
+        {
+            status = true;
+            break;
+        }
+        else
+            status = false;
     }
 
     foreach(PdscRequirement r, requirementMap[PdscRequirement::Deny].value(PdscRequirement::Device))
@@ -914,10 +946,13 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
             continue;
 
         if(device.getName() == r.Dname() || device.getName().contains(QRegExp(r.Dname())))
-            return false;
+        {
+            status = false;
+            break;
+        }
     }
 
-    return true;
+    return status;
 }
 
 //------------------------------------------------------------------------------
@@ -1018,9 +1053,37 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
 
     foreach(PdscFile f, component.files())
     {
-        if(!f.hasCondition() && allowedCategories.contains(f.category().name()))
+        if(allowedCategories.contains(f.category().name()))
         {
-            files.append(f.name());
+            //
+            // Добавляем сначала файлы без условий
+            //
+            if(!f.hasCondition() )
+            {
+                files.append(QString("%1=%2").arg(f.category().name()).arg(f.name()));
+            }
+            //
+            // Проверяем файл на соответствие требованиям
+            //
+            else
+            {
+                auto requirementMap = f.condition().requirementsMap();
+
+                // TODO в большинстве случаев это соответствие файла компилятору
+                // если на практике окажется, что нужна праверка еще каких-то условий,
+                // то доработаю проверку
+                foreach (PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Compiler))
+                {
+                    if(!r.isValid())
+                        continue;
+
+                    if(r.Tcompiler() == "GCC")
+                    {
+                        files.append(QString("%1=%2").arg(f.category().name()).arg(f.name()));
+                        break;
+                    }
+                }
+            }
         }
     }
 

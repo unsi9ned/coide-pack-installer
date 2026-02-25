@@ -4,6 +4,7 @@
 #include <QString>
 #include <QList>
 #include <QList>
+#include <QDateTime>
 #include "category.h"
 
 class Component
@@ -14,6 +15,15 @@ public:
     {
         DRIVER = 1,
         COMPONENT = 2,
+    };
+
+    enum ComponentLayer
+    {
+        LAYER_DRIVER = 1,
+        LAYER_MCU = 2,
+        LAYER_USER = 3,
+        LAYER_MIDDLEWARE = 4,
+        LAYER_DEVICE = 5,
     };
 
     struct ComponentStatus
@@ -37,6 +47,14 @@ public:
         {
             return statusId == 0;
         }
+
+        static ComponentStatus ok()
+        {
+            ComponentStatus status;
+            status.hasDownloaded = 1;
+            status.auditStatus = 1;
+            return status;
+        }
     };
 
 private:
@@ -56,12 +74,12 @@ private:
     QString repoUser;
     QString repoPass;
     QString micro;
-    int cox;
+    int cox; //Зависит ли компонент от драйверов CooCox
     QString version;
     QString publishStatus;
     int hits;
-    QString createDate;
-    QString updateDate;
+    QDateTime createDate;
+    QDateTime updateDate;
     QString tags;
 
     QList<Component*> dependencies;
@@ -76,7 +94,6 @@ private:
 
 public:
     Component();
-    Component(Component * c);
 
     int getId() const;
     void setId(int value);
@@ -116,10 +133,14 @@ public:
     void setPublishStatus(const QString &value);
     int getHits() const;
     void setHits(int value);
-    QString getCreateDate() const;
-    void setCreateDate(const QString &value);
-    QString getUpdateDate() const;
+
+
+    void setCreationDate(const QString &value);
     void setUpdateDate(const QString &value);
+
+    QString getCreationDate(QString dtFormat = QString("yyyy-MM-dd HH:mm:ss")) const;
+    QString getUpdateDate(QString dtFormat = QString("yyyy-MM-dd HH:mm:ss")) const;
+
     QString getTags() const;
     void setTags(const QString &value);
     QList<Component *> getDependencies() const;
@@ -149,6 +170,7 @@ public:
     bool isDriver();
     bool isNull();
 
+    static QString generateTimeUUID();
 };
 
 #endif // COMPONENT_H
