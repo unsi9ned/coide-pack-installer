@@ -62,11 +62,14 @@ public:
     bool setComponentStatusOK(int statusId, QString * errorString = nullptr);
     bool removeStatusPhantomRelations(QString *errorString = nullptr);
 
+    bool createComponent(Component& component, QString *errorString = nullptr);
+
 private:
 
     bool deleteManufacturerList(int componentId, QString& errorString);
     bool addManufacturer(int componentId, int vendorId, QString& errorString);
     bool updateManufacturerList(const Component& component, QString& errorString);
+    Component findComponent(const Component component);
 
 signals:
 

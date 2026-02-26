@@ -529,6 +529,14 @@ bool ComponentsInfo::removeStatusPhantomRelations(QString *errorString)
 }
 
 //------------------------------------------------------------------------------
+// Добавление компонента в базу данных
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponent(Component &component, QString *errorString)
+{
+    return false;
+}
+
+//------------------------------------------------------------------------------
 // Удаляет из базы данных информацию о производителях, к которым применим компонент
 //------------------------------------------------------------------------------
 bool ComponentsInfo::deleteManufacturerList(int componentId, QString &errorString)
@@ -582,6 +590,60 @@ bool ComponentsInfo::updateManufacturerList(const Component &component, QString&
     }
 
     return true;
+}
+
+Component ComponentsInfo::findComponent(const Component component)
+{
+    Component foundComponent;
+    QString sql = "SELECT "
+                    "component.id, "
+                    "component.Layer_id, "
+                    "component.type, "
+                    "component.name, "
+                    "component.description, "
+                    "component.uuid, "
+                    "component.version, "
+                    "component_supports_mcu.mcuId, "
+                    "mcu.name, "
+                    "mcuseries.seriesName, "
+                    "mcufamily.familyName, "
+                    "mcumanufacturer.name "
+                    "FROM component, component_supports_mcu, mcu, mcuseries, mcufamily, mcumanufacturer "
+                    "WHERE component.name = 'CMSIS_Boot' "
+                    "AND component.version = '1.0.1' "
+                    "AND component.id = component_supports_mcu.componentId "
+                    "AND mcu.id = component_supports_mcu.mcuId "
+                    "AND mcuseries.id = mcu.seriesId "
+                    "AND mcufamily.id = mcuseries.familyId "
+                    "AND mcumanufacturer.id = mcufamily.manufacturerId;";
+
+    sql = "SELECT "
+            "component.id, "
+            "component.type, "
+            "component.Layer_id AS layerId, "
+            "component_has_category.categoryId, "
+            "category.name AS category, "
+            "component.name, "
+            "component.description, "
+            "component.uuid, "
+            "component.version, "
+            "component_supports_mcu.mcuId, "
+            "mcu.name AS mcu, "
+            "mcuseries.seriesName AS series, "
+            "mcufamily.familyName AS family, "
+            "mcumanufacturer.name AS vendor "
+            "FROM component, component_supports_mcu, mcu, mcuseries, mcufamily, mcumanufacturer, component_has_category, category "
+            "WHERE component.name = 'CMSIS_Boot' "
+            "AND component.version = '1.0.1' "
+            "AND component.id = component_supports_mcu.componentId "
+            "AND mcu.id = component_supports_mcu.mcuId "
+            "AND mcuseries.id = mcu.seriesId "
+            "AND mcufamily.id = mcuseries.familyId "
+            "AND mcumanufacturer.id = mcufamily.manufacturerId "
+            "AND component_has_category.componentId = component.id "
+            "AND category.id = component_has_category.categoryId;";
+
+    return foundComponent;
 }
 
 //------------------------------------------------------------------------------
