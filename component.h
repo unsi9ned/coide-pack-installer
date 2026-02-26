@@ -88,6 +88,9 @@ private:
     QList<int> mcuSeriesList;
     QList<int> mcuManufacturerList;
 
+    QStringList _supportsMcuList;
+    QStringList _exampleList;
+
     ComponentStatus _status;
     QStringList _files;
     Category _category;
@@ -159,12 +162,17 @@ public:
     void setMcuManufacturerList(const QList<int> &value);
     void appendMcuManufacturer(int id);
     QStringList& files();
+    QStringList fileListConst() const;
 
     QStringList headers();
     QStringList includes();
     QStringList libraries();
     QStringList sources();
     QStringList linkerScripts();
+
+    void addSupportedMcu(const QString& mcuName);
+    void removeSupportedMcu(const QString& mcuName);
+    QStringList supportedMcuList();
 
     Category getCategory() const;
     void setCategory(const Category &category);
@@ -177,6 +185,8 @@ public:
     bool isNull();
 
     static QString generateTimeUUID();
+
+    operator==(const Component& component);
 };
 
 #endif // COMPONENT_H

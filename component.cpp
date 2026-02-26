@@ -317,6 +317,11 @@ QStringList &Component::files()
     return _files;
 }
 
+QStringList Component::fileListConst() const
+{
+    return _files;
+}
+
 //------------------------------------------------------------------------------
 // Возвращает только список файлов, относящихся к категории header (обычно *.h):
 // Формат: <filepath>
@@ -409,6 +414,23 @@ QStringList Component::linkerScripts()
     return list;
 }
 
+void Component::addSupportedMcu(const QString &mcuName)
+{
+    if(!_supportsMcuList.contains(mcuName))
+        _supportsMcuList.append(mcuName);
+}
+
+void Component::removeSupportedMcu(const QString &mcuName)
+{
+    if(_supportsMcuList.contains(mcuName))
+        _supportsMcuList.removeOne(mcuName);
+}
+
+QStringList Component::supportedMcuList()
+{
+    return _supportsMcuList;
+}
+
 Component::ComponentStatus Component::getStatus()
 {
     return _status;
@@ -445,6 +467,43 @@ QString Component::generateTimeUUID()
     }
 
     return str;
+}
+
+Component::operator==(const Component &component)
+{
+    bool equal = (this->layerId == component.getLayerId() &&
+                  this->type == component.getType() &&
+                  this->name == component.getName() &&
+                  this->description == component.getDescription() &&
+                  this->version == component.getVersion() &&
+                  this->_category.getName() == component.getCategory().getName());
+
+    if(_category.hasSubCategory() && component.getCategory().hasSubCategory())
+    {
+        if(_category.subCategory().getName() != component.getCategory().subCategory().getName())
+            equal = false;
+    }
+    else if(!_category.hasSubCategory() && !component.getCategory().hasSubCategory())
+        equal = equal;
+    else
+        equal = false;
+
+    QStringList currFileList = _files;
+
+    foreach (QString f, component.fileListConst())
+    {
+        if(currFileList.contains(f))
+            currFileList.removeOne(f);
+        else
+        {
+            equal = false;
+            break;
+        }
+    }
+
+    equal = equal && currFileList.isEmpty();
+
+    return equal;
 }
 
 Category Component::getCategory() const

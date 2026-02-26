@@ -8,6 +8,7 @@
 #include "pdscparser.h"
 #include "manufacturer.h"
 #include "requestmanager.h"
+#include "makelink.h"
 
 PackManager::PackManager(QObject *parent) : QObject(parent)
 {
@@ -132,6 +133,19 @@ void PackManager::packInstall(PackDescription &pack)
             emit errorOccured("Couldn't extract sources files");
         else
             emit errorOccured(QString("Couldn't extract sources files: %1").arg(errorString));
+
+        return;
+    }
+
+    //
+    // Создание компонентов в файловой структуре CoIDE
+    //
+    if(!createComponentMirrors(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            emit errorOccured("Couldn't create component mirror");
+        else
+            emit errorOccured(QString("Couldn't create component mirror: %1").arg(errorString));
 
         return;
     }
@@ -444,76 +458,87 @@ bool PackManager::makeSvdDatabase(PackDescription &pack, QString& errorString)
 }
 
 //------------------------------------------------------------------------------
-// Возвращает полный список файлов, входящих во все компоненты
-// Эта функция необходимо для распаковки архива, чтобы не повторять команды
-// распаковки одного и того же файла по нескольку раз
+// Формирование полного набора файлов для каждого уникального компонента
+// Удаляет метаданные из пути к файлу. Читает список файлов из категории include
 //------------------------------------------------------------------------------
-QStringList PackManager::getFullFileList(PackDescription &pack, QString &errorString)
+void PackManager::loadCoComponents(PackDescription &pack)
 {
-    QStringList list;
-    QStringList includeDirList;
+    QMap<QString, QStringList>& coMap = pack.coComponentMap();
+    coMap.clear();
 
-    //
-    // Формирование списка файлов для распаковки
-    //
-    Manufacturer& vendor = pack.vendors().first();
-
-    foreach(QString familyName, vendor.families().keys())
+    if(pack.pathToArchive().isEmpty())
     {
-        Family& family = vendor.family(familyName);
+        return;
+    }
 
-        foreach(QString seriesName, family.seriesMap().keys())
+    foreach(Component c, pack.components())
+    {
+        coMap.insert(c.getUuid(), QStringList());
+
+        QStringList& list = coMap[c.getUuid()];
+        QStringList includes = c.includes();
+        QStringList sources = c.sources();
+        QStringList libraries = c.libraries();
+        QStringList scripts = c.linkerScripts();
+
+        foreach(QString src, sources)
         {
-            Series& series = vendor.family(familyName).series(seriesName);
+            if(!list.contains(src))
+                list.append(src.replace('/', '\\'));
+        }
 
-            foreach (QString mcuName, series.mcuMap().keys())
+        foreach(QString lib, libraries)
+        {
+            if(!list.contains(lib))
+                list.append(lib.replace('/', '\\'));
+        }
+
+        foreach(QString ld, scripts)
+        {
+            if(!list.contains(ld))
+                list.append(ld.replace('/', '\\'));
+        }
+
+        // Чтение списка файлов в каталоге
+        foreach(QString dir, includes)
+        {
+            QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(pack.pathToArchive(), dir.replace('/', '\\'));
+
+            foreach(ZipArchive::ArchiveEntry f, files)
             {
-                Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
-
-                foreach(Component c, mcu.components())
+                if(!f.isDir && !list.contains(f.fullPath))
                 {
-                    QStringList includes = c.includes();
-                    QStringList sources = c.sources();
-                    QStringList libraries = c.libraries();
-                    QStringList scripts = c.linkerScripts();
-
-                    foreach(QString src, sources)
-                    {
-                        if(!list.contains(src))
-                            list.append(src.replace('/', '\\'));
-                    }
-
-                    foreach(QString lib, libraries)
-                    {
-                        if(!list.contains(lib))
-                            list.append(lib.replace('/', '\\'));
-                    }
-
-                    foreach(QString ld, scripts)
-                    {
-                        if(!list.contains(ld))
-                            list.append(ld.replace('/', '\\'));
-                    }
-
-                    foreach(QString dir, includes)
-                    {
-                        if(!includeDirList.contains(dir))
-                            includeDirList.append(dir.replace('/', '\\'));
-                    }
+                    list.append(f.fullPath.replace('/', '\\'));
                 }
             }
         }
     }
+}
 
-    foreach(QString d, includeDirList)
+//------------------------------------------------------------------------------
+// Возвращает полный список файлов, входящих во все компоненты
+// Эта функция необходимо для распаковки архива, чтобы не повторять команды
+// распаковки одного и того же файла по нескольку раз
+//------------------------------------------------------------------------------
+QStringList PackManager::getFullFileList(PackDescription &pack)
+{
+    QMap<QString, QStringList>& coMap = pack.coComponentMap();
+    QStringList list;
+
+    if(coMap.isEmpty())
     {
-        QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(pack.pathToArchive(), d);
+        loadCoComponents(pack);
+    }
 
-        foreach(ZipArchive::ArchiveEntry f, files)
+    for(auto it = coMap.begin(); it != coMap.end(); ++it)
+    {
+        QStringList coList = it.value();
+
+        foreach(QString f, coList)
         {
-            if(!f.isDir && !list.contains(f.fullPath))
+            if(!list.contains(f))
             {
-                list.append(f.fullPath.replace('/', '\\'));
+                list.append(f);
             }
         }
     }
@@ -552,9 +577,9 @@ bool PackManager::extractSources(PackDescription &pack, QString &errorString)
     //
     // Формирование списка файлов для распаковки
     //
-    QStringList sources = getFullFileList(pack, errorString);
+    QStringList sources = getFullFileList(pack);
 
-    if(sources.isEmpty() || !errorString.isEmpty())
+    if(sources.isEmpty())
     {
         return false;
     }
@@ -570,6 +595,72 @@ bool PackManager::extractSources(PackDescription &pack, QString &errorString)
         {
             errorString = QString("An error occurred while extracting the %1 file").arg(s);
             return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создает файловую структуру компонента в системе CoIDE.
+// Фактически создает ссылки на файлы, которые распакованы в каталог установки пакета
+//------------------------------------------------------------------------------
+bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorString)
+{
+    if(!pack.isValid())
+    {
+        errorString = QString("The '%1' package is not valid").arg(pack.name());
+        return false;
+    }
+    else if(pack.installDir().isEmpty())
+    {
+        errorString = QString("The installation directory is not defined or does not exist");
+        return false;
+    }
+
+    if(pack.coComponentMap().isEmpty())
+        loadCoComponents(pack);
+
+    QMap<QString, QStringList>& fileMap = pack.coComponentMap();
+    QMap<QString, Component>& componentMap = pack.components();
+
+    for(auto it = fileMap.begin(); it != fileMap.end(); ++it)
+    {
+        QStringList coList = it.value();
+        Component& component = componentMap[it.key()];
+        QDir rootDir;
+
+        if(component.getType() == Component::DRIVER)
+            rootDir.setPath(Paths::instance()->coIdeDriversDir() + "/!" + component.getUuid() + "/src");
+        else
+            rootDir.setPath(Paths::instance()->coIdeComponentsDir() + "/!" + component.getUuid() + "/src");
+
+        if(!rootDir.exists() && !rootDir.mkpath(rootDir.path()))
+        {
+            errorString = QString("The mirror directory %1 cannot be created").arg(rootDir.path());
+            return false;
+        }
+
+        foreach(QString f, coList)
+        {
+            QFileInfo info(f);
+            QDir subDir;
+            QString targetPath = pack.installDir() + "/" + f;
+            QString linkPath = rootDir.path() + "/" + f;
+
+            subDir.setPath(rootDir.path() + "/" + info.path());
+
+            if(!subDir.exists() && !subDir.mkpath(subDir.path()))
+            {
+                errorString = QString("The %1 directory cannot be created").arg(rootDir.path());
+                return false;
+            }
+
+            if(!MakeLink::createLink(linkPath, targetPath))
+            {
+                errorString = QString("Failed to create symbolic link to %1 file").arg(f);
+                return false;
+            }
         }
     }
 

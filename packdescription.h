@@ -19,6 +19,10 @@ private:
     QString _pathToPdsc;
 
     QMap<QString, Manufacturer> _vendorMap;
+    QMap<QString, Component> _componentMap;
+
+    // Карта компонентов CoIDE. Ключ - UUID компонента, значение - список файлов
+    QMap<QString, QStringList> _coComponentMap;
 
 public:
     PackDescription();
@@ -49,6 +53,8 @@ public:
     void printInfo();
     bool isValid() const;
 
+    QMap<QString, Component>& components();
+    QMap<QString, QStringList>& coComponentMap();
 
 private:
     Manufacturer& createNewVendor(const QString& vendorName);

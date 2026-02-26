@@ -183,6 +183,16 @@ bool PackDescription::isValid() const
     return true;
 }
 
+QMap<QString, Component> &PackDescription::components()
+{
+    return _componentMap;
+}
+
+QMap<QString, QStringList> &PackDescription::coComponentMap()
+{
+    return _coComponentMap;
+}
+
 Manufacturer &PackDescription::createNewVendor(const QString &vendorName)
 {
     _vendorMap.insert(vendorName, Manufacturer());

@@ -44,8 +44,6 @@ private:
     QMap<QString, Memory> _memoryMap;
     QStringList _definedSymbols;
 
-    QList<Component> _componentList;
-
 public:
     Mcu();
     Mcu(int id,
@@ -73,7 +71,6 @@ public:
     int getHits() const {return hits;}
     QString svdLocalPath() const { return _svd;}
     DebugAlgorithm& getDebugAlgorithm() {return this->debugAlgorithm;}
-    QList<Component>& components(){return this->_componentList;}
 
     void setId(int id){this->id = id;}
     void setSeriesId(int id){this->seriesId = id;}

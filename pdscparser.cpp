@@ -870,7 +870,25 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                                                                         device,
                                                                         pComponent,
                                                                         componentList));
-                            device.components().append(coComponent);
+
+                            if(pack.components().values().contains(coComponent))
+                            {
+                                for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+                                {
+                                    Component& existingComponent = it.value();
+
+                                    if(existingComponent == coComponent)
+                                    {
+                                        existingComponent.addSupportedMcu(device.getName());
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                coComponent.addSupportedMcu(device.getName());
+                                pack.components().insert(coComponent.getUuid(), coComponent);
+                            }
 #if 0
                             if(device.getName() == "nRF52832_xxAA")
                                 qInfo() << device.getName() <<
