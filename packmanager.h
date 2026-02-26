@@ -20,6 +20,8 @@ private:
     bool extractPDSC(PackDescription& pack, QString& errorString);
     bool extractSVD(PackDescription& pack, QString& errorString);
     bool makeSvdDatabase(PackDescription& pack, QString& errorString);
+    QStringList getFullFileList(PackDescription& pack, QString& errorString);
+    bool extractSources(PackDescription& pack, QString& errorString);
 
 signals:
     void errorOccured(QString e);

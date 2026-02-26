@@ -1048,7 +1048,7 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
     QStringList files;
     QStringList allowedCategories =
     {
-        "header", "include", "library", "source", "sourceC", "sourceCpp", "sourceAsm", "linkerScript"
+        "header", "include", "library", "object", "source", "sourceC", "sourceCpp", "sourceAsm", "linkerScript"
     };
 
     foreach(PdscFile f, component.files())

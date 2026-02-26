@@ -124,6 +124,19 @@ void PackManager::packInstall(PackDescription &pack)
     }
 
     //
+    // Распаковка исходников
+    //
+    if(!extractSources(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            emit errorOccured("Couldn't extract sources files");
+        else
+            emit errorOccured(QString("Couldn't extract sources files: %1").arg(errorString));
+
+        return;
+    }
+
+    //
     // Загружаем из базы данных информацию об устройствах
     //
     RequestManager * reqManager = RequestManager::instance();
@@ -426,6 +439,139 @@ bool PackManager::makeSvdDatabase(PackDescription &pack, QString& errorString)
     }
 
     svdDatabase.close();
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает полный список файлов, входящих во все компоненты
+// Эта функция необходимо для распаковки архива, чтобы не повторять команды
+// распаковки одного и того же файла по нескольку раз
+//------------------------------------------------------------------------------
+QStringList PackManager::getFullFileList(PackDescription &pack, QString &errorString)
+{
+    QStringList list;
+    QStringList includeDirList;
+
+    //
+    // Формирование списка файлов для распаковки
+    //
+    Manufacturer& vendor = pack.vendors().first();
+
+    foreach(QString familyName, vendor.families().keys())
+    {
+        Family& family = vendor.family(familyName);
+
+        foreach(QString seriesName, family.seriesMap().keys())
+        {
+            Series& series = vendor.family(familyName).series(seriesName);
+
+            foreach (QString mcuName, series.mcuMap().keys())
+            {
+                Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
+
+                foreach(Component c, mcu.components())
+                {
+                    QStringList includes = c.includes();
+                    QStringList sources = c.sources();
+                    QStringList libraries = c.libraries();
+                    QStringList scripts = c.linkerScripts();
+
+                    foreach(QString src, sources)
+                    {
+                        if(!list.contains(src))
+                            list.append(src.replace('/', '\\'));
+                    }
+
+                    foreach(QString lib, libraries)
+                    {
+                        if(!list.contains(lib))
+                            list.append(lib.replace('/', '\\'));
+                    }
+
+                    foreach(QString ld, scripts)
+                    {
+                        if(!list.contains(ld))
+                            list.append(ld.replace('/', '\\'));
+                    }
+
+                    foreach(QString dir, includes)
+                    {
+                        if(!includeDirList.contains(dir))
+                            includeDirList.append(dir.replace('/', '\\'));
+                    }
+                }
+            }
+        }
+    }
+
+    foreach(QString d, includeDirList)
+    {
+        QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(pack.pathToArchive(), d);
+
+        foreach(ZipArchive::ArchiveEntry f, files)
+        {
+            if(!f.isDir && !list.contains(f.fullPath))
+            {
+                list.append(f.fullPath.replace('/', '\\'));
+            }
+        }
+    }
+
+    return list;
+}
+
+//------------------------------------------------------------------------------
+// Распаковка исходников
+//------------------------------------------------------------------------------
+bool PackManager::extractSources(PackDescription &pack, QString &errorString)
+{
+    QDir dir;
+
+    dir.setPath(pack.installDir());
+
+    //
+    // Пакет не валиден
+    //
+    if(pack.pathToArchive().isEmpty())
+    {
+        errorString = QString("The archive path is not set");
+        return false;
+    }
+    else if(pack.installDir().isEmpty() || !dir.exists())
+    {
+        errorString = QString("The installation directory is not defined or does not exist");
+        return false;
+    }
+    else if(!pack.isValid())
+    {
+        errorString = QString("The '%1' package is not valid").arg(pack.name());
+        return false;
+    }
+
+    //
+    // Формирование списка файлов для распаковки
+    //
+    QStringList sources = getFullFileList(pack, errorString);
+
+    if(sources.isEmpty() || !errorString.isEmpty())
+    {
+        return false;
+    }
+
+    //
+    // Распаковка
+    //
+    foreach (QString s, sources)
+    {
+        QString destinationDir = pack.installDir() + "\\" + QFileInfo(s).path().replace('/','\\');
+
+        if(!ZipArchive().extractFile(pack.pathToArchive(), destinationDir, s))
+        {
+            errorString = QString("An error occurred while extracting the %1 file").arg(s);
+            return false;
+        }
+    }
 
     return true;
 }

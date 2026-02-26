@@ -45,7 +45,7 @@ public:
 
     explicit ZipArchive(QObject *parent = 0);
 
-    QList<ArchiveEntry> listContents(const QString& pathToArchive);
+    QList<ArchiveEntry> listContents(const QString& pathToArchive, QString inheritPath = QString());
     bool extractFile(const QString& pathToArchive,
                      const QString& destDir,
                      const QString& pathToFile);

@@ -308,9 +308,105 @@ void Component::appendMcuManufacturer(int id)
     mcuManufacturerList.append(id);
 }
 
+//------------------------------------------------------------------------------
+// Возвращает общий список файлов, входящих в компонент в формате:
+// <category>=<filepath>
+//------------------------------------------------------------------------------
 QStringList &Component::files()
 {
     return _files;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает только список файлов, относящихся к категории header (обычно *.h):
+// Формат: <filepath>
+//------------------------------------------------------------------------------
+QStringList Component::headers()
+{
+    QStringList list;
+
+    foreach (QString f, _files)
+    {
+        if(f.startsWith("header="))
+            list.append(f.mid(sizeof("header=") - 1));
+    }
+
+    return list;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает только список каталогов, относящихся к категории include (каталог,
+// который содержит *.h - файлы)
+// Формат: <filepath>
+//------------------------------------------------------------------------------
+QStringList Component::includes()
+{
+    QStringList list;
+
+    foreach (QString f, _files)
+    {
+        if(f.startsWith("include="))
+            list.append(f.mid(sizeof("include=") - 1));
+    }
+
+    return list;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает только список статических библиотек (*.a)
+// Формат: <filepath>
+//------------------------------------------------------------------------------
+QStringList Component::libraries()
+{
+    QStringList list;
+
+    foreach (QString f, _files)
+    {
+        if(f.startsWith("library=") || f.startsWith("object="))
+            list.append(f.mid(f.indexOf("=") + 1));
+    }
+
+    return list;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает только список исходников (*.с, *.cpp, *.h, *.s, *.asm и т.д.)
+// Формат: <filepath>
+//------------------------------------------------------------------------------
+QStringList Component::sources()
+{
+    QStringList list;
+
+    foreach (QString f, _files)
+    {
+        if(f.startsWith("source=") ||
+           f.startsWith("sourceC=") ||
+           f.startsWith("sourceCpp=") ||
+           f.startsWith("sourceAsm=") ||
+           f.startsWith("header="))
+        {
+            list.append(f.mid(f.indexOf("=") + 1));
+        }
+    }
+
+    return list;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает только список скриптов линкера (*.ld)
+// Формат: <filepath>
+//------------------------------------------------------------------------------
+QStringList Component::linkerScripts()
+{
+    QStringList list;
+
+    foreach (QString f, _files)
+    {
+        if(f.startsWith("linkerScript="))
+            list.append(f.mid(sizeof("linkerScript=") - 1));
+    }
+
+    return list;
 }
 
 Component::ComponentStatus Component::getStatus()

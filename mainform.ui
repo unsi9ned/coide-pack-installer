@@ -249,7 +249,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Сохранить изменения</string>
+         <string>Установить пакет</string>
         </property>
        </widget>
        <widget class="QPushButton" name="pushButtonDataLoad">

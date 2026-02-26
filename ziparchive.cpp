@@ -11,11 +11,14 @@ ZipArchive::ZipArchive(QObject *parent) : QObject(parent)
 //------------------------------------------------------------------------------
 // Вывод списка файлов внутри архива
 //------------------------------------------------------------------------------
-QList<ZipArchive::ArchiveEntry> ZipArchive::listContents(const QString &pathToArchive)
+QList<ZipArchive::ArchiveEntry> ZipArchive::listContents(const QString &pathToArchive, QString inheritPath)
 {
     QList<ZipArchive::ArchiveEntry> fileList;
     QStringList args = QStringList() << "l" << "-slt" << pathToArchive;
-    QStringList lines = execute(args);
+    QStringList lines;
+
+    args = inheritPath.isEmpty() ? args : QStringList() << args << inheritPath;
+    lines = execute(args);
 
     if(!lines.isEmpty())
     {
@@ -166,6 +169,7 @@ ZipArchive::ArchiveEntry ZipArchive::from7zOutput(const QMap<QString, QStringLis
     entry.compressedSize = fileInfo["Packed Size"].at(1).trimmed().toInt();
     entry.crc32 = fileInfo["CRC"].at(1).trimmed().toInt();
     entry.modified = parseDateTime(fileInfo["Modified"].at(1).trimmed());
+    entry.isDir = fileInfo["Folder"].at(1).trimmed() == "+";
 
     if(entry.fullPath.contains("\\"))
     {

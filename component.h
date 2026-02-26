@@ -160,6 +160,12 @@ public:
     void appendMcuManufacturer(int id);
     QStringList& files();
 
+    QStringList headers();
+    QStringList includes();
+    QStringList libraries();
+    QStringList sources();
+    QStringList linkerScripts();
+
     Category getCategory() const;
     void setCategory(const Category &category);
 

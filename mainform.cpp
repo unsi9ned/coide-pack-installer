@@ -11,23 +11,27 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
+#define  DANGEROUS_TEST  0
+
 #if 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
-#elif 1
+#elif 0 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1.pack");
-#elif 1
+#elif 0 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.44.1.pack");
-#elif 1
+#elif 0 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.1.0.pack");
-#elif 1
+#elif 0 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack");
-#elif 1
+#elif 1 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.2.11.0.pack");
 #elif 1
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.1.2.0.pack");
-#elif 1
+#elif 1 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.3.7.262.atpack");
 #endif
+
+#undef DANGEROUS_TEST
 
     packMgr.readPackDescription(pack);
 
