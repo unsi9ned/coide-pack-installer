@@ -165,3 +165,30 @@ TODO List:
 - С путями Windows постоянная проблема из-за путаницы с прямым и обратным слешем /\
 - Попробовать адаптировать алгоритмы программирования Keil
 - Реализовать удаление устройств из базы данных и обновление, а так же учет версий
+
+-------------------------------- ПОИСК КОМПОНЕНТА В БД ПО КОСВЕННЫМ ПРИЗНАКАМ -------------------------------
+SELECT 
+	component.id, 
+	component.type, 
+	component.Layer_id AS layerId, 
+	component_has_category.categoryId, 
+	category.name AS category,
+	component.name, 
+	component.description, 
+	component.uuid, 
+	component.version, 
+	component_supports_mcu.mcuId, 
+	mcu.name AS mcu, 
+	mcuseries.seriesName AS series,
+	mcufamily.familyName AS family,
+	mcumanufacturer.name AS vendor
+FROM component, component_supports_mcu, mcu, mcuseries, mcufamily, mcumanufacturer, component_has_category, category
+WHERE component.name = 'CMSIS_Boot' 
+AND component.version = '1.0.1' 
+AND component.id = component_supports_mcu.componentId 
+AND mcu.id = component_supports_mcu.mcuId 
+AND mcuseries.id = mcu.seriesId
+AND mcufamily.id = mcuseries.familyId
+AND mcumanufacturer.id = mcufamily.manufacturerId
+AND component_has_category.componentId = component.id
+AND category.id = component_has_category.categoryId;
