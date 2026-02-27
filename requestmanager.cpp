@@ -529,7 +529,7 @@ bool RequestManager::createFamily(Family& family)
                 queryStr = QString("INSERT INTO mcufamily "
                                    "VALUES ('%1','%2','%3')").
                                     arg(lastId + 1).
-                                    arg(family.getName()).
+                                    arg(family.getCoName()).
                                     arg(family.getManufacturerId());
 
                 result = DataBase::instance()->sendQuery(queryStr, &status);

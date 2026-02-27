@@ -138,19 +138,6 @@ void PackManager::packInstall(PackDescription &pack)
     }
 
     //
-    // Создание компонентов в файловой структуре CoIDE
-    //
-    if(!createComponentMirrors(pack, errorString))
-    {
-        if(errorString.isEmpty())
-            emit errorOccured("Couldn't create component mirror");
-        else
-            emit errorOccured(QString("Couldn't create component mirror: %1").arg(errorString));
-
-        return;
-    }
-
-    //
     // Загружаем из базы данных информацию об устройствах
     //
     RequestManager * reqManager = RequestManager::instance();
@@ -243,6 +230,19 @@ void PackManager::packInstall(PackDescription &pack)
 
             return;
         }
+    }
+
+    //
+    // Создание компонентов в файловой структуре CoIDE
+    //
+    if(!createComponentMirrors(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            emit errorOccured("Couldn't create component mirror");
+        else
+            emit errorOccured(QString("Couldn't create component mirror: %1").arg(errorString));
+
+        return;
     }
 
 #if 0
@@ -661,9 +661,15 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
         QDir rootDir;
 
         if(component.getType() == Component::DRIVER)
-            rootDir.setPath(Paths::instance()->coIdeDriversDir() + "/!" + component.getUuid() + "/src");
+            rootDir.setPath(Paths::instance()->coIdeDriversDir() +
+                            "/" + QString::number(component.getId()) +
+                            "_" + component.getName() +
+                            "/src");
         else
-            rootDir.setPath(Paths::instance()->coIdeComponentsDir() + "/!" + component.getUuid() + "/src");
+            rootDir.setPath(Paths::instance()->coIdeComponentsDir() +
+                            "/" + QString::number(component.getId()) +
+                            "_" + component.getName() +
+                            "/src");
 
         if(!rootDir.exists() && !rootDir.mkpath(rootDir.path()))
         {

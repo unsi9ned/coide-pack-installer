@@ -232,3 +232,23 @@ FROM component_supports_mcu
 INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId
 INNER JOIN component ON component.id = component_supports_mcu.componentId
 WHERE mcu.name = 'STM32F103C8'
+
+----------------------------------------------------------------------------------------
+Замечено, что не все категории отображаются на вкладках. Вот список принадлежности категорий вкладкам:
+
+1 = driver = скорее всего Drivers (но нужно еще менять тип type = 1 и создавать подкатегорию)
+
+2 = Common  = Peripherals
+5 = Boot = Peripherals
+6 = rtos = Peripherals
+7 = peripheral = Peripherals
+
+3 = FileSystem = Others
+4 = other = Others
+8 = Board Support = Others
+11 = Algorithm = Others
+12 = LCD = Others
+15 = Framework = Others
+16 = OS = Others
+23 = Others = Others
+25 = Algorithm = Others

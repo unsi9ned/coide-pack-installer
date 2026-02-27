@@ -32,6 +32,11 @@ int Family::getId() const {return id;}
 
 QString Family::getName() const {return _name;}
 
+QString Family::getCoName()
+{
+    return _name.replace('-', ' ');
+}
+
 int Family::getManufacturerId() const {return manufacturerId;}
 
 QMap<QString, Series> &Family::seriesMap()

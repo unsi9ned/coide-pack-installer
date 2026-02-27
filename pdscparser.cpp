@@ -848,19 +848,25 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                         if(checkRequirements(pack, vendor, family, series, device, pComponent, componentList))
                         {
                             Component coComponent;
-                            Category coCategory;
+                            Category coCategory = Category::categoryBoot();
 
-                            coCategory.setName(pComponent.attributes().getCclass());
-                            coCategory.setSubCategoryName(pack.release());
+                            coCategory.setSubCategoryName(pComponent.attributes().getCclass());
 
                             coComponent.setLayerId(Component::LAYER_MCU);
                             coComponent.setType(Component::COMPONENT);
-                            coComponent.setName(pComponent.attributes().getCgroup());
 
                             if(pComponent.attributes().getCversion().isEmpty())
+                            {
                                 coComponent.setVersion(pack.release());
+                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
+                                                    pack.release());
+                            }
                             else
+                            {
                                 coComponent.setVersion(pComponent.attributes().getCversion());
+                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
+                                                    pComponent.attributes().getCversion());
+                            }
 
                             coComponent.setCategory(coCategory);
                             coComponent.setDescription(pComponent.description());

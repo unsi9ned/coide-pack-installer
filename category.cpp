@@ -1,5 +1,13 @@
 #include "category.h"
 
+QMap<Category::PeripheralCaletory, QString> Category::periphCategoryMap =
+{
+    {Category::CATEGORY_COMMON, "Common"},
+    {Category::CATEGORY_BOOT, "Boot"},
+    {Category::CATEGORY_RTOS, "rtos"},
+    {Category::CATEGORY_PERIPHERAL, "peripheral"},
+};
+
 int Category::getId() const
 {
     return id;
@@ -96,6 +104,30 @@ Category::Category(int id, QString name, int parentId)
     this->parentId = parentId;
     this->subCategoryId = -1;
     this->subCategoryName = "";
+}
+
+Category Category::categoryCommon()
+{
+    return Category(Category::CATEGORY_COMMON,
+                    Category::periphCategoryMap.value(Category::CATEGORY_COMMON));
+}
+
+Category Category::categoryBoot()
+{
+    return Category(Category::CATEGORY_BOOT,
+                    Category::periphCategoryMap.value(Category::CATEGORY_BOOT));
+}
+
+Category Category::categoryRtos()
+{
+    return Category(Category::CATEGORY_RTOS,
+                    Category::periphCategoryMap.value(Category::CATEGORY_RTOS));
+}
+
+Category Category::categoryPeripheral()
+{
+    return Category(Category::CATEGORY_PERIPHERAL,
+                    Category::periphCategoryMap.value(Category::CATEGORY_PERIPHERAL));
 }
 
 

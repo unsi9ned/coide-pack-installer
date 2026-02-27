@@ -653,12 +653,31 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                     return false;
             }
 
+            // Создаем связь между компонентом и категорией
             int catId = -1;
 
             if(!hasComponentCategoryLink(component.getId(), component.getCategory().getName(), &catId, &status, errorString))
             {
                 if(!createComponentCategoryLink(component.getId(), component.getCategory().getName(), errorString))
                     return false;
+            }
+            else if(!status)
+                return false;
+
+            // Создаем связь между компонентом и подкатегорией
+            if(!hasComponentSubCategoryLink(component.getId(),
+                                            component.getCategory().getName(),
+                                            component.getCategory().getSubCategoryName(),
+                                            &status,
+                                            errorString))
+            {
+                if(!createComponentSubCategoryLink(component.getId(),
+                                                   component.getCategory().getName(),
+                                                   component.getCategory().getSubCategoryName(),
+                                                   errorString))
+                {
+                    return false;
+                }
             }
             else if(!status)
                 return false;
@@ -965,6 +984,90 @@ bool ComponentsInfo::createComponentCategoryLink(int componentId,
                                "'%1', (SELECT id FROM category WHERE name = '%2' LIMIT 1)"
                                ");").
                        arg(componentId).
+                       arg(categoryName);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Проверить принадлежности компонента подкатегории
+//------------------------------------------------------------------------------
+bool ComponentsInfo::hasComponentSubCategoryLink(int componentId,
+                                                 const QString &categoryName,
+                                                 const QString &subCategoryName,
+                                                 bool *status,
+                                                 QString *errorString)
+{
+    bool opstatus = false;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "component_has_subcategory.componentId, "
+                  "component_has_subcategory.subcategoryId "
+                  "FROM component_has_subcategory "
+                  "WHERE component_has_subcategory.subcategoryId = "
+                    "(SELECT id FROM subcategory WHERE name = '%1' AND categoryId = "
+                        "(SELECT id FROM category WHERE name = '%3' LIMIT 1) LIMIT 1) "
+                  "AND component_has_subcategory.componentId = '%2' LIMIT 1;").
+                  arg(subCategoryName).
+                  arg(componentId).
+                  arg(categoryName);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        if(status)
+            *status = false;
+        return false;
+    }
+    else
+    {
+        opstatus = false;
+
+        if(status)
+            *status = true;
+
+        while (result.next())
+        {
+            opstatus = true;
+            break;
+        }
+    }
+
+    return opstatus;
+}
+
+//------------------------------------------------------------------------------
+// Связать компонент с подкатегорией
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponentSubCategoryLink(int componentId,
+                                                    const QString &categoryName,
+                                                    const QString &subCategoryName,
+                                                    QString *errorString)
+{
+    //Поиск последнего айди
+    bool opstatus = false;
+    QString queryStr = QString("INSERT INTO component_has_subcategory ("
+                               "componentId, subcategoryId "
+                               ") VALUES ("
+                               "'%1', (SELECT id FROM subcategory WHERE name = '%2' "
+                                      "AND categoryId = "
+                                      "(SELECT id FROM category WHERE name = '%3' LIMIT 1) LIMIT 1)"
+                               ");").
+                       arg(componentId).
+                       arg(subCategoryName).
                        arg(categoryName);
 
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);

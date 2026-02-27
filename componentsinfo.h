@@ -72,7 +72,7 @@ private:
     bool addManufacturer(int componentId, int vendorId, QString& errorString);
     bool updateManufacturerList(const Component& component, QString& errorString);
     Component findComponent(const Component component, QString* errorString = nullptr);
-    Category  findCategory(const Category category, QString* errorString = nullptr);
+    Category findCategory(const Category category, QString* errorString = nullptr);
     Category findSubCategory(const Category category, QString* errorString = nullptr);
 
     bool createComponentStatus(Component::ComponentStatus& status, QString *errorString = nullptr);
@@ -84,6 +84,9 @@ private:
 
     bool hasComponentCategoryLink(int componentId, const QString& categoryName, int * categoryId = nullptr, bool * status = nullptr, QString * errorString = nullptr);
     bool createComponentCategoryLink(int componentId, const QString& categoryName, QString * errorString = nullptr);
+
+    bool hasComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, bool * status = nullptr, QString * errorString = nullptr);
+    bool createComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, QString * errorString = nullptr);
 
 signals:
 

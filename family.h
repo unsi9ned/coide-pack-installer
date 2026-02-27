@@ -28,6 +28,7 @@ public:
 
     int getId() const;
     QString getName() const;
+    QString getCoName();
     int getManufacturerId() const;
 
     QMap<QString, Series>& seriesMap();
