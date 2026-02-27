@@ -192,3 +192,43 @@ AND mcufamily.id = mcuseries.familyId
 AND mcumanufacturer.id = mcufamily.manufacturerId
 AND component_has_category.componentId = component.id
 AND category.id = component_has_category.categoryId;
+-------------------------------------- С ВЫВОДОМ ПОДКАТЕГОРИЙ -------------------------------------------------
+SELECT 
+    component.id, 
+    component.type, 
+    component.Layer_id AS layerId, 
+    component_has_category.categoryId, 
+    category.name AS category,
+	COALESCE(component_has_subcategory.subcategoryId, -1) AS subcategoryId,
+	COALESCE(subcategory.name, NULL) AS subcategory,
+    component.name, 
+    component.description, 
+    component.uuid, 
+    component.version, 
+    component_supports_mcu.mcuId, 
+    mcu.name AS mcu, 
+    mcuseries.seriesName AS series,
+    mcufamily.familyName AS family,
+    mcumanufacturer.name AS vendor
+FROM component
+INNER JOIN component_supports_mcu ON component.id = component_supports_mcu.componentId
+INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId
+INNER JOIN mcuseries ON mcuseries.id = mcu.seriesId
+INNER JOIN mcufamily ON mcufamily.id = mcuseries.familyId
+INNER JOIN mcumanufacturer ON mcumanufacturer.id = mcufamily.manufacturerId
+INNER JOIN component_has_category ON component_has_category.componentId = component.id
+INNER JOIN category ON category.id = component_has_category.categoryId
+LEFT JOIN component_has_subcategory ON component_has_subcategory.componentId = component.id
+LEFT JOIN subcategory ON subcategory.id = component_has_subcategory.subcategoryId
+WHERE component.name = 'CMSIS_Boot' 
+AND component.version = '1.0.1';
+
+SELECT 
+    component_supports_mcu.componentId,
+	component.name AS componentName,
+    component_supports_mcu.mcuId,
+    mcu.name AS mcuName
+FROM component_supports_mcu
+INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId
+INNER JOIN component ON component.id = component_supports_mcu.componentId
+WHERE mcu.name = 'STM32F103C8'

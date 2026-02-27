@@ -5,6 +5,7 @@
 #include <QList>
 #include <QMap>
 #include <QVector>
+#include <QPair>
 
 #include "component.h"
 #include "database.h"
@@ -63,13 +64,26 @@ public:
     bool removeStatusPhantomRelations(QString *errorString = nullptr);
 
     bool createComponent(Component& component, QString *errorString = nullptr);
+    bool updateComponent(Component& component, QString *errorString = nullptr);
 
 private:
 
     bool deleteManufacturerList(int componentId, QString& errorString);
     bool addManufacturer(int componentId, int vendorId, QString& errorString);
     bool updateManufacturerList(const Component& component, QString& errorString);
-    Component findComponent(const Component component);
+    Component findComponent(const Component component, QString* errorString = nullptr);
+    Category  findCategory(const Category category, QString* errorString = nullptr);
+    Category findSubCategory(const Category category, QString* errorString = nullptr);
+
+    bool createComponentStatus(Component::ComponentStatus& status, QString *errorString = nullptr);
+    bool createCategory(Category& category, QString *errorString = nullptr);
+    bool createSubCategory(Category& category, QString *errorString = nullptr);
+
+    bool hasComponentMcuLink(int componentId, const QString& mcuName, int * mcuId = nullptr, bool * status = nullptr, QString * errorString = nullptr);
+    bool createComponentMcuLink(int componentId, const QString& mcuName, QString * errorString = nullptr);
+
+    bool hasComponentCategoryLink(int componentId, const QString& categoryName, int * categoryId = nullptr, bool * status = nullptr, QString * errorString = nullptr);
+    bool createComponentCategoryLink(int componentId, const QString& categoryName, QString * errorString = nullptr);
 
 signals:
 

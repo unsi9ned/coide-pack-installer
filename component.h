@@ -172,7 +172,7 @@ public:
 
     void addSupportedMcu(const QString& mcuName);
     void removeSupportedMcu(const QString& mcuName);
-    QStringList supportedMcuList();
+    QStringList supportedMcuList() const;
 
     Category getCategory() const;
     void setCategory(const Category &category);

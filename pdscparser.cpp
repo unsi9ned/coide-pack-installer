@@ -851,8 +851,10 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             Category coCategory;
 
                             coCategory.setName(pComponent.attributes().getCclass());
-                            coCategory.setSubCategory(pack.release());
+                            coCategory.setSubCategoryName(pack.release());
 
+                            coComponent.setLayerId(Component::LAYER_MCU);
+                            coComponent.setType(Component::COMPONENT);
                             coComponent.setName(pComponent.attributes().getCgroup());
 
                             if(pComponent.attributes().getCversion().isEmpty())

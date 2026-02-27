@@ -533,7 +533,450 @@ bool ComponentsInfo::removeStatusPhantomRelations(QString *errorString)
 //------------------------------------------------------------------------------
 bool ComponentsInfo::createComponent(Component &component, QString *errorString)
 {
+    Component foundComponent = findComponent(component);
+
+    // Создаем новый
+    if(foundComponent.isNull())
+    {
+        //Поиск последнего айди
+        int lastId = -1;
+        bool status = false;
+        QString queryStr = QString("SELECT MAX(id) FROM component");
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+        if(!status || !result.next())
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            lastId = result.value(0).toInt();
+            component.setId(lastId + 1);
+
+            // Создаем положительный статус компонента
+            Component::ComponentStatus costatus = component.getStatus();
+
+            if(!createComponentStatus(costatus, errorString))
+                return false;
+            else
+                component.setStatus(costatus);
+
+            queryStr = QString("INSERT INTO component "
+                               "(id, authorId, Layer_id, Component_Status_id, Share_Document_id,"
+                               "type, name, description, advertisingWord, advertisingURL, uuid,"
+                               "timeuuid, repo_user, repo_password, micro, cox, version, publish_status,"
+                               "hits, create_date, update_date, tags) "
+                               "VALUES ('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12',"
+                               "'%13','%14','%15','%16','%17','%18','%19','%20','%21','%22')").
+                               arg(component.getId()).
+                               arg(component.getAuthorId()).
+                               arg(component.getLayerId()).
+                               arg(component.getComponentStatusId()).
+                               arg(component.getShareDocumentId()).
+                               arg(component.getType()).
+                               arg(component.getName()).
+                               arg(component.getDescription()).
+                               arg(component.getAdvertisingWord()).
+                               arg(component.getAdvertisingURL()).
+                               arg(component.getUuid()).
+                               arg(component.getTimeuuid()).
+                               arg(component.getRepoUser()).
+                               arg(component.getRepoPass()).
+                               arg(component.getMicro()).
+                               arg(component.getCox()).
+                               arg(component.getVersion()).
+                               arg(component.getPublishStatus()).
+                               arg(component.getHits()).
+                               arg(component.getCreationDate()).
+                               arg(component.getUpdateDate()).
+                               arg(component.getTags());
+
+            result = DataBase::instance()->sendQuery(queryStr, &status);
+
+            if(!status)
+            {
+                if(errorString)
+                    *errorString = result.lastError().text();
+                return false;
+            }
+
+            // Создаем категорию или находим ее, если она создана
+            Category newCategory = findCategory(component.getCategory(), errorString);
+
+            if(newCategory.isNull())
+            {
+                newCategory.setName(component.getCategory().getName());
+
+                if(!createCategory(newCategory, errorString))
+                    return false;
+            }
+            newCategory.setSubCategoryName(component.getCategory().getSubCategoryName());
+            component.setCategory(newCategory);
+
+            // Создаем подкатегорию (у нас она всегда есть)
+            Category newSubCategory = findSubCategory(component.getCategory(), errorString);
+
+            if(newSubCategory.getSubCategoryName().isEmpty())
+            {
+                newSubCategory.setId(newCategory.getId());
+                newSubCategory.setSubCategoryName(component.getCategory().getSubCategoryName());
+
+                if(!createSubCategory(newSubCategory, errorString))
+                    return false;
+
+                newCategory.setSubCategoryId(newSubCategory.getSubCategoryId());
+            }
+            else
+            {
+                newCategory.setSubCategoryId(newSubCategory.getSubCategoryId());
+                newCategory.setSubCategoryName(newSubCategory.getSubCategoryName());
+            }
+
+            component.setCategory(newCategory);
+
+            // Создаем связь между компонентом и устройствами
+            foreach(QString dev, component.supportedMcuList())
+            {
+                int mcuId = -1;
+
+                if(hasComponentMcuLink(component.getId(), dev, &mcuId, &status, errorString))
+                {
+                    continue;
+                }
+                else if(!status)
+                {
+                    return false;
+                }
+                else if(!createComponentMcuLink(component.getId(), dev, errorString))
+                    return false;
+            }
+
+            int catId = -1;
+
+            if(!hasComponentCategoryLink(component.getId(), component.getCategory().getName(), &catId, &status, errorString))
+            {
+                if(!createComponentCategoryLink(component.getId(), component.getCategory().getName(), errorString))
+                    return false;
+            }
+            else if(!status)
+                return false;
+        }
+    }
+    // Обновляем существующий
+    else if(!updateComponent(component, errorString))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Обновление компонента в базе данных
+//------------------------------------------------------------------------------
+bool ComponentsInfo::updateComponent(Component &component, QString *errorString)
+{
     return false;
+}
+
+//------------------------------------------------------------------------------
+// Создать запись в таблице status
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponentStatus(Component::ComponentStatus &status, QString *errorString)
+{
+    //Поиск последнего айди
+    int lastId = -1;
+    bool opstatus = false;
+    QString queryStr = QString("SELECT MAX(id) FROM status");
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus || !result.next())
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+    else
+    {
+        lastId = result.value(0).toInt();
+        status.statusId = lastId + 1;
+
+        queryStr = QString("INSERT INTO status ("
+                           "id, shouldupdate, hasdownloaded, hasdeleted, auditstatus"
+                           ") VALUES ("
+                           "'%1', '%2', '%3', '%4', '%5'"
+                           ");").
+                   arg(status.statusId).
+                   arg(status.shouldUpdate).
+                   arg(status.hasDownloaded).
+                   arg(status.hasDeleted).
+                   arg(status.auditStatus);
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создать категорию компонента
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createCategory(Category &category, QString *errorString)
+{
+    //Поиск последнего айди
+    int lastId = -1;
+    bool opstatus = false;
+    QString queryStr = QString("SELECT MAX(id) FROM category");
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus || !result.next())
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+    else
+    {
+        lastId = result.value(0).toInt();
+        category.setId(lastId + 1);
+        queryStr = QString("INSERT INTO category ("
+                           "id, name "
+                           ") VALUES ("
+                           "'%1', '%2'"
+                           ");").
+                   arg(category.getId()).
+                   arg(category.getName());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создать подкатегорию компонента
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createSubCategory(Category &category, QString *errorString)
+{
+    //Поиск последнего айди
+    int lastId = -1;
+    bool opstatus = false;
+    QString queryStr = QString("SELECT MAX(id) FROM subcategory");
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus || !result.next())
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+    else
+    {
+        lastId = result.value(0).toInt();
+        category.setSubCategoryId(lastId + 1);
+
+        queryStr = QString("INSERT INTO subcategory ("
+                           "id, name, categoryId "
+                           ") VALUES ("
+                           "'%1', '%2', '%3'"
+                           ");").
+                   arg(category.getSubCategoryId()).
+                   arg(category.getSubCategoryName()).
+                   arg(category.getId());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Проверить связь компонента с MCU
+//------------------------------------------------------------------------------
+bool ComponentsInfo::hasComponentMcuLink(int componentId,
+                                         const QString &mcuName,
+                                         int *mcuId, bool *status,
+                                         QString *errorString)
+{
+    bool opstatus = false;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "component_supports_mcu.componentId, "
+                  "component.name AS componentName, "
+                  "component_supports_mcu.mcuId, "
+                  "mcu.name AS mcuName "
+                  "FROM component_supports_mcu "
+                  "INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId "
+                  "INNER JOIN component ON component.id = component_supports_mcu.componentId "
+                  "WHERE mcu.name = '%1' AND component_supports_mcu.componentId = '%2';").
+                  arg(mcuName).
+                  arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        if(status)
+            *status = false;
+        return false;
+    }
+    else
+    {
+        opstatus = false;
+
+        if(status)
+            *status = true;
+
+        while (result.next())
+        {
+#if 0
+            int componentId = result.value("componentId").toInt();
+            QString componentName = result.value("componentName").toString();
+#endif
+            if(mcuId)
+                *mcuId = result.value("mcuId").toInt();
+            opstatus = true;
+            break;
+        }
+    }
+
+    return opstatus;
+}
+
+//------------------------------------------------------------------------------
+// Связать компонент с MCU
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponentMcuLink(int componentId, const QString &mcuName, QString *errorString)
+{
+    //Поиск последнего айди
+    bool opstatus = false;
+    QString queryStr = QString("INSERT INTO component_supports_mcu ("
+                               "componentId, mcuId "
+                               ") VALUES ("
+                               "'%1', (SELECT id FROM mcu WHERE name = '%2' LIMIT 1)"
+                               ");").
+                       arg(componentId).
+                       arg(mcuName);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Проверить принадлежности компонента категории
+//------------------------------------------------------------------------------
+bool ComponentsInfo::hasComponentCategoryLink(int componentId,
+                                              const QString &categoryName,
+                                              int *categoryId,
+                                              bool *status,
+                                              QString *errorString)
+{
+    bool opstatus = false;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "component_has_category.componentId, "
+                  "component_has_category.categoryId "
+                  "FROM component_has_category "
+                  "WHERE component_has_category.categoryId = (SELECT id FROM category WHERE name = '%1' LIMIT 1) "
+                  "AND component_has_category.componentId = '%2' LIMIT 1;").
+                  arg(categoryName).
+                  arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        if(status)
+            *status = false;
+        return false;
+    }
+    else
+    {
+        opstatus = false;
+
+        if(status)
+            *status = true;
+
+        while (result.next())
+        {
+#if 0
+            int componentId = result.value("componentId").toInt();
+            QString componentName = result.value("componentName").toString();
+#endif
+            if(categoryId)
+                *categoryId = result.value("categoryId").toInt();
+            opstatus = true;
+            break;
+        }
+    }
+
+    return opstatus;
+}
+
+//------------------------------------------------------------------------------
+// Проверить принадлежности компонента подкатегории
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponentCategoryLink(int componentId,
+                                                 const QString &categoryName,
+                                                 QString *errorString)
+{
+    //Поиск последнего айди
+    bool opstatus = false;
+    QString queryStr = QString("INSERT INTO component_has_category ("
+                               "componentId, categoryId "
+                               ") VALUES ("
+                               "'%1', (SELECT id FROM category WHERE name = '%2' LIMIT 1)"
+                               ");").
+                       arg(componentId).
+                       arg(categoryName);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -592,58 +1035,224 @@ bool ComponentsInfo::updateManufacturerList(const Component &component, QString&
     return true;
 }
 
-Component ComponentsInfo::findComponent(const Component component)
+//------------------------------------------------------------------------------
+// Поиск компонента в базе данных по косвенным признакам
+//------------------------------------------------------------------------------
+Component ComponentsInfo::findComponent(const Component component, QString *errorString)
 {
+    bool status = true;
     Component foundComponent;
-    QString sql = "SELECT "
+    QList<Component> foundComponentList;
+    QString sql;
+
+    sql = QString("SELECT "
                     "component.id, "
-                    "component.Layer_id, "
                     "component.type, "
+                    "component.Layer_id AS layerId, "
+                    "component_has_category.categoryId, "
+                    "category.name AS category, "
+                    "COALESCE(component_has_subcategory.subcategoryId, -1) AS subcategoryId, "
+                    "COALESCE(subcategory.name, NULL) AS subcategory, "
                     "component.name, "
                     "component.description, "
                     "component.uuid, "
                     "component.version, "
                     "component_supports_mcu.mcuId, "
-                    "mcu.name, "
-                    "mcuseries.seriesName, "
-                    "mcufamily.familyName, "
-                    "mcumanufacturer.name "
-                    "FROM component, component_supports_mcu, mcu, mcuseries, mcufamily, mcumanufacturer "
-                    "WHERE component.name = 'CMSIS_Boot' "
-                    "AND component.version = '1.0.1' "
-                    "AND component.id = component_supports_mcu.componentId "
-                    "AND mcu.id = component_supports_mcu.mcuId "
-                    "AND mcuseries.id = mcu.seriesId "
-                    "AND mcufamily.id = mcuseries.familyId "
-                    "AND mcumanufacturer.id = mcufamily.manufacturerId;";
+                    "mcu.name AS mcu, "
+                    "mcuseries.seriesName AS series, "
+                    "mcufamily.familyName AS family, "
+                    "mcumanufacturer.name AS vendor "
+                "FROM component "
+                "INNER JOIN component_supports_mcu ON component.id = component_supports_mcu.componentId "
+                "INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId "
+                "INNER JOIN mcuseries ON mcuseries.id = mcu.seriesId "
+                "INNER JOIN mcufamily ON mcufamily.id = mcuseries.familyId "
+                "INNER JOIN mcumanufacturer ON mcumanufacturer.id = mcufamily.manufacturerId "
+                "INNER JOIN component_has_category ON component_has_category.componentId = component.id "
+                "INNER JOIN category ON category.id = component_has_category.categoryId "
+                "LEFT JOIN component_has_subcategory ON component_has_subcategory.componentId = component.id "
+                "LEFT JOIN subcategory ON subcategory.id = component_has_subcategory.subcategoryId "
+                "WHERE component.name = '%1' "
+                "AND component.version = '%2';").
+            arg(component.getName()).
+            arg(component.getVersion());
 
-    sql = "SELECT "
-            "component.id, "
-            "component.type, "
-            "component.Layer_id AS layerId, "
-            "component_has_category.categoryId, "
-            "category.name AS category, "
-            "component.name, "
-            "component.description, "
-            "component.uuid, "
-            "component.version, "
-            "component_supports_mcu.mcuId, "
-            "mcu.name AS mcu, "
-            "mcuseries.seriesName AS series, "
-            "mcufamily.familyName AS family, "
-            "mcumanufacturer.name AS vendor "
-            "FROM component, component_supports_mcu, mcu, mcuseries, mcufamily, mcumanufacturer, component_has_category, category "
-            "WHERE component.name = 'CMSIS_Boot' "
-            "AND component.version = '1.0.1' "
-            "AND component.id = component_supports_mcu.componentId "
-            "AND mcu.id = component_supports_mcu.mcuId "
-            "AND mcuseries.id = mcu.seriesId "
-            "AND mcufamily.id = mcuseries.familyId "
-            "AND mcumanufacturer.id = mcufamily.manufacturerId "
-            "AND component_has_category.componentId = component.id "
-            "AND category.id = component_has_category.categoryId;";
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return foundComponent;
+    }
+    else
+    {
+        while (result.next())
+        {
+            int componentId = result.value("id").toInt();
+            int type = result.value("type").toInt();
+            int layerId = result.value("layerId").toInt();
+            int categoryId = result.value("categoryId").toInt();
+            QString category = result.value("category").toString();
+            int subCategoryId = result.value("subcategoryId").toInt();
+            QString subCategory = result.value("subcategory").toString();
+            QString name = result.value("name").toString();
+            QString description = result.value("description").toString();
+            QString uuid = result.value("uuid").toString();
+            QString version = result.value("version").toString();
+            int mcuId = result.value("mcuId").toInt();
+            QString mcu = result.value("mcu").toString();
+#if 0
+            QString series = result.value("series").toString();
+            QString family = result.value("family").toString();
+            QString vendor = result.value("vendor").toString();
+#endif
+
+            Component current;
+            Category foundCategory;
+
+            foundCategory.setId(categoryId);
+            foundCategory.setName(category);
+            foundCategory.setSubCategoryId(subCategoryId);
+            foundCategory.setSubCategoryName(subCategory);
+
+            current.setId(componentId);
+            current.setType(type);
+            current.setLayerId(layerId);
+            current.setCategory(foundCategory);
+            current.setName(name);
+            current.setDescription(description);
+            current.setUuid(uuid);
+            current.setVersion(version);
+            current.addSupportedMcu(mcu);
+            current.appendMcuId(mcuId);
+
+            if(foundComponentList.contains(current))
+            {
+                for(int i = 0; i < foundComponentList.count(); i++)
+                {
+                    Component& c = foundComponentList[i];
+
+                    // Обновляем список mcu
+                    if(c == current)
+                    {
+                        if(!c.supportedMcuList().contains(mcu))
+                        {
+                            c.addSupportedMcu(mcu);
+                            c.appendMcuId(mcuId);
+                        }
+                        break;
+                    }
+                }
+            }
+            else
+                foundComponentList.append(current);
+        }
+    }
+
+    if(!foundComponentList.isEmpty())
+    {
+        foreach (Component c, foundComponentList)
+        {
+            foreach (QString mcuName, component.supportedMcuList())
+            {
+                if(c.supportedMcuList().contains(mcuName))
+                {
+                    foundComponent = c;
+                }
+            }
+        }
+    }
 
     return foundComponent;
+}
+
+//------------------------------------------------------------------------------
+// Поиск категории в базе данных
+//------------------------------------------------------------------------------
+Category ComponentsInfo::findCategory(const Category category, QString *errorString)
+{
+    bool status = true;
+    Category foundCategory;
+    QString sql;
+
+    sql = QString("SELECT "
+                    "category.id, "
+                    "category.name "
+                  "FROM category "
+                  "WHERE category.name = '%1' "
+                  "LIMIT 1;").
+                  arg(category.getName());
+
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return foundCategory;
+    }
+    else
+    {
+        while (result.next())
+        {
+            int categoryId = result.value("id").toInt();
+            QString categoryName = result.value("name").toString();
+
+            foundCategory.setId(categoryId);
+            foundCategory.setName(categoryName);
+        }
+    }
+
+    return foundCategory;
+}
+
+//------------------------------------------------------------------------------
+// Поиск подкатегории в базе данных
+//------------------------------------------------------------------------------
+Category ComponentsInfo::findSubCategory(const Category category,
+                                         QString *errorString)
+{
+    Category foundSubCategory;
+    bool status = true;
+
+    QString sql;
+
+    sql = QString("SELECT "
+                    "subcategory.id, "
+                    "subcategory.name, "
+                    "subcategory.categoryId "
+                  "FROM subcategory "
+                  "WHERE subcategory.name = '%1' AND subcategory.categoryId = '%2' "
+                  "LIMIT 1;").
+                  arg(category.getSubCategoryName()).
+                  arg(category.getId());
+
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return foundSubCategory;
+    }
+    else
+    {
+        while (result.next())
+        {
+            int id = result.value("id").toInt();
+            QString name = result.value("name").toString();
+
+            foundSubCategory = category;
+            foundSubCategory.setSubCategoryId(id);
+            foundSubCategory.setSubCategoryName(name);
+        }
+    }
+
+    return foundSubCategory;
 }
 
 //------------------------------------------------------------------------------

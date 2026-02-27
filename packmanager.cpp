@@ -215,6 +215,36 @@ void PackManager::packInstall(PackDescription &pack)
             }
         }
     }
+
+    //
+    // Установка компонентов
+    //
+    QMap<QString, Component>& componentMap = pack.components();
+    QMap<QString, QStringList>& componentFileMap = pack.coComponentMap();
+
+    foreach(QString uuid, componentMap.keys())
+    {
+        Component& component = componentMap[uuid];
+        QStringList& files = componentFileMap[uuid];
+
+        emit eventOccured(QString("Creating component '%1/%2'").
+                          arg(component.getName()).
+                          arg(component.getVersion()));
+
+        if(!reqManager->createComponent(component, &errorString))
+        {
+            if(errorString.isEmpty())
+                emit errorOccured(QString("An error occurred while adding the '%1' component").
+                                  arg(component.getName()));
+            else
+                emit errorOccured(QString("An error occurred while adding the '%1' component: %2").
+                                  arg(component.getName()).
+                                  arg(errorString));
+
+            return;
+        }
+    }
+
 #if 0
     {
 #if 0

@@ -426,7 +426,7 @@ void Component::removeSupportedMcu(const QString &mcuName)
         _supportsMcuList.removeOne(mcuName);
 }
 
-QStringList Component::supportedMcuList()
+QStringList Component::supportedMcuList() const
 {
     return _supportsMcuList;
 }
@@ -439,6 +439,7 @@ Component::ComponentStatus Component::getStatus()
 void Component::setStatus(Component::ComponentStatus status)
 {
     _status = status;
+    componentStatusId = status.statusId;
 }
 
 bool Component::isDownloaded()
@@ -480,7 +481,7 @@ Component::operator==(const Component &component)
 
     if(_category.hasSubCategory() && component.getCategory().hasSubCategory())
     {
-        if(_category.subCategory().getName() != component.getCategory().subCategory().getName())
+        if(_category.getSubCategoryName() != component.getCategory().getSubCategoryName())
             equal = false;
     }
     else if(!_category.hasSubCategory() && !component.getCategory().hasSubCategory())

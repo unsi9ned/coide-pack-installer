@@ -34,9 +34,10 @@ public:
     void setChildren(const QMap<int, Category *> &value);
     void appendChild(Category * child);
 
-    void setSubCategory(const Category& subCategory);
-    void setSubCategory(const QString& subCategory, int id = -1);
-    Category subCategory();
+    void setSubCategoryName(const QString& name);
+    void setSubCategoryId(int id);
+    QString getSubCategoryName() const;
+    int getSubCategoryId() const;
 
     bool isNull();
     bool isValid();
