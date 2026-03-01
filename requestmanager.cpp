@@ -501,7 +501,7 @@ bool RequestManager::createFamily(Family& family)
             Family currFam = families.at(f);
 
             if(currFam.getManufacturerId() == family.getManufacturerId() &&
-               currFam.getName().trimmed().toLower() == family.getName().trimmed().toLower())
+               currFam.getCoName().trimmed().toLower() == family.getCoName().trimmed().toLower())
             {
                 family.setId(currFam.getId());
                 isset = true;

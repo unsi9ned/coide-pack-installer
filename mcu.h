@@ -43,6 +43,7 @@ private:
 
     QMap<QString, Memory> _memoryMap;
     QStringList _definedSymbols;
+    QStringList _compileHeaders;
 
 public:
     Mcu();
@@ -109,6 +110,9 @@ public:
     QStringList definedSymbols() {return this->_definedSymbols;}
     QString defSym2coMicro();
     QString coDescription();
+
+    void addCompileHeader(const QString& header){this->_compileHeaders.append(header);}
+    QStringList compileHeaders(){return this->_compileHeaders;}
 
 private:
     bool isValid(QString& errorString);

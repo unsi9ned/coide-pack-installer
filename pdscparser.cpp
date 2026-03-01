@@ -207,6 +207,8 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
         QList<DeviceFeature> subFamilyFeatures;
         QStringList coreCompileOptions;
         QStringList subFamilyCompileOptions;
+        QStringList coreCompileHeaders;
+        QStringList subFamilyCompileHeaders;
         QString coreSVD;
         QString subFamilySVD;
 
@@ -235,6 +237,7 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                     {
                         QString devProcessor = node.namedItem("processor").attributes().namedItem("Dcore").nodeValue();
                         QString definedSymbol = node.namedItem("compile").attributes().namedItem("define").nodeValue();
+                        QString compileHeader = node.namedItem("compile").attributes().namedItem("header").nodeValue();
                         QString coreName;
 
                         if(devProcessor.isEmpty())
@@ -288,6 +291,17 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
 
                         if(!definedSymbol.isEmpty())
                             newMcu.addDefSymbol(definedSymbol);
+
+                        //
+                        // Добавляем compile header
+                        //
+                        foreach(QString hdr, subFamilyCompileHeaders)
+                        {
+                            newMcu.addCompileHeader("header=" + hdr);
+                        }
+
+                        if(!compileHeader.isEmpty())
+                            newMcu.addCompileHeader("header=" + compileHeader);
                     }
                     else if(nodeName == "feature")
                     {
@@ -309,9 +323,13 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                     else if(nodeName == "compile")
                     {
                         QString define = node.attributes().namedItem("define").nodeValue();
+                        QString header = node.attributes().namedItem("header").nodeValue();
 
                         if(!define.isEmpty())
                             subFamilyCompileOptions.append(define);
+
+                        if(!header.isEmpty())
+                            subFamilyCompileHeaders.append(header);
                     }
                 }
             }
@@ -319,6 +337,7 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
             {
                 QString devProcessor = node.namedItem("processor").attributes().namedItem("Dcore").nodeValue();
                 QString definedSymbol = node.namedItem("compile").attributes().namedItem("define").nodeValue();
+                QString compileHeader = node.namedItem("compile").attributes().namedItem("header").nodeValue();
                 QString coreName;
 
                 coreName = devProcessor.isEmpty() ? familyProcessor : devProcessor;
@@ -360,6 +379,17 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
 
                 if(!definedSymbol.isEmpty())
                     newMcu.addDefSymbol(definedSymbol);
+
+                //
+                // Добавляем заголовочный файлы для компилятора
+                //
+                foreach (QString hdr, coreCompileHeaders)
+                {
+                    newMcu.addCompileHeader("header=" + hdr);
+                }
+
+                if(!compileHeader.isEmpty())
+                    newMcu.addCompileHeader("header=" + compileHeader);
             }
             else if(nodeName == "feature" && !familyProcessor.isEmpty())
             {
@@ -378,9 +408,13 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
             else if(nodeName == "compile")
             {
                 QString define = node.attributes().namedItem("define").nodeValue();
+                QString header = node.attributes().namedItem("header").nodeValue();
 
                 if(!define.isEmpty())
                     coreCompileOptions.append(define);
+
+                if(!header.isEmpty())
+                    coreCompileHeaders.append(header);
             }
         }
     }
@@ -835,13 +869,6 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                     {
                         Mcu& device = d.value();
 
-#if 0
-                        if(device.getName() == "nRF52840_xxAA" && pComponent.attributes().getCgroup() == "StartupConfig")
-                        {
-                            qInfo() << "StartupConfig";
-                        }
-#endif
-
                         //
                         // Компонент предназначен для данного устройства
                         //
@@ -897,22 +924,48 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                                 coComponent.addSupportedMcu(device.getName());
                                 pack.components().insert(coComponent.getUuid(), coComponent);
                             }
-#if 0
-                            if(device.getName() == "nRF52832_xxAA")
-                                qInfo() << device.getName() <<
-                                           pComponent.attributes().getCclass() <<
-                                           pComponent.attributes().getCgroup() <<
-                                           coComponent.files() << "Depend of" <<
-                                           pComponent.condition().id();
-#endif
                         }
-#if 0
-                        else
+
+                        //
+                        // Превращаем параметр compile header в компонент
+                        //
+                        if(!device.compileHeaders().isEmpty())
                         {
-                            if(device.getName() == "nRF52840_xxAA")
-                                qInfo() << "SKIP ---->" << device.getName() << pComponent.attributes().getCclass() << pComponent.attributes().getCgroup() << pComponent.condition().id();
+                            Component coComponent;
+                            Category coCategory = Category::categoryCommon();
+
+                            coCategory.setSubCategoryName("Device");
+
+                            coComponent.setLayerId(Component::LAYER_MCU);
+                            coComponent.setType(Component::COMPONENT);
+
+                            coComponent.setVersion(pack.release());
+                            coComponent.setName("Compile_" + pack.release());
+
+                            coComponent.setCategory(coCategory);
+                            coComponent.setDescription("CMSIS-Core compliant device header file");
+                            coComponent.files().clear();
+                            coComponent.files().append(device.compileHeaders());
+
+                            if(pack.components().values().contains(coComponent))
+                            {
+                                for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+                                {
+                                    Component& existingComponent = it.value();
+
+                                    if(existingComponent == coComponent)
+                                    {
+                                        existingComponent.addSupportedMcu(device.getName());
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                coComponent.addSupportedMcu(device.getName());
+                                pack.components().insert(coComponent.getUuid(), coComponent);
+                            }
                         }
-#endif
                     }
                 }
             }
