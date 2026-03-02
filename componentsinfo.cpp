@@ -1180,7 +1180,6 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
             arg(component.getName()).
             arg(component.getVersion());
 
-
     QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
 
     if(!status)
@@ -1240,7 +1239,7 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
                     // Обновляем список mcu
                     if(c == current)
                     {
-                        if(!c.supportedMcuList().contains(mcu))
+                        if(!c.supportedMcuList().contains(mcu, Qt::CaseInsensitive))
                         {
                             c.addSupportedMcu(mcu);
                             c.appendMcuId(mcuId);
@@ -1260,7 +1259,7 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
         {
             foreach (QString mcuName, component.supportedMcuList())
             {
-                if(c.supportedMcuList().contains(mcuName))
+                if(c.supportedMcuList().contains(mcuName, Qt::CaseInsensitive))
                 {
                     foundComponent = c;
                 }

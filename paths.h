@@ -15,6 +15,7 @@ private:
     static constexpr const char* CO_FLASH_ALGORITHM_DIR = "flash";
     static constexpr const char* CO_DATA_DIR = "data";
     static constexpr const char* CO_PACK_DIR = "pack";
+    static constexpr const char* CO_CMSIS_PACK_DIR = "CMSIS";
     static constexpr const char* CO_TEMP_DIR = "temp";
     static constexpr const char* CO_REPO_DIR = "repo";
     static constexpr const char* CO_COMPONENTS_DIR = "Components";
@@ -23,6 +24,8 @@ private:
     static constexpr const char* APP_SETTINGS = "config.dat";
     static constexpr const char* APP_UTILS_DIR = "utils";
     static constexpr const char* SEVEN_ZIP = "7z.exe";
+    static constexpr const char* APP_CMSIS_DIR = "CMSIS";
+    static constexpr const char* CMSIS_CORE_ZIP = "CMSIS_Core_%VERSION%.zip";
 
     static const QMap<QString, QString> _coDebugAlgorithmsMap;
 
@@ -41,6 +44,7 @@ public:
 
     QString appSettingsFile();
     QString sevenZipExe();
+    QString cmsisCore(QString version = "0.0.0");
     QString coIdeDir();
     QString coIdeDatabaseFile();
     QString coIdeDebugAlgorithmDir();
@@ -50,6 +54,7 @@ public:
     QString coIdeDataDir();
     QString coIdePacketsDir();
     QString coIdePackDir(const QString& vendor, const QString& release);
+    QString coIdeCmsisDir(QString version = QString());
     QString coIdeTempDir();
     QString coIdeRepositoryDir();
     QString coIdeComponentsDir();

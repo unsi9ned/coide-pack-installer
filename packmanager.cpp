@@ -43,6 +43,62 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     PdscParser parser;
     parser.parse(pack);
+
+    //
+    // Искусственно добавляем в описание компоненты CMSIS CORE
+    //
+    QString cmsisVer = "5.6.0";
+    Component coComponent;
+    Category coCategory = Category::categoryCommon();
+
+    coCategory.setSubCategoryName("Device");
+
+    coComponent.setLayerId(Component::LAYER_MCU);
+    coComponent.setType(Component::COMPONENT);
+    coComponent.setVersion(cmsisVer);
+    coComponent.setName(QString("CMSIS_Core_%1").arg(coComponent.getVersion()));
+    coComponent.setCategory(coCategory);
+    coComponent.setDescription("CMSIS-CORE for Cortex-M, SC000, SC300, Star-MC1, ARMv8-M, ARMv8.1-M");
+
+    //
+    // Чтение списка файлов в арвхиве и распаковка
+    //
+    QFile cmsisZip(Paths::instance()->cmsisCore(coComponent.getVersion()));
+
+    if(cmsisZip.exists())
+    {
+        QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(cmsisZip.fileName());
+
+        foreach(ZipArchive::ArchiveEntry f, files)
+        {
+            if(!f.isDir)
+            {
+                coComponent.files().append("header=" + f.fullPath.replace('/', '\\'));
+            }
+        }
+    }
+    else
+    {
+        emit errorOccured(QString("The %1 file was not found").arg(cmsisZip.fileName()));
+        return;
+    }
+
+    //
+    // Добавление mcu, которые зависят от CMSIS
+    // TODO добавляем для всех mcu
+    //
+    for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+    {
+        Component& component = pack.components()[it.key()];
+
+        foreach(QString mcuName, component.supportedMcuList())
+        {
+            if(!coComponent.supportedMcuList().contains(mcuName, Qt::CaseInsensitive))
+                coComponent.addSupportedMcu(mcuName);
+        }
+    }
+
+    pack.components().insert(coComponent.getUuid(), coComponent);
 }
 
 //------------------------------------------------------------------------------
@@ -218,7 +274,7 @@ void PackManager::packInstall(PackDescription &pack)
                           arg(component.getName()).
                           arg(component.getDescription()));
 
-#if 1
+#if 0
         if(component.getDescription() == "nRF5340 Device network core and CMSIS")
         {
             qInfo() << component.getName() << component.getDescription();
@@ -622,13 +678,52 @@ QStringList PackManager::getFullFileList(PackDescription &pack)
 
     for(auto it = coMap.begin(); it != coMap.end(); ++it)
     {
+        Component& component = pack.components()[it.key()];
         QStringList coList = it.value();
+
+        if(component.getName() == QString("CMSIS_Core_%1").arg(component.getVersion()))
+            continue;
 
         foreach(QString f, coList)
         {
             if(!list.contains(f))
             {
                 list.append(f);
+            }
+        }
+    }
+
+    return list;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает список файлов, входящих в ядро CMSIS
+//------------------------------------------------------------------------------
+QStringList PackManager::getCmsisFileList(PackDescription &pack, QString &version)
+{
+    QMap<QString, QStringList>& coMap = pack.coComponentMap();
+    QStringList list;
+
+    if(coMap.isEmpty())
+    {
+        loadCoComponents(pack);
+    }
+
+    for(auto it = coMap.begin(); it != coMap.end(); ++it)
+    {
+        Component& component = pack.components()[it.key()];
+        QStringList coList = it.value();
+
+        if(component.getName() == QString("CMSIS_Core_%1").arg(component.getVersion()))
+        {
+            version = component.getVersion();
+
+            foreach(QString f, coList)
+            {
+                if(!list.contains(f))
+                {
+                    list.append(f);
+                }
             }
         }
     }
@@ -662,6 +757,27 @@ bool PackManager::extractSources(PackDescription &pack, QString &errorString)
     {
         errorString = QString("The '%1' package is not valid").arg(pack.name());
         return false;
+    }
+
+    //
+    // Формирование списка файлов CMSIS для распаковки
+    //
+    QString cmsisVer = "0.0.0";
+    QStringList cmsisFiles = getCmsisFileList(pack, cmsisVer);
+
+    //
+    // Распаковка
+    //
+    foreach (QString s, cmsisFiles)
+    {
+        QString destinationDir = Paths::instance()->coIdeCmsisDir(cmsisVer).replace('/', '\\') + "\\" +
+                                 QFileInfo(s).path().replace('/','\\');
+
+        if(!ZipArchive().extractFile(Paths::instance()->cmsisCore(cmsisVer), destinationDir, s))
+        {
+            errorString = QString("An error occurred while extracting the %1 file").arg(s);
+            return false;
+        }
     }
 
     //
@@ -743,6 +859,11 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
             QDir subDir;
             QString targetPath = pack.installDir() + "/" + f;
             QString linkPath = rootDir.path() + "/" + f;
+
+            if(component.getName().startsWith("CMSIS_Core_"))
+            {
+                targetPath = Paths::instance()->coIdeCmsisDir(component.getVersion()) + "/" + f;
+            }
 
             subDir.setPath(rootDir.path() + "/" + info.path());
 

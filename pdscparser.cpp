@@ -885,7 +885,15 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                         if(checkRequirements(pack, vendor, family, series, device, pComponent, componentList))
                         {
                             Component coComponent;
-                            Category coCategory = Category::categoryBoot();
+                            Category coCategory = Category::categoryCommon();
+
+                            // Принудительно задаем точку входа в программу main()
+                            if(pComponent.attributes().getCclass().toLower() == "device" &&
+                               pComponent.attributes().getCgroup().toLower() == "startup")
+                            {
+                                coCategory = Category::categoryBoot();
+                                coComponent.setMicro("__START=main");
+                            }
 
                             coCategory.setSubCategoryName(pComponent.attributes().getCclass());
 

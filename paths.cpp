@@ -78,6 +78,18 @@ QString Paths::sevenZipExe()
 }
 
 //------------------------------------------------------------------------------
+// Путь к архиву с исходниками CMSIS CORE
+//------------------------------------------------------------------------------
+QString Paths::cmsisCore(QString version)
+{
+    QString path =  QApplication::applicationDirPath() + "/" +
+                    Paths::APP_CMSIS_DIR + "/" +
+                    QString(Paths::CMSIS_CORE_ZIP).replace("%VERSION%", version);
+
+    return path;
+}
+
+//------------------------------------------------------------------------------
 // Путь к CoIDE
 //------------------------------------------------------------------------------
 QString Paths::coIdeDir()
@@ -158,6 +170,19 @@ QString Paths::coIdePackDir(const QString &vendor,
                             const QString &release)
 {
     return coIdePacketsDir() + "/" + vendor + "/" + release;
+}
+
+//------------------------------------------------------------------------------
+// Путь к каталогу установки ядра CMSIS
+//------------------------------------------------------------------------------
+QString Paths::coIdeCmsisDir(QString version)
+{
+    QString path = coIdeDir() + "/" + Paths::CO_PACK_DIR + "/" + Paths::CO_CMSIS_PACK_DIR;
+
+    if(!version.isEmpty())
+        path += "/" + version;
+
+    return path;
 }
 
 //------------------------------------------------------------------------------

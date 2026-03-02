@@ -22,6 +22,7 @@ private:
     bool makeSvdDatabase(PackDescription& pack, QString& errorString);
     void loadCoComponents(PackDescription& pack);
     QStringList getFullFileList(PackDescription& pack);
+    QStringList getCmsisFileList(PackDescription& pack, QString& version);
     bool extractSources(PackDescription& pack, QString& errorString);
     bool createComponentMirrors(PackDescription& pack, QString& errorString);
 
