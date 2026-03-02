@@ -869,6 +869,16 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                     {
                         Mcu& device = d.value();
 
+#if 0
+                        if(pComponent.attributes().getCclass() == "Device" &&
+                           pComponent.attributes().getCgroup() == "Startup" &&
+                           pComponent.condition().id() == "nRF5340 Device network core and CMSIS" &&
+                           device.getName() != "nRF5340_xxAA")
+                        {
+                            qInfo() << device.getName() << pComponent.condition().id();
+                        }
+#endif
+
                         //
                         // Компонент предназначен для данного устройства
                         //
@@ -896,7 +906,12 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             }
 
                             coComponent.setCategory(coCategory);
-                            coComponent.setDescription(pComponent.description());
+
+                            if(!pComponent.description().isEmpty())
+                                coComponent.setDescription(pComponent.description());
+                            else if(pComponent.hasCondition())
+                                coComponent.setDescription(pComponent.condition().description());
+
                             coComponent.files().clear();
                             coComponent.files().append(getFilteredFiles(pack,
                                                                         vendor,

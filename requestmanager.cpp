@@ -684,7 +684,7 @@ bool RequestManager::createMcu(Mcu &device)
                                     arg(device.getSeriesId()).
                                     arg(device.getUserId()).
                                     arg(device.getDebugAlgorithm().coId()).
-                                    arg(device.getName()).
+                                    arg(device.getCoName()).
                                     arg(device.coDescription()).
                                     arg(device.coFeaturesSummary()).
                                     arg(device.coWebPageUrl()).

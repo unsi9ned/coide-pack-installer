@@ -161,7 +161,7 @@ void PdscRequirement::setPname(const QString &Pname)
     m_Pname = Pname;
 
     if(!Pname.isEmpty())
-        m_target = PdscRequirement::Pack;
+        m_target = PdscRequirement::Device;
 }
 
 void PdscRequirement::setPversion(const QString &Pversion)

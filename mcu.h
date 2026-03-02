@@ -57,6 +57,7 @@ public:
     int getUserId() const {return userId;}
     int getDebugAlgorithmId() const {return debugAlgorithmId;}
     QString getName() const {return name;}
+    QString getCoName() {return name.toUpper();}
     QString getDescription() const {return description;}
     QString getKeyParameter() const {return keyParameter;}
     QString getWebPageURL() const {return webPageURL;}

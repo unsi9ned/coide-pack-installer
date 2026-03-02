@@ -10,6 +10,10 @@ const QMap<QString, QString> Paths::_coDebugAlgorithmsMap = {
     {"Cortex-M0+", "cortex-m0plus.xml"},
     {"Cortex-M3",  "cortex-m3.xml"},
     {"Cortex-M4",  "cortex-m4.xml"},
+
+    //TODO временное решение для полной установки пакетов с новыми ядрами,
+    //которых нет в CoIDE
+    {"Cortex-M33",  "cortex-m3.xml"},
 };
 
 //------------------------------------------------------------------------------

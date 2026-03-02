@@ -216,7 +216,14 @@ void PackManager::packInstall(PackDescription &pack)
 
         emit eventOccured(QString("Creating component '%1/%2'").
                           arg(component.getName()).
-                          arg(component.getVersion()));
+                          arg(component.getDescription()));
+
+#if 1
+        if(component.getDescription() == "nRF5340 Device network core and CMSIS")
+        {
+            qInfo() << component.getName() << component.getDescription();
+        }
+#endif
 
         if(!reqManager->createComponent(component, &errorString))
         {
@@ -494,6 +501,8 @@ bool PackManager::makeSvdDatabase(PackDescription &pack, QString& errorString)
 void PackManager::loadCoComponents(PackDescription &pack)
 {
     QMap<QString, QStringList>& coMap = pack.coComponentMap();
+    QMap<QString, Component>& componentMap = pack.components();
+
     coMap.clear();
 
     if(pack.pathToArchive().isEmpty())
@@ -543,6 +552,57 @@ void PackManager::loadCoComponents(PackDescription &pack)
             }
         }
     }
+
+    //
+    // Дополняем компонент Compile заголовочными h-файлами, которые не были
+    // явно указаны в pdsc
+    //
+    QString compileUuid;
+
+    for(auto it = componentMap.begin(); it != componentMap.end(); ++it)
+    {
+       if(it.value().getName().startsWith("Compile_"))
+       {
+           compileUuid = it.key();
+           break;
+       }
+    }
+
+    //
+    // Читаем список файлов в архиве и находим h-файлы, которые не были включены
+    // ни в один из компонентов
+    //
+    if(!compileUuid.isEmpty())
+    {
+        QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(pack.pathToArchive());
+
+        foreach(ZipArchive::ArchiveEntry f, files)
+        {
+            if(!f.isDir && f.extension.toLower() == "h")
+            {
+                bool componentContainsFile = false;
+
+                for(auto it = coMap.begin(); it != coMap.end(); ++it)
+                {
+                    QStringList fList = it.value();
+
+                    if(fList.contains(f.fullPath.replace('/', '\\')))
+                    {
+                        componentContainsFile = true;
+                        break;
+                    }
+                }
+
+                if(!componentContainsFile)
+                {
+                    QStringList& list = coMap[compileUuid];
+                    list.append(f.fullPath);
+                }
+            }
+        }
+    }
+
+    return;
 }
 
 //------------------------------------------------------------------------------

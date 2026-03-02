@@ -852,7 +852,7 @@ bool ComponentsInfo::hasComponentMcuLink(int componentId,
                   "INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId "
                   "INNER JOIN component ON component.id = component_supports_mcu.componentId "
                   "WHERE mcu.name = '%1' AND component_supports_mcu.componentId = '%2';").
-                  arg(mcuName).
+                  arg(mcuName.toUpper()).
                   arg(componentId);
 
     QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
@@ -901,7 +901,7 @@ bool ComponentsInfo::createComponentMcuLink(int componentId, const QString &mcuN
                                "'%1', (SELECT id FROM mcu WHERE name = '%2' LIMIT 1)"
                                ");").
                        arg(componentId).
-                       arg(mcuName);
+                       arg(mcuName.toUpper());
 
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
 

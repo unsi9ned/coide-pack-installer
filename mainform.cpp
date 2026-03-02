@@ -13,11 +13,13 @@ MainForm::MainForm(QWidget *parent) :
 
 #define  DANGEROUS_TEST  0
 
-#if 1
+#if 0
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
 #elif 1
+    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.28.0.pack");
+#elif 0
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1.pack");
-#elif 0 && DANGEROUS_TEST
+#elif 1 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.44.1.pack");
 #elif 0 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.1.0.pack");
