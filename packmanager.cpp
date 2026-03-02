@@ -483,7 +483,7 @@ bool PackManager::makeSvdDatabase(PackDescription &pack, QString& errorString)
 
         foreach(QString mcuName, svd.mcuList)
         {
-            line += mcuName + ", ";
+            line += mcuName.toUpper() + ", ";
         }
         line += ".." + svd.relativePath + "\r\n";
         svdDatabase.write(line.toLatin1());
