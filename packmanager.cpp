@@ -47,58 +47,62 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     // Искусственно добавляем в описание компоненты CMSIS CORE
     //
-    QString cmsisVer = "5.6.0";
-    Component coComponent;
-    Category coCategory = Category::categoryCommon();
+    QStringList cmsisVer = QStringList() << "5.6.0" << "4.3.0";
 
-    coCategory.setSubCategoryName("Device");
-
-    coComponent.setLayerId(Component::LAYER_MCU);
-    coComponent.setType(Component::COMPONENT);
-    coComponent.setVersion(cmsisVer);
-    coComponent.setName(QString("CMSIS_Core_%1").arg(coComponent.getVersion()));
-    coComponent.setCategory(coCategory);
-    coComponent.setDescription("CMSIS-CORE for Cortex-M, SC000, SC300, Star-MC1, ARMv8-M, ARMv8.1-M");
-
-    //
-    // Чтение списка файлов в арвхиве и распаковка
-    //
-    QFile cmsisZip(Paths::instance()->cmsisCore(coComponent.getVersion()));
-
-    if(cmsisZip.exists())
+    foreach(QString v, cmsisVer)
     {
-        QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(cmsisZip.fileName());
+        Component coComponent;
+        Category coCategory = Category::categoryCommon();
 
-        foreach(ZipArchive::ArchiveEntry f, files)
+        coCategory.setSubCategoryName("Device");
+
+        coComponent.setLayerId(Component::LAYER_MCU);
+        coComponent.setType(Component::COMPONENT);
+        coComponent.setVersion(v);
+        coComponent.setName(QString("CMSIS_Core_%1").arg(coComponent.getVersion()));
+        coComponent.setCategory(coCategory);
+        coComponent.setDescription("CMSIS-CORE for Cortex-M, SC000, SC300, Star-MC1, ARMv8-M, ARMv8.1-M");
+
+        //
+        // Чтение списка файлов в арвхиве и распаковка
+        //
+        QFile cmsisZip(Paths::instance()->cmsisCore(coComponent.getVersion()));
+
+        if(cmsisZip.exists())
         {
-            if(!f.isDir)
+            QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(cmsisZip.fileName());
+
+            foreach(ZipArchive::ArchiveEntry f, files)
             {
-                coComponent.files().append("header=" + f.fullPath.replace('/', '\\'));
+                if(!f.isDir)
+                {
+                    coComponent.files().append("header=" + f.fullPath.replace('/', '\\'));
+                }
             }
         }
-    }
-    else
-    {
-        emit errorOccured(QString("The %1 file was not found").arg(cmsisZip.fileName()));
-        return;
-    }
-
-    //
-    // Добавление mcu, которые зависят от CMSIS
-    // TODO добавляем для всех mcu
-    //
-    for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
-    {
-        Component& component = pack.components()[it.key()];
-
-        foreach(QString mcuName, component.supportedMcuList())
+        else
         {
-            if(!coComponent.supportedMcuList().contains(mcuName, Qt::CaseInsensitive))
-                coComponent.addSupportedMcu(mcuName);
+            emit errorOccured(QString("The %1 file was not found").arg(cmsisZip.fileName()));
+            return;
         }
-    }
 
-    pack.components().insert(coComponent.getUuid(), coComponent);
+        //
+        // Добавление mcu, которые зависят от CMSIS
+        // TODO добавляем для всех mcu
+        //
+        for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+        {
+            Component& component = pack.components()[it.key()];
+
+            foreach(QString mcuName, component.supportedMcuList())
+            {
+                if(!coComponent.supportedMcuList().contains(mcuName, Qt::CaseInsensitive))
+                    coComponent.addSupportedMcu(mcuName);
+            }
+        }
+
+        pack.components().insert(coComponent.getUuid(), coComponent);
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -681,7 +685,7 @@ QStringList PackManager::getFullFileList(PackDescription &pack)
         Component& component = pack.components()[it.key()];
         QStringList coList = it.value();
 
-        if(component.getName() == QString("CMSIS_Core_%1").arg(component.getVersion()))
+        if(component.getName().startsWith("CMSIS_Core_"))
             continue;
 
         foreach(QString f, coList)
@@ -699,7 +703,7 @@ QStringList PackManager::getFullFileList(PackDescription &pack)
 //------------------------------------------------------------------------------
 // Возвращает список файлов, входящих в ядро CMSIS
 //------------------------------------------------------------------------------
-QStringList PackManager::getCmsisFileList(PackDescription &pack, QString &version)
+QStringList PackManager::getCmsisFileList(PackDescription &pack, const QString version)
 {
     QMap<QString, QStringList>& coMap = pack.coComponentMap();
     QStringList list;
@@ -714,10 +718,8 @@ QStringList PackManager::getCmsisFileList(PackDescription &pack, QString &versio
         Component& component = pack.components()[it.key()];
         QStringList coList = it.value();
 
-        if(component.getName() == QString("CMSIS_Core_%1").arg(component.getVersion()))
+        if(component.getName() == QString("CMSIS_Core_%1").arg(version))
         {
-            version = component.getVersion();
-
             foreach(QString f, coList)
             {
                 if(!list.contains(f))
@@ -762,21 +764,25 @@ bool PackManager::extractSources(PackDescription &pack, QString &errorString)
     //
     // Формирование списка файлов CMSIS для распаковки
     //
-    QString cmsisVer = "0.0.0";
-    QStringList cmsisFiles = getCmsisFileList(pack, cmsisVer);
+    QStringList cmsisVer = QStringList() << "5.6.0" << "4.3.0";
 
-    //
-    // Распаковка
-    //
-    foreach (QString s, cmsisFiles)
+    foreach(QString v, cmsisVer)
     {
-        QString destinationDir = Paths::instance()->coIdeCmsisDir(cmsisVer).replace('/', '\\') + "\\" +
-                                 QFileInfo(s).path().replace('/','\\');
+        QStringList cmsisFiles = getCmsisFileList(pack, v);
 
-        if(!ZipArchive().extractFile(Paths::instance()->cmsisCore(cmsisVer), destinationDir, s))
+        //
+        // Распаковка
+        //
+        foreach (QString s, cmsisFiles)
         {
-            errorString = QString("An error occurred while extracting the %1 file").arg(s);
-            return false;
+            QString destinationDir = Paths::instance()->coIdeCmsisDir(v).replace('/', '\\') + "\\" +
+                                     QFileInfo(s).path().replace('/','\\');
+
+            if(!ZipArchive().extractFile(Paths::instance()->cmsisCore(v), destinationDir, s))
+            {
+                errorString = QString("An error occurred while extracting the %1 file").arg(s);
+                return false;
+            }
         }
     }
 
