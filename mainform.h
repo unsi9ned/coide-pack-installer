@@ -14,6 +14,7 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QString>
+#include <QListWidget>
 
 #include "pdscparser.h"
 #include "packdescription.h"
@@ -67,13 +68,16 @@ private slots:
     void on_pushButtonDataLoad_clicked();
     void on_pushButtonSave_clicked();
     void on_pushButtonSetIdePath_clicked();
-
-
     void on_pushButtonDbOptimize_clicked();
 
+    void changeCoIDEPath();
+    void loadDFP();
+
 private:
+    void loadDFP(const QString& path);
     int extractIdFromItemText(QString text);
     QString extractNameFromItemText(QString text);
+    void selectListItemByText(QListWidget *listWidget, const QString& text);
     Ui::MainForm *ui;
 };
 

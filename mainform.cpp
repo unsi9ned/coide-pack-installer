@@ -4,6 +4,7 @@
 #include "ziparchive.h"
 #include "packmanager.h"
 #include "dbgarbagecollector.h"
+#include "settings.h"
 
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
@@ -11,11 +12,12 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
+#if 0
 #define  DANGEROUS_TEST  0
 
 #if 0
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
-#elif 1
+#elif 0
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.28.0.pack");
 #elif 0
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1.pack");
@@ -27,7 +29,7 @@ MainForm::MainForm(QWidget *parent) :
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack");
 #elif 1 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.2.11.0.pack");
-#elif 1
+#elif 0
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.1.2.0.pack");
 #elif 1 && DANGEROUS_TEST
     pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.3.7.262.atpack");
@@ -36,6 +38,7 @@ MainForm::MainForm(QWidget *parent) :
 #undef DANGEROUS_TEST
 
     packMgr.readPackDescription(pack);
+#endif
 
     //Иконка
     this->setWindowIcon(QIcon(":coide_project.ico"));
@@ -106,11 +109,19 @@ MainForm::MainForm(QWidget *parent) :
             SIGNAL(currentIndexChanged(int)),
             this,
             SLOT(showFilteredComponents(int)));
-    //--------------------------------------------------------------------------
 
-    //Обновление данных на форме. Данные были загружены ранее из БД
-    //Это произошло при создании объекта mcuInfo
-    refreshData();
+    // Изменение пути к CoIDE
+    connect(ui->actionPreferences,
+            SIGNAL(triggered(bool)),
+            SLOT(changeCoIDEPath()));
+
+    // Выбор пакета DFP и загрузка
+    connect(ui->actionOpen_DFP,
+            SIGNAL(triggered(bool)),
+            SLOT(loadDFP()));
+    //--------------------------------------------------------------------------
+    //Обновление данных на форме
+    loadDFP(Settings::instance()->lastLoadedPack());
 }
 
 //------------------------------------------------------------------------------
@@ -152,7 +163,7 @@ QString MainForm::compilationVersion()
     {
         date_part = compilation_date.mid(7, 4);
         date_part += QString("%1").arg(month, 2, 10, QChar('0'));
-        date_part += compilation_date.mid(4, 2);
+        date_part += compilation_date.mid(4, 2).replace(' ', '0');
     }
 
     time_part = time_part.mid(0, 2) + time_part.mid(3, 2);
@@ -403,6 +414,8 @@ void MainForm::showFamilyList(QModelIndex index)
     {
         ui->listWidgetFamily->addItem(it.key());
     }
+
+    Settings::instance()->saveSelectedVendor(currentItem->text());
 }
 
 //------------------------------------------------------------------------------
@@ -518,6 +531,8 @@ void MainForm::showSeriesList(QModelIndex index)
     {
         ui->listWidgetSeries->addItem(it.key());
     }
+
+    Settings::instance()->saveSelectedCore(currentItem->text());
 }
 
 //------------------------------------------------------------------------------
@@ -549,6 +564,8 @@ void MainForm::showMcuList(QModelIndex index)
     {
         ui->listWidgetMcu->addItem(it.key());
     }
+
+    Settings::instance()->saveSelectedSeries(series);
 }
 
 //------------------------------------------------------------------------------
@@ -680,6 +697,31 @@ void MainForm::showFeatures(QModelIndex index)
     // Вывод пути к SVD-файлу
     //
     ui->lineEditSVD->setText(device.svdLocalPath());
+
+    Settings::instance()->saveSelectedMcu(mcu);
+}
+
+//------------------------------------------------------------------------------
+// Выбор элемента в списке по его тексту
+//------------------------------------------------------------------------------
+void MainForm::selectListItemByText(QListWidget* listWidget, const QString &text)
+{
+    // Поиск по всем элементам
+    QList<QListWidgetItem*> items = listWidget->findItems(text, Qt::MatchExactly);
+
+    if (!items.isEmpty())
+    {
+        // Выбираем первый найденный элемент
+        listWidget->setCurrentItem(items.first());
+
+        // Если нужно выделить (подсветить) элемент
+        items.first()->setSelected(true);
+
+        // Прокрутить до выбранного элемента
+        listWidget->scrollToItem(items.first());
+
+        emit listWidget->clicked(listWidget->currentIndex());
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -707,148 +749,6 @@ void MainForm::on_pushButtonSave_clicked()
     ui->pushButtonSave->setEnabled(false);
     packMgr.packInstall(pack);
     ui->pushButtonSave->setEnabled(true);
-#if 0
-    QListWidgetItem * manItem = ui->listWidgetManufacturer->currentItem();
-    QListWidgetItem * famItem = ui->listWidgetFamily->currentItem();
-    QListWidgetItem * serItem = ui->listWidgetSeries->currentItem();
-    QListWidgetItem * mcuItem = ui->listWidgetMcu->currentItem();
-
-    if(manItem == NULL)
-    {
-        showError(tr("Не выбран производитель"));
-        return;
-    }
-    else if(famItem == NULL)
-    {
-        showError(tr("Не выбрано семейство"));
-        return;
-    }
-    else if(serItem == NULL)
-    {
-        showError(tr("Не выбрана серия"));
-        return;
-    }
-    else if(mcuItem == NULL)
-    {
-        showError(tr("Не выбран микроконтроллер"));
-        return;
-    }
-
-    int manId = extractIdFromItemText(manItem->text());
-    int famId = extractIdFromItemText(famItem->text());
-    int serId = extractIdFromItemText(serItem->text());
-    int mcuId = extractIdFromItemText(mcuItem->text());
-
-    QString debugAlgName = extractNameFromItemText(ui->comboBoxDebugAlg->currentText());
-    QString flashAlgName = extractNameFromItemText(ui->comboBoxFlashAlg->currentText());
-
-    QString url = ui->lineEditUrl->text();
-    QString datasheet = ui->lineEditDatasheetUrl->text();
-    QString description = ui->plainTextEditDescription->toPlainText();
-    QStringList features = ui->plainTextEditFeatures->toPlainText().split("\n");
-    QString flashStartAddr = ui->lineEditFlashStart->text();
-    QString ramStartAddr = ui->lineEditRamStart->text();
-    QString flashSize = ui->lineEditFlashSize->text();
-    QString ramSize = ui->lineEditRamSize->text();
-
-    Manufacturer man = mcuInfo.getManufacturer(manId);
-    Family fam = man.getFamily(famId);
-    Serie ser = fam.getSerie(serId);
-    Mcu mcu = ser.getMcu(mcuId);
-
-    if(mcu.getId() > -1)
-    {
-        DebugAlgorithm debAlg = mcuInfo.getDebugAlg(debugAlgName);
-        FlashAlgorithm flashAlg = mcuInfo.getFlashAlg(flashAlgName);
-
-        //Изменен алгоритм отладки
-        if(debAlg.getId() > -1)
-        {
-            mcu.setDebugAlgorithm(debAlg);
-        }
-
-        //Изменен алгоритм программирования
-        if(flashAlg.getId() > -1)
-        {
-            mcu.setFlashAlgorithm(flashAlg);
-        }
-
-        //Задан URL
-        if(!url.isEmpty())
-        {
-            QByteArray ba;
-            url  = "[\"" + url + "\"]";
-            ba.append(url);
-
-            mcu.setWebPageURL(ba);
-        }
-
-        //Задан даташит
-        if(!datasheet.isEmpty())
-        {
-            QByteArray ba;
-            datasheet = "[\"" + datasheet + "\"]";
-            ba.append(datasheet);
-
-            mcu.setDatasheetURL(ba);
-        }
-
-        //Задано описание
-        if(!description.isEmpty())
-        {
-            mcu.setDescription(description);
-        }
-
-        //Заданы характеристики
-        if(features.length())
-        {
-            for(int i = 0; i < features.length();i++)
-            {
-                features[i] = "\"" + features[i] + "\"";
-            }
-
-            QString featuresStr = "[" + features.join(",") + "]";
-            mcu.setKeyParameter(QByteArray().append(featuresStr));
-        }
-
-        //Параметры памяти
-        if(flashStartAddr.isEmpty() ||
-           flashSize.isEmpty() ||
-           ramStartAddr.isEmpty() ||
-           ramSize.isEmpty())
-        {
-            showError(tr("Параметры памяти заданы не полностью"));
-        }
-        else
-        {
-            QString memStr = QString(
-                             "[\"{\\\"type\\\":\\\"FLASH\\\","
-                             "\\\"id\\\":0,\\\"start\\\":\\\"%1\\\","
-                             "\\\"size\\\":\\\"%2\\\"}\","
-                             "\"{\\\"type\\\":\\\"RAM\\\","
-                             "\\\"id\\\":0,"
-                             "\\\"start\\\":\\\"%3\\\","
-                             "\\\"size\\\":\\\"%4\\\"}\"]"
-                            ).
-                    arg(flashStartAddr).
-                    arg(flashSize).
-                    arg(ramStartAddr).
-                    arg(ramSize);
-
-            mcu.setMemInfo(QByteArray().append(memStr));
-        }
-
-        if(mcuInfo.updateMcuInfo(mcu))
-        {
-            showInfo(tr("Данные контроллера %1 обновлены").arg(mcu.getName()));
-        }
-    }
-    else
-    {
-        showError(tr("Не выбран микроконтроллер"));
-        return;
-    }
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -856,20 +756,6 @@ void MainForm::on_pushButtonSave_clicked()
 //------------------------------------------------------------------------------
 void MainForm::on_pushButtonSetIdePath_clicked()
 {
-#if 0
-    QString str =
-            QFileDialog::getExistingDirectory(this,
-                                              tr("Директория установки CooCox IDE"),
-                                              IDE_PATH);
-    ui->lineEditIdePath->setText(str);
-    mcuInfo.changeIdePath(str);
-    ui->tabWidget->setCurrentWidget(ui->tabMcu);
-
-    mcuInfo.loadDataFromDb();
-    componInfo.loadDataFromDb();
-    refreshData();
-#endif
-
     QString str = QFileDialog::getExistingDirectory(this, tr("Директория установки CooCox IDE"), QApplication::applicationDirPath());
     Paths::instance()->setCoIdeDir(str);
     ui->lineEditIdePath->setText(str);
@@ -992,4 +878,75 @@ void MainForm::on_pushButtonDbOptimize_clicked()
 
 
     ui->pushButtonDbOptimize->setEnabled(true);
+}
+
+//------------------------------------------------------------------------------
+// Изменение пути к каталогу CoIDE
+//------------------------------------------------------------------------------
+void MainForm::changeCoIDEPath()
+{
+    QString str = QFileDialog::getExistingDirectory(this,
+                                                    tr("Директория установки CooCox IDE"),
+                                                    Paths::instance()->coIdeDir());
+    if(!str.isEmpty())
+    {
+        Paths::instance()->setCoIdeDir(str);
+        ui->lineEditIdePath->setText(str);
+        refreshData();
+    }
+}
+
+//------------------------------------------------------------------------------
+// Выбор и загрузка DFP
+//------------------------------------------------------------------------------
+void MainForm::loadDFP()
+{
+    QFileInfo packFileInfo(Settings::instance()->lastLoadedPack());
+    QString path = QFileDialog::getOpenFileName(this,
+                                                tr("Device Family Pack"),
+                                                packFileInfo.path(),
+                                                "*.pack");
+    loadDFP(path);
+}
+
+//------------------------------------------------------------------------------
+// Загрузка DFP
+//------------------------------------------------------------------------------
+void MainForm::loadDFP(const QString &path)
+{
+    if(!path.isEmpty())
+    {
+        // Загрузка
+        Settings::instance()->saveLastLoadedPack(path);
+        pack.clear();
+        pack.setPathToArchive(path);
+        packMgr.readPackDescription(pack);
+        refreshData();
+
+        // Выбор элементов
+        QString vendor = Settings::instance()->selectedVendor();
+        QString core = Settings::instance()->selectedCore();
+        QString series = Settings::instance()->selectedSeries();
+        QString mcu = Settings::instance()->selectedMcu();
+
+        if(!vendor.isEmpty())
+        {
+            selectListItemByText(ui->listWidgetManufacturer, vendor);
+
+            if(!core.isEmpty())
+            {
+                selectListItemByText(ui->listWidgetFamily, core);
+
+                if(!series.isEmpty())
+                {
+                    selectListItemByText(ui->listWidgetSeries, series);
+
+                    if(!mcu.isEmpty())
+                    {
+                        selectListItemByText(ui->listWidgetMcu, mcu);
+                    }
+                }
+            }
+        }
+    }
 }

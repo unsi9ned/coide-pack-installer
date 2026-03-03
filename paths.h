@@ -21,7 +21,7 @@ private:
     static constexpr const char* CO_COMPONENTS_DIR = "Components";
     static constexpr const char* CO_DRIVERS_DIR = "Drivers";
     static constexpr const char* CO_EXAMPLES_DIR = "Examples";
-    static constexpr const char* APP_SETTINGS = "config.dat";
+    static constexpr const char* APP_SETTINGS = "config.ini";
     static constexpr const char* APP_UTILS_DIR = "utils";
     static constexpr const char* SEVEN_ZIP = "7z.exe";
     static constexpr const char* APP_CMSIS_DIR = "CMSIS";
@@ -34,8 +34,6 @@ private:
     ~Paths();
 
     static Paths* m_instance;
-
-    QString _coIdeDirectory;
 
 public:
     Paths(const Paths&) = delete;

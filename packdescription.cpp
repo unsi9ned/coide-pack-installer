@@ -193,6 +193,24 @@ QMap<QString, QStringList> &PackDescription::coComponentMap()
     return _coComponentMap;
 }
 
+//------------------------------------------------------------------------------
+// Очистка содержимого пакета, всех полей и списков
+//------------------------------------------------------------------------------
+void PackDescription::clear()
+{
+    _vendor.clear();
+    _name.clear();
+    _url.clear();
+    _description.clear();
+    _release.clear();
+    _pathToArchive.clear();
+    _installDir.clear();
+    _pathToPdsc.clear();
+    _vendorMap.clear();
+    _componentMap.clear();
+    _coComponentMap.clear();
+}
+
 Manufacturer &PackDescription::createNewVendor(const QString &vendorName)
 {
     _vendorMap.insert(vendorName, Manufacturer());

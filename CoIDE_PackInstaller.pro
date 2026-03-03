@@ -54,7 +54,8 @@ SOURCES += main.cpp\
     pdsc/pdsccomponent.cpp \
     pdsc/pdsccondition.cpp \
     pdsc/pdscrequirement.cpp \
-    makelink.cpp
+    makelink.cpp \
+    settings.cpp
 
 HEADERS  += \
     pdscparser.h \
@@ -90,7 +91,8 @@ HEADERS  += \
     pdsc/pdsccomponent.h \
     pdsc/pdsccondition.h \
     pdsc/pdscrequirement.h \
-    makelink.h
+    makelink.h \
+    settings.h
 
 INCLUDEPATH += \
     pdsc/

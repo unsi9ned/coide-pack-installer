@@ -56,6 +56,8 @@ public:
     QMap<QString, Component>& components();
     QMap<QString, QStringList>& coComponentMap();
 
+    void clear();
+
 private:
     Manufacturer& createNewVendor(const QString& vendorName);
 };

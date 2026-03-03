@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QFile>
 #include "paths.h"
+#include "settings.h"
 
 Paths* Paths::m_instance = nullptr;
 
@@ -27,24 +28,7 @@ const QMap<QString, QString> Paths::_cmsisCoreMap = {
 //------------------------------------------------------------------------------
 Paths::Paths(QObject *parent) : QObject(parent)
 {
-    QFile settingFile(appSettingsFile());
-    QByteArray idePath;
 
-    if(settingFile.exists() && settingFile.open(QFile::ReadOnly))
-    {
-        idePath = settingFile.readLine();
-
-        if(idePath.isEmpty())
-            _coIdeDirectory = QApplication::applicationDirPath();
-        else
-            _coIdeDirectory = QString(idePath);
-
-        settingFile.close();
-    }
-    else
-    {
-        _coIdeDirectory = QApplication::applicationDirPath();
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -100,7 +84,7 @@ QString Paths::cmsisCore(QString version)
 //------------------------------------------------------------------------------
 QString Paths::coIdeDir()
 {
-    return _coIdeDirectory;
+    return Settings::instance()->coIdePath();
 }
 
 //------------------------------------------------------------------------------
@@ -268,21 +252,5 @@ QMap<QString, QString> Paths::cmsisCores()
 //------------------------------------------------------------------------------
 void Paths::setCoIdeDir(const QString &dir)
 {
-    if(dir.isEmpty())
-        return;
-
-    QDir coIdeDir;
-    coIdeDir.setPath(dir);
-
-    if(coIdeDir.exists())
-    {
-        QFile settingFile(appSettingsFile());
-
-        if(settingFile.open(QFile::WriteOnly))
-        {
-            _coIdeDirectory = coIdeDir.path();
-            settingFile.write(coIdeDir.path().toLatin1());
-            settingFile.close();
-        }
-    }
+    Settings::instance()->saveCoIdePath(dir);
 }
