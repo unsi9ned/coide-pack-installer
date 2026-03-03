@@ -47,9 +47,9 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     // Искусственно добавляем в описание компоненты CMSIS CORE
     //
-    QStringList cmsisVer = QStringList() << "5.6.0" << "4.3.0";
+    QMap<QString, QString> cmsisCores = Paths::instance()->cmsisCores();
 
-    foreach(QString v, cmsisVer)
+    for(auto it = cmsisCores.begin(); it != cmsisCores.end(); ++it)
     {
         Component coComponent;
         Category coCategory = Category::categoryCommon();
@@ -58,10 +58,10 @@ void PackManager::readPackDescription(PackDescription &pack)
 
         coComponent.setLayerId(Component::LAYER_MCU);
         coComponent.setType(Component::COMPONENT);
-        coComponent.setVersion(v);
+        coComponent.setVersion(it.key());
         coComponent.setName(QString("CMSIS_Core_%1").arg(coComponent.getVersion()));
         coComponent.setCategory(coCategory);
-        coComponent.setDescription("CMSIS-CORE for Cortex-M, SC000, SC300, Star-MC1, ARMv8-M, ARMv8.1-M");
+        coComponent.setDescription(it.value());
 
         //
         // Чтение списка файлов в арвхиве и распаковка
@@ -764,21 +764,21 @@ bool PackManager::extractSources(PackDescription &pack, QString &errorString)
     //
     // Формирование списка файлов CMSIS для распаковки
     //
-    QStringList cmsisVer = QStringList() << "5.6.0" << "4.3.0";
+    QMap<QString, QString> cmsisCores = Paths::instance()->cmsisCores();
 
-    foreach(QString v, cmsisVer)
+    for(auto it = cmsisCores.begin(); it != cmsisCores.end(); ++it)
     {
-        QStringList cmsisFiles = getCmsisFileList(pack, v);
+        QStringList cmsisFiles = getCmsisFileList(pack, it.key());
 
         //
         // Распаковка
         //
         foreach (QString s, cmsisFiles)
         {
-            QString destinationDir = Paths::instance()->coIdeCmsisDir(v).replace('/', '\\') + "\\" +
+            QString destinationDir = Paths::instance()->coIdeCmsisDir(it.key()).replace('/', '\\') + "\\" +
                                      QFileInfo(s).path().replace('/','\\');
 
-            if(!ZipArchive().extractFile(Paths::instance()->cmsisCore(v), destinationDir, s))
+            if(!ZipArchive().extractFile(Paths::instance()->cmsisCore(it.key()), destinationDir, s))
             {
                 errorString = QString("An error occurred while extracting the %1 file").arg(s);
                 return false;

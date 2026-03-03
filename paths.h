@@ -28,6 +28,7 @@ private:
     static constexpr const char* CMSIS_CORE_ZIP = "CMSIS_Core_%VERSION%.zip";
 
     static const QMap<QString, QString> _coDebugAlgorithmsMap;
+    static const QMap<QString, QString> _cmsisCoreMap;
 
     explicit Paths(QObject *parent = nullptr);
     ~Paths();
@@ -63,6 +64,7 @@ public:
     QString coIdeDriverDir(int id, const QString& name);
     QString coIdeExamplesDir();
     QString coIdeExampleDir(int id, const QString& name);
+    QMap<QString, QString> cmsisCores();
 
     void setCoIdeDir(const QString& dir);
 

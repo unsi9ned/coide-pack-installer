@@ -16,6 +16,12 @@ const QMap<QString, QString> Paths::_coDebugAlgorithmsMap = {
     {"Cortex-M33",  "cortex-m3.xml"},
 };
 
+const QMap<QString, QString> Paths::_cmsisCoreMap = {
+    {"4.3.0", "CMSIS-CORE for Cortex-M, SC000, and SC300"},
+    {"5.6.0", "CMSIS-CORE for Cortex-M, SC000, SC300, Star-MC1, ARMv8-M, ARMv8.1-M"},
+    {"6.3.0", "CMSIS-CORE for Cortex-M, SC000, SC300, Star-MC, ARMv8-M, ARMv8.1-M"},
+};
+
 //------------------------------------------------------------------------------
 // Загрузка пути к каталогу CoIDE
 //------------------------------------------------------------------------------
@@ -247,6 +253,14 @@ QString Paths::coIdeExamplesDir()
 QString Paths::coIdeExampleDir(int id, const QString &name)
 {
     return coIdeExamplesDir() + "/" + QString("%1_%2").arg(id).arg(name);
+}
+
+//------------------------------------------------------------------------------
+// Карта доступных CMSIS Core <version>, <description>
+//------------------------------------------------------------------------------
+QMap<QString, QString> Paths::cmsisCores()
+{
+    return Paths::_cmsisCoreMap;
 }
 
 //------------------------------------------------------------------------------
