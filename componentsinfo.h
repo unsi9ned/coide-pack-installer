@@ -88,6 +88,9 @@ private:
     bool hasComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, bool * status = nullptr, QString * errorString = nullptr);
     bool createComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, QString * errorString = nullptr);
 
+    bool hasComponentsLink(int parentId, int childId, bool * status = nullptr, QString * errorString = nullptr);
+    bool createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+
 signals:
 
 protected slots:

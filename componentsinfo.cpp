@@ -690,6 +690,23 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
             }
             else if(!status)
                 return false;
+
+            // Создаем связь между компонентами
+            if(component.hasChildren())
+            {
+                foreach (Component* child, children)
+                {
+                    bool hasLink = hasComponentsLink(component.getId(), child->getId(), &status, errorString);
+
+                    if(status && !hasLink)
+                    {
+                        if(!createComponentsLink(component.getId(), child->getId(), errorString))
+                            return false;
+                    }
+                    else if(!status)
+                        return false;
+                }
+            }
         }
     }
 #if 0
@@ -1087,6 +1104,82 @@ bool ComponentsInfo::createComponentSubCategoryLink(int componentId,
                        arg(componentId).
                        arg(subCategoryName).
                        arg(categoryName);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Проверить наличие связи между компонентами
+//------------------------------------------------------------------------------
+bool ComponentsInfo::hasComponentsLink(int parentId,
+                                       int childId,
+                                       bool *status,
+                                       QString *errorString)
+{
+    bool opstatus = false;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "component_depends_component.parentComponentId, "
+                  "component_depends_component.childComponentId "
+                  "FROM component_depends_component "
+                  "WHERE component_depends_component.parentComponentId = '%1' "
+                  "AND component_depends_component.childComponentId = '%2';").
+                  arg(parentId).
+                  arg(childId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        if(status)
+            *status = false;
+        return false;
+    }
+    else
+    {
+        opstatus = false;
+
+        if(status)
+            *status = true;
+
+        while (result.next())
+        {
+            opstatus = true;
+            break;
+        }
+    }
+
+    return opstatus;
+}
+
+//------------------------------------------------------------------------------
+// Связать компоненты между собой
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponentsLink(int parentId,
+                                          int childId,
+                                          QString *errorString)
+{
+    //Поиск последнего айди
+    bool opstatus = false;
+    QString queryStr = QString("INSERT INTO component_depends_component ("
+                               "parentComponentId, childComponentId "
+                               ") VALUES ("
+                               "'%1', '%2'"
+                               ");").
+                       arg(parentId).
+                       arg(childId);
 
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
 

@@ -153,6 +153,7 @@ public:
     void addChild(Component * getChild);
     bool hasChild(const QString& childName);
     bool hasChild(Component* child);
+    bool hasChildren();
     Component* getChild(const QString& childName);
     QList<int> getMcuListId() const;
     void setMcuListId(const QList<int> &value);

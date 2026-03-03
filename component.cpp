@@ -260,6 +260,11 @@ bool Component::hasChild(Component *child)
     return dependencies.contains(child);
 }
 
+bool Component::hasChildren()
+{
+    return !dependencies.isEmpty();
+}
+
 Component *Component::getChild(const QString &childName)
 {
     Component * child = nullptr;
