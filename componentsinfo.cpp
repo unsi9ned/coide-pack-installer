@@ -683,11 +683,18 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                 return false;
         }
     }
+#if 0
     // Обновляем существующий
     else if(!updateComponent(component, errorString))
     {
         return false;
     }
+#else
+    else
+    {
+        component.setPersisted(true);
+    }
+#endif
 
     return true;
 }

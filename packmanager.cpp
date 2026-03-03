@@ -297,6 +297,12 @@ void PackManager::packInstall(PackDescription &pack)
 
             return;
         }
+        else if(component.isPersisted())
+        {
+            emit eventOccured(QString("The '%1/%2' component already exists in the database").
+                              arg(component.getName()).
+                              arg(component.getDescription()));
+        }
     }
 
     //
@@ -841,6 +847,10 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
         QStringList coList = it.value();
         Component& component = componentMap[it.key()];
         QDir rootDir;
+
+        // Не создаем компонент повторно
+        if(component.isPersisted())
+            continue;
 
         if(component.getType() == Component::DRIVER)
             rootDir.setPath(Paths::instance()->coIdeDriversDir() +

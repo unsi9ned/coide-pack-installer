@@ -457,6 +457,16 @@ bool Component::isNull()
     return id == -1;
 }
 
+bool Component::isPersisted() const
+{
+    return _isPersisted;
+}
+
+void Component::setPersisted(bool state)
+{
+    _isPersisted = state;
+}
+
 QString Component::generateTimeUUID()
 {
     QString str = QUuid::createUuid().toString();
@@ -534,7 +544,8 @@ Component::Component() :
     hits(0),
     createDate(QDateTime::currentDateTime()),
     updateDate(QDateTime::currentDateTime()),
-    _status(ComponentStatus::ok())
+    _status(ComponentStatus::ok()),
+    _isPersisted(false)
 {
 
 }

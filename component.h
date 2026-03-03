@@ -95,6 +95,8 @@ private:
     QStringList _files;
     Category _category;
 
+    bool _isPersisted;
+
 public:
     Component();
 
@@ -183,6 +185,8 @@ public:
     bool isDownloaded();
     bool isDriver();
     bool isNull();
+    bool isPersisted() const;
+    void setPersisted(bool state);
 
     static QString generateTimeUUID();
 
