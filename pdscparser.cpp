@@ -931,22 +931,25 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
 
                             //
                             // Связываем компоненты с CMSIS
+                            // TODO пока жестко завязываем на одну верси CMSIS
                             //
+                            Component* cmsisComponent = pack.cmsisComponents()["5.6.0"];
+
+                            // Всем MCU нужен пакет CMSIS
+                            foreach(Component* c, pack.cmsisComponents())
+                            {
+                                c->addSupportedMcu(device.getName());
+                            }
+
                             QList<PdscRequirement> requiredComponents = pComponent.condition().requirementsMap()[PdscRequirement::Require].value(PdscRequirement::Component);
 
                             foreach(PdscRequirement r, requiredComponents)
                             {
                                 if(r.Cclass().toUpper() == "CMSIS" && r.Cgroup().toUpper() == "CORE")
                                 {
-                                    //TODO пока жестко завязываем на одну верси CMSIS
-                                    if(pack.cmsisComponents().contains("5.6.0"))
+                                    if(cmsisComponent)
                                     {
-                                        Component * cmsisCore = pack.cmsisComponents()["5.6.0"];
-
-                                        if(cmsisCore)
-                                        {
-                                            coComponent.addDependence(cmsisCore);
-                                        }
+                                        coComponent.addChild(cmsisComponent);
                                     }
                                     break;
                                 }
@@ -958,14 +961,9 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             // Как у Nordic DFP 8.28.0
                             if(pComponent.attributes().getCclass().toLower() == "device" &&
                                pComponent.attributes().getCgroup().toLower() == "startup" &&
-                               !coComponent.hasDependence(pack.cmsisComponents().value("5.6.0")->getName()))
+                               cmsisComponent)
                             {
-                                Component * cmsisCore = pack.cmsisComponents()["5.6.0"];
-
-                                if(cmsisCore)
-                                {
-                                    coComponent.addDependence(cmsisCore);
-                                }
+                                coComponent.addChild(cmsisComponent);
                             }
                             //-------------------------------------------------------------------------------
 #endif

@@ -150,8 +150,10 @@ public:
     void setTags(const QString &value);
     QList<Component *> getDependencies() const;
     void setDependencies(const QList<Component *> &value);
-    void addDependence(Component * child);
-    bool hasDependence(const QString& componentName);
+    void addChild(Component * getChild);
+    bool hasChild(const QString& childName);
+    bool hasChild(Component* child);
+    Component* getChild(const QString& childName);
     QList<int> getMcuListId() const;
     void setMcuListId(const QList<int> &value);
     void appendMcuId(int id);

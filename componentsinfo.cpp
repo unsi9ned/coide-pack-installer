@@ -533,6 +533,15 @@ bool ComponentsInfo::removeStatusPhantomRelations(QString *errorString)
 //------------------------------------------------------------------------------
 bool ComponentsInfo::createComponent(Component &component, QString *errorString)
 {
+    // Сначала создаем компаненты, от которых зависим
+    QList<Component *> children = component.getDependencies();
+
+    foreach (Component* child, children)
+    {
+        if(child && !createComponent(*child, errorString))
+            return false;
+    }
+
     Component foundComponent = findComponent(component);
 
     // Создаем новый
@@ -692,6 +701,8 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
 #else
     else
     {
+        if(component.isNull())
+            component.setId(foundComponent.getId());
         component.setPersisted(true);
     }
 #endif
@@ -1434,7 +1445,7 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
         {
             parentComponent = &componentsMap[parentComponentId];
             childComponent = &componentsMap[childComponentId];
-            parentComponent->addDependence(childComponent);
+            parentComponent->addChild(childComponent);
         }
     }
 

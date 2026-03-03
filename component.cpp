@@ -243,23 +243,40 @@ void Component::setDependencies(const QList<Component *> &value)
     dependencies = value;
 }
 
-void Component::addDependence(Component *child)
+void Component::addChild(Component *child)
 {
-    dependencies.append(child);
+    if(!dependencies.contains(child))
+        dependencies.append(child);
 }
 
-bool Component::hasDependence(const QString &componentName)
+bool Component::hasChild(const QString &childName)
 {
+    Component * c = getChild(childName);
+    return c != nullptr;
+}
+
+bool Component::hasChild(Component *child)
+{
+    return dependencies.contains(child);
+}
+
+Component *Component::getChild(const QString &childName)
+{
+    Component * child = nullptr;
+
     if(!dependencies.isEmpty())
     {
         foreach (Component* c, dependencies)
         {
-            if(c && c->getName() == componentName)
-                return true;
+            if(c && c->getName() == childName)
+            {
+                child = c;
+                return child;
+            }
         }
     }
 
-    return false;
+    return child;
 }
 
 QList<int> Component::getMcuListId() const

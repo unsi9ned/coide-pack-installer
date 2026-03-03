@@ -275,10 +275,6 @@ void PackManager::packInstall(PackDescription &pack)
         Component& component = componentMap[uuid];
         QStringList& files = componentFileMap[uuid];
 
-        emit eventOccured(QString("Creating component '%1/%2'").
-                          arg(component.getName()).
-                          arg(component.getDescription()));
-
 #if 0
         if(component.getDescription() == "nRF5340 Device network core and CMSIS")
         {
@@ -286,23 +282,30 @@ void PackManager::packInstall(PackDescription &pack)
         }
 #endif
 
-        if(!reqManager->createComponent(component, &errorString))
-        {
-            if(errorString.isEmpty())
-                emit errorOccured(QString("An error occurred while adding the '%1' component").
-                                  arg(component.getName()));
-            else
-                emit errorOccured(QString("An error occurred while adding the '%1' component: %2").
-                                  arg(component.getName()).
-                                  arg(errorString));
+        emit eventOccured(QString("Creating component '%1/%2'").
+                          arg(component.getName()).
+                          arg(component.getDescription()));
 
-            return;
-        }
-        else if(component.isPersisted())
+        if(component.isPersisted())
         {
-            emit eventOccured(QString("The '%1/%2' component already exists in the database").
+            emit eventOccured(QString("The '%1/%2' component was created earlier").
                               arg(component.getName()).
                               arg(component.getDescription()));
+        }
+        else
+        {
+            if(!reqManager->createComponent(component, &errorString))
+            {
+                if(errorString.isEmpty())
+                    emit errorOccured(QString("An error occurred while adding the '%1' component").
+                                      arg(component.getName()));
+                else
+                    emit errorOccured(QString("An error occurred while adding the '%1' component: %2").
+                                      arg(component.getName()).
+                                      arg(errorString));
+
+                return;
+            }
         }
     }
 
@@ -851,8 +854,8 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
 
         // Не создаем компонент повторно
         // TODO Возможно, здесь будет лучше сделать пересоздание компонента
-        if(component.isPersisted())
-            continue;
+//        if(component.isPersisted())
+//            continue;
 
         if(component.getType() == Component::DRIVER)
             rootDir.setPath(Paths::instance()->coIdeDriversDir() +
@@ -891,7 +894,7 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
                 return false;
             }
 
-            if(!MakeLink::createLink(linkPath, targetPath))
+            if(!QFile(linkPath).exists() && !MakeLink::createLink(linkPath, targetPath))
             {
                 errorString = QString("Failed to create symbolic link to %1 file").arg(f);
                 return false;
