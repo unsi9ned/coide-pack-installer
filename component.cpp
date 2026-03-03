@@ -248,6 +248,20 @@ void Component::addDependence(Component *child)
     dependencies.append(child);
 }
 
+bool Component::hasDependence(const QString &componentName)
+{
+    if(!dependencies.isEmpty())
+    {
+        foreach (Component* c, dependencies)
+        {
+            if(c && c->getName() == componentName)
+                return true;
+        }
+    }
+
+    return false;
+}
+
 QList<int> Component::getMcuListId() const
 {
     return mcuListId;

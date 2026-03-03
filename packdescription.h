@@ -24,6 +24,9 @@ private:
     // Карта компонентов CoIDE. Ключ - UUID компонента, значение - список файлов
     QMap<QString, QStringList> _coComponentMap;
 
+    // Карта компонентов CMSIS Core для быстрого доступа по версии
+    QMap<QString, Component*>  _cmsisComponentMap;
+
 public:
     PackDescription();
 
@@ -55,6 +58,7 @@ public:
 
     QMap<QString, Component>& components();
     QMap<QString, QStringList>& coComponentMap();
+    QMap<QString, Component*>& cmsisComponents();
 
     void clear();
 

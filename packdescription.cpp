@@ -193,6 +193,11 @@ QMap<QString, QStringList> &PackDescription::coComponentMap()
     return _coComponentMap;
 }
 
+QMap<QString, Component *> &PackDescription::cmsisComponents()
+{
+    return _cmsisComponentMap;
+}
+
 //------------------------------------------------------------------------------
 // Очистка содержимого пакета, всех полей и списков
 //------------------------------------------------------------------------------
@@ -209,6 +214,7 @@ void PackDescription::clear()
     _vendorMap.clear();
     _componentMap.clear();
     _coComponentMap.clear();
+    _cmsisComponentMap.clear();
 }
 
 Manufacturer &PackDescription::createNewVendor(const QString &vendorName)

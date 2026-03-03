@@ -39,12 +39,6 @@ void PackManager::readPackDescription(PackDescription &pack)
     }
 
     //
-    // Разбор файла описания
-    //
-    PdscParser parser;
-    parser.parse(pack);
-
-    //
     // Искусственно добавляем в описание компоненты CMSIS CORE
     //
     QMap<QString, QString> cmsisCores = Paths::instance()->cmsisCores();
@@ -102,7 +96,14 @@ void PackManager::readPackDescription(PackDescription &pack)
         }
 
         pack.components().insert(coComponent.getUuid(), coComponent);
+        pack.cmsisComponents().insert(coComponent.getVersion(), &pack.components()[coComponent.getUuid()]);
     }
+
+    //
+    // Разбор файла описания
+    //
+    PdscParser parser;
+    parser.parse(pack);
 }
 
 //------------------------------------------------------------------------------
@@ -849,6 +850,7 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
         QDir rootDir;
 
         // Не создаем компонент повторно
+        // TODO Возможно, здесь будет лучше сделать пересоздание компонента
         if(component.isPersisted())
             continue;
 

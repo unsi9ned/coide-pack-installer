@@ -151,6 +151,7 @@ public:
     QList<Component *> getDependencies() const;
     void setDependencies(const QList<Component *> &value);
     void addDependence(Component * child);
+    bool hasDependence(const QString& componentName);
     QList<int> getMcuListId() const;
     void setMcuListId(const QList<int> &value);
     void appendMcuId(int id);

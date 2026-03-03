@@ -929,6 +929,47 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                                                                         pComponent,
                                                                         componentList));
 
+                            //
+                            // Связываем компоненты с CMSIS
+                            //
+                            QList<PdscRequirement> requiredComponents = pComponent.condition().requirementsMap()[PdscRequirement::Require].value(PdscRequirement::Component);
+
+                            foreach(PdscRequirement r, requiredComponents)
+                            {
+                                if(r.Cclass().toUpper() == "CMSIS" && r.Cgroup().toUpper() == "CORE")
+                                {
+                                    //TODO пока жестко завязываем на одну верси CMSIS
+                                    if(pack.cmsisComponents().contains("5.6.0"))
+                                    {
+                                        Component * cmsisCore = pack.cmsisComponents()["5.6.0"];
+
+                                        if(cmsisCore)
+                                        {
+                                            coComponent.addDependence(cmsisCore);
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+
+#if 1
+                            //-------------------------------------------------------------------------------
+                            // Если у pdsc кривое описание и нет явного определения CMSIS CORE
+                            // Как у Nordic DFP 8.28.0
+                            if(pComponent.attributes().getCclass().toLower() == "device" &&
+                               pComponent.attributes().getCgroup().toLower() == "startup" &&
+                               !coComponent.hasDependence(pack.cmsisComponents().value("5.6.0")->getName()))
+                            {
+                                Component * cmsisCore = pack.cmsisComponents()["5.6.0"];
+
+                                if(cmsisCore)
+                                {
+                                    coComponent.addDependence(cmsisCore);
+                                }
+                            }
+                            //-------------------------------------------------------------------------------
+#endif
+
                             if(pack.components().values().contains(coComponent))
                             {
                                 for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
