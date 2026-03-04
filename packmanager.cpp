@@ -537,31 +537,180 @@ bool PackManager::makeSvdDatabase(PackDescription &pack, QString& errorString)
         return false;
     }
 
+    QMap<QString, QStringList> svdSupportMcuMap;
+    QMap<QString, QString> mcuHasSvdMap;
     QFile svdDatabase;
     Manufacturer vendor = pack.vendors().first();
+    QList<Manufacturer::SvdInfo> svdList = vendor.svdList();
     QString dbFilename = Paths::instance()->coIdeDataDir() + "/" + vendor.getName() + ".txt";
 
     svdDatabase.setFileName(dbFilename);
 
-    if(!svdDatabase.open(QFile::WriteOnly))
+    //
+    // Если файл существует, но нельзя просто создать новый, т.к. может
+    // быть потеряна информация об Mcu, которые были добавлены из более новых пакетов
+    //
+    if(svdDatabase.exists() && svdDatabase.open(QFile::ReadOnly))
     {
-        errorString = QString("Failed to create %1 file: %2").arg(dbFilename).arg(svdDatabase.errorString());
-        return false;
-    }
+        QByteArray line;
 
-    foreach(auto svd, vendor.svdList())
-    {
-        QString line;
-
-        foreach(QString mcuName, svd.mcuList)
+        do
         {
-            line += mcuName.toUpper() + ", ";
-        }
-        line += ".." + svd.relativePath + "\r\n";
-        svdDatabase.write(line.toLatin1());
-    }
+            line = svdDatabase.readLine();
 
-    svdDatabase.close();
+            if(!line.isEmpty())
+            {
+                QStringList items = QString(line).split(',');
+                QString svdPath;
+
+                if(!items.isEmpty())
+                {
+                    svdPath = items.last().trimmed();
+
+                    // Проверка существования svd-файла
+                    QFile currSvd(Paths::instance()->coIdeDataDir() + "\\" + svdPath);
+
+                    if(currSvd.exists())
+                    {
+                        items.removeLast();
+
+                        foreach (QString mcuName, items)
+                        {
+                            QStringList * mcuList = nullptr;
+
+                            mcuName = mcuName.trimmed();
+                            mcuHasSvdMap.insert(mcuName, svdPath);
+
+                            if(svdSupportMcuMap.contains(svdPath))
+                            {
+                                mcuList = &svdSupportMcuMap[svdPath];
+                            }
+                            else
+                            {
+                                svdSupportMcuMap.insert(svdPath, QStringList());
+                                mcuList = &svdSupportMcuMap[svdPath];
+                            }
+
+                            if(!mcuList->contains(mcuName))
+                                mcuList->append(mcuName);
+                        }
+                    }
+                }
+            }
+        }
+        while(!line.isEmpty());
+        svdDatabase.close();
+
+        //
+        // Обновляем информацию данными из PDSC
+        //
+        foreach(auto svdInfo, vendor.svdList())
+        {
+            QString svdPath = ".." + svdInfo.relativePath;
+
+            foreach(QString mcuName, svdInfo.mcuList)
+            {
+                mcuName = mcuName.toUpper();
+
+                bool mcuExists = mcuHasSvdMap.contains(mcuName);
+                bool svdBelongMcu = mcuHasSvdMap.value(mcuName) == svdPath;
+                bool svdExists = svdSupportMcuMap.contains(svdPath);
+
+                // Создать новый Mcu и новую группу
+                if(!mcuExists && !svdExists)
+                {
+                    QStringList mcuList = QStringList() << mcuName;
+                    mcuHasSvdMap.insert(mcuName, svdPath);
+                    svdSupportMcuMap.insert(svdPath, mcuList);
+                }
+                // Перенести Mcu в другую группу
+                else if(mcuExists && svdExists && !svdBelongMcu)
+                {
+                    QString oldGroupName = mcuHasSvdMap.value(mcuName);
+                    QStringList& oldGroupList = svdSupportMcuMap[oldGroupName];
+                    QStringList& newGroupList = svdSupportMcuMap[svdPath];
+
+                    oldGroupList.removeOne(mcuName);
+                    if(!newGroupList.contains(mcuName))
+                        newGroupList.append(mcuName);
+
+                    // Заменить svd для данного mcu
+                    mcuHasSvdMap[mcuName] = svdPath;
+
+                    // Если группа опустела, то удаляем ее
+                    if(oldGroupList.isEmpty())
+                        svdSupportMcuMap.remove(oldGroupName);
+                }
+                // Создать новую группу и перенести туда Mcu
+                else if(mcuExists && !svdExists)
+                {
+                    // Новая группа
+                    svdSupportMcuMap.insert(svdPath, QStringList());
+
+                    QString oldGroupName = mcuHasSvdMap.value(mcuName);
+                    QStringList& oldGroupList = svdSupportMcuMap[oldGroupName];
+                    QStringList& newGroupList = svdSupportMcuMap[svdPath];
+
+                    oldGroupList.removeOne(mcuName);
+                    if(!newGroupList.contains(mcuName))
+                        newGroupList.append(mcuName);
+
+                    // Заменить svd для данного mcu
+                    mcuHasSvdMap[mcuName] = svdPath;
+
+                    // Если группа опустела, то удаляем ее
+                    if(oldGroupList.isEmpty())
+                        svdSupportMcuMap.remove(oldGroupName);
+                }
+            }
+        }
+
+        //
+        // Создаем новый файл с обновленными данными
+        //
+        if(!svdDatabase.open(QFile::WriteOnly))
+        {
+            errorString = QString("Failed to create %1 file: %2").arg(dbFilename).arg(svdDatabase.errorString());
+            return false;
+        }
+
+        for(auto it = svdSupportMcuMap.begin(); it != svdSupportMcuMap.end(); ++it)
+        {
+            QString svdPath = it.key();
+            QString line;
+
+            foreach(QString mcuName, it.value())
+            {
+                line += mcuName.toUpper() + ", ";
+            }
+            line += svdPath + "\r\n";
+            svdDatabase.write(line.toLatin1());
+        }
+
+        svdDatabase.close();
+    }
+    else if(!svdDatabase.exists())
+    {
+        if(!svdDatabase.open(QFile::WriteOnly))
+        {
+            errorString = QString("Failed to create %1 file: %2").arg(dbFilename).arg(svdDatabase.errorString());
+            return false;
+        }
+
+        foreach(auto svd, vendor.svdList())
+        {
+            QString line;
+
+            foreach(QString mcuName, svd.mcuList)
+            {
+                line += mcuName.toUpper() + ", ";
+            }
+            line += ".." + svd.relativePath + "\r\n";
+            svdDatabase.write(line.toLatin1());
+        }
+
+        svdDatabase.close();
+    }
 
     return true;
 }
