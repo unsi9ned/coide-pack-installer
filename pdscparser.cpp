@@ -878,6 +878,50 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             qInfo() << device.getName() << pComponent.condition().id();
                         }
 #endif
+                        //
+                        // Превращаем параметр compile header в компонент
+                        //
+                        Component * compileComponent = nullptr;
+
+                        if(!device.compileHeaders().isEmpty())
+                        {
+                            Component gccComponent;
+                            Category compileCategory = Category::categoryCommon();
+
+                            compileCategory.setSubCategoryName("Device");
+
+                            gccComponent.setLayerId(Component::LAYER_MCU);
+                            gccComponent.setType(Component::COMPONENT);
+
+                            gccComponent.setVersion(pack.release());
+                            gccComponent.setName("Compile_" + pack.release());
+
+                            gccComponent.setCategory(compileCategory);
+                            gccComponent.setDescription("CMSIS-Core compliant device header file");
+                            gccComponent.files().clear();
+                            gccComponent.files().append(device.compileHeaders());
+
+                            if(pack.components().values().contains(gccComponent))
+                            {
+                                for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+                                {
+                                    Component& existingComponent = it.value();
+
+                                    if(existingComponent == gccComponent)
+                                    {
+                                        compileComponent = &existingComponent;
+                                        existingComponent.addSupportedMcu(device.getName());
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                gccComponent.addSupportedMcu(device.getName());
+                                pack.components().insert(gccComponent.getUuid(), gccComponent);
+                                compileComponent = &pack.components()[gccComponent.getUuid()];
+                            }
+                        }
 
                         //
                         // Компонент предназначен для данного устройства
@@ -967,47 +1011,11 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             }
                             //-------------------------------------------------------------------------------
 #endif
-
-                            if(pack.components().values().contains(coComponent))
+                            // Связываем с компонентом compile
+                            if(compileComponent)
                             {
-                                for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
-                                {
-                                    Component& existingComponent = it.value();
-
-                                    if(existingComponent == coComponent)
-                                    {
-                                        existingComponent.addSupportedMcu(device.getName());
-                                        break;
-                                    }
-                                }
+                                coComponent.addChild(compileComponent);
                             }
-                            else
-                            {
-                                coComponent.addSupportedMcu(device.getName());
-                                pack.components().insert(coComponent.getUuid(), coComponent);
-                            }
-                        }
-
-                        //
-                        // Превращаем параметр compile header в компонент
-                        //
-                        if(!device.compileHeaders().isEmpty())
-                        {
-                            Component coComponent;
-                            Category coCategory = Category::categoryCommon();
-
-                            coCategory.setSubCategoryName("Device");
-
-                            coComponent.setLayerId(Component::LAYER_MCU);
-                            coComponent.setType(Component::COMPONENT);
-
-                            coComponent.setVersion(pack.release());
-                            coComponent.setName("Compile_" + pack.release());
-
-                            coComponent.setCategory(coCategory);
-                            coComponent.setDescription("CMSIS-Core compliant device header file");
-                            coComponent.files().clear();
-                            coComponent.files().append(device.compileHeaders());
 
                             if(pack.components().values().contains(coComponent))
                             {
