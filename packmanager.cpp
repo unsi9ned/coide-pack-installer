@@ -80,13 +80,14 @@ void PackManager::readPackDescription(PackDescription &pack)
             return;
         }
 
+#if 0
         //
         // Добавление mcu, которые зависят от CMSIS
         // TODO добавляем для всех mcu
         //
-        for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+        for(auto it = pack.coComponentMap().begin(); it != pack.coComponentMap().end(); ++it)
         {
-            Component& component = pack.components()[it.key()];
+            Component& component = pack.coComponentMap()[it.key()];
 
             foreach(QString mcuName, component.supportedMcuList())
             {
@@ -94,9 +95,10 @@ void PackManager::readPackDescription(PackDescription &pack)
                     coComponent.addSupportedMcu(mcuName);
             }
         }
+#endif
 
-        pack.components().insert(coComponent.getUuid(), coComponent);
-        pack.cmsisComponents().insert(coComponent.getVersion(), &pack.components()[coComponent.getUuid()]);
+        pack.coComponentMap().insert(coComponent.getUuid(), coComponent);
+        pack.cmsisComponents().insert(coComponent.getVersion(), &pack.coComponentMap()[coComponent.getUuid()]);
     }
 
     //
@@ -267,8 +269,8 @@ void PackManager::packInstall(PackDescription &pack)
     //
     // Установка компонентов
     //
-    QMap<QString, Component>& componentMap = pack.components();
-    QMap<QString, QStringList>& componentFileMap = pack.coComponentMap();
+    QMap<QString, Component>& componentMap = pack.coComponentMap();
+    QMap<QString, QStringList>& componentFileMap = pack.componentFilesMap();
 
     foreach(QString uuid, componentMap.keys())
     {
@@ -570,8 +572,8 @@ bool PackManager::makeSvdDatabase(PackDescription &pack, QString& errorString)
 //------------------------------------------------------------------------------
 void PackManager::loadCoComponents(PackDescription &pack)
 {
-    QMap<QString, QStringList>& coMap = pack.coComponentMap();
-    QMap<QString, Component>& componentMap = pack.components();
+    QMap<QString, QStringList>& coMap = pack.componentFilesMap();
+    QMap<QString, Component>& componentMap = pack.coComponentMap();
 
     coMap.clear();
 
@@ -580,7 +582,7 @@ void PackManager::loadCoComponents(PackDescription &pack)
         return;
     }
 
-    foreach(Component c, pack.components())
+    foreach(Component c, pack.coComponentMap())
     {
         coMap.insert(c.getUuid(), QStringList());
 
@@ -682,7 +684,7 @@ void PackManager::loadCoComponents(PackDescription &pack)
 //------------------------------------------------------------------------------
 QStringList PackManager::getFullFileList(PackDescription &pack)
 {
-    QMap<QString, QStringList>& coMap = pack.coComponentMap();
+    QMap<QString, QStringList>& coMap = pack.componentFilesMap();
     QStringList list;
 
     if(coMap.isEmpty())
@@ -692,7 +694,7 @@ QStringList PackManager::getFullFileList(PackDescription &pack)
 
     for(auto it = coMap.begin(); it != coMap.end(); ++it)
     {
-        Component& component = pack.components()[it.key()];
+        Component& component = pack.coComponentMap()[it.key()];
         QStringList coList = it.value();
 
         if(component.getName().startsWith("CMSIS_Core_"))
@@ -715,7 +717,7 @@ QStringList PackManager::getFullFileList(PackDescription &pack)
 //------------------------------------------------------------------------------
 QStringList PackManager::getCmsisFileList(PackDescription &pack, const QString version)
 {
-    QMap<QString, QStringList>& coMap = pack.coComponentMap();
+    QMap<QString, QStringList>& coMap = pack.componentFilesMap();
     QStringList list;
 
     if(coMap.isEmpty())
@@ -725,7 +727,7 @@ QStringList PackManager::getCmsisFileList(PackDescription &pack, const QString v
 
     for(auto it = coMap.begin(); it != coMap.end(); ++it)
     {
-        Component& component = pack.components()[it.key()];
+        Component& component = pack.coComponentMap()[it.key()];
         QStringList coList = it.value();
 
         if(component.getName() == QString("CMSIS_Core_%1").arg(version))
@@ -840,11 +842,11 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
         return false;
     }
 
-    if(pack.coComponentMap().isEmpty())
+    if(pack.componentFilesMap().isEmpty())
         loadCoComponents(pack);
 
-    QMap<QString, QStringList>& fileMap = pack.coComponentMap();
-    QMap<QString, Component>& componentMap = pack.components();
+    QMap<QString, QStringList>& fileMap = pack.componentFilesMap();
+    QMap<QString, Component>& componentMap = pack.coComponentMap();
 
     for(auto it = fileMap.begin(); it != fileMap.end(); ++it)
     {

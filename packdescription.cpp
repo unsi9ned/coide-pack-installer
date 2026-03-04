@@ -183,14 +183,14 @@ bool PackDescription::isValid() const
     return true;
 }
 
-QMap<QString, Component> &PackDescription::components()
+QMap<QString, Component> &PackDescription::coComponentMap()
 {
     return _componentMap;
 }
 
-QMap<QString, QStringList> &PackDescription::coComponentMap()
+QMap<QString, QStringList> &PackDescription::componentFilesMap()
 {
-    return _coComponentMap;
+    return _coComponentFilesMap;
 }
 
 QMap<QString, Component *> &PackDescription::cmsisComponents()
@@ -213,7 +213,7 @@ void PackDescription::clear()
     _pathToPdsc.clear();
     _vendorMap.clear();
     _componentMap.clear();
-    _coComponentMap.clear();
+    _coComponentFilesMap.clear();
     _cmsisComponentMap.clear();
 }
 

@@ -456,6 +456,14 @@ void Component::addSupportedMcu(const QString &mcuName)
         _supportsMcuList.append(mcuName);
 }
 
+void Component::addSupportedMcuList(const QStringList &mcuList)
+{
+    foreach (QString mcuName, mcuList)
+    {
+        addSupportedMcu(mcuName);
+    }
+}
+
 void Component::removeSupportedMcu(const QString &mcuName)
 {
     if(_supportsMcuList.contains(mcuName))

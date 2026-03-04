@@ -135,6 +135,9 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
     QList<PdscCondition> conditionList;
     QList<PdscComponent> componentList;
 
+    QMap<QString, Component> coComponentMap;
+    QMap<QString, QList<ParentComponentInfo> > parentComponentInfoMap;
+
     if(!devicesElem.isNull())
     {
         parseDevFamilies(devicesElem, pack);
@@ -164,7 +167,11 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         }
     }
 
-    loadComponents(componentList, pack);
+    //loadComponents(componentList, pack);
+    loadComponents(coComponentMap, parentComponentInfoMap, componentList, pack);
+    linkComponents(coComponentMap, parentComponentInfoMap, pack);
+
+    return;
 }
 
 //------------------------------------------------------------------------------
@@ -901,9 +908,9 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             gccComponent.files().clear();
                             gccComponent.files().append(device.compileHeaders());
 
-                            if(pack.components().values().contains(gccComponent))
+                            if(pack.coComponentMap().values().contains(gccComponent))
                             {
-                                for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+                                for(auto it = pack.coComponentMap().begin(); it != pack.coComponentMap().end(); ++it)
                                 {
                                     Component& existingComponent = it.value();
 
@@ -918,8 +925,8 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             else
                             {
                                 gccComponent.addSupportedMcu(device.getName());
-                                pack.components().insert(gccComponent.getUuid(), gccComponent);
-                                compileComponent = &pack.components()[gccComponent.getUuid()];
+                                pack.coComponentMap().insert(gccComponent.getUuid(), gccComponent);
+                                compileComponent = &pack.coComponentMap()[gccComponent.getUuid()];
                             }
                         }
 
@@ -1017,9 +1024,9 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                                 coComponent.addChild(compileComponent);
                             }
 
-                            if(pack.components().values().contains(coComponent))
+                            if(pack.coComponentMap().values().contains(coComponent))
                             {
-                                for(auto it = pack.components().begin(); it != pack.components().end(); ++it)
+                                for(auto it = pack.coComponentMap().begin(); it != pack.coComponentMap().end(); ++it)
                                 {
                                     Component& existingComponent = it.value();
 
@@ -1033,7 +1040,7 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
                             else
                             {
                                 coComponent.addSupportedMcu(device.getName());
-                                pack.components().insert(coComponent.getUuid(), coComponent);
+                                pack.coComponentMap().insert(coComponent.getUuid(), coComponent);
                             }
                         }
                     }
@@ -1041,6 +1048,290 @@ void PdscParser::loadComponents(const QList<PdscComponent> &componentList,
             }
         }
     }
+}
+
+//------------------------------------------------------------------------------
+// Формирование компонентов и связь с устройствами
+//------------------------------------------------------------------------------
+void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
+                                QMap<QString, QList<ParentComponentInfo> >& parentComponentInfoMap,
+                                const QList<PdscComponent> &componentList,
+                                PackDescription &pack)
+{
+    if(pack.vendors().isEmpty())
+        return;
+
+    foreach (PdscComponent pComponent, componentList)
+    {
+        // Проверка, что компонент соответствует пакету и его версии
+        if(!checkRequirements(pack, pComponent, componentList))
+            continue;
+
+        QMap<QString, Manufacturer>& vendors = pack.vendors();
+
+        for(auto v = vendors.begin(); v != vendors.end(); ++v)
+        {
+            Manufacturer& vendor = v.value();
+            QMap<QString, Family>& families = vendor.families();
+
+            for(auto f = families.begin(); f != families.end(); ++f)
+            {
+                Family& family = f.value();
+                QMap<QString, Series>& seriesMap = family.seriesMap();
+
+                for(auto s = seriesMap.begin(); s != seriesMap.end(); ++s)
+                {
+                    Series& series = s.value();
+                    QMap<QString, Mcu>& devices = series.mcuMap();
+
+                    for(auto d = devices.begin(); d != devices.end(); ++d)
+                    {
+                        Mcu& device = d.value();
+
+                        //
+                        // Превращаем параметр compile header в компонент
+                        //
+                        Component * compileComponent = nullptr;
+
+                        if(!device.compileHeaders().isEmpty())
+                        {
+                            Component gccComponent;
+                            Category compileCategory = Category::categoryCommon();
+
+                            compileCategory.setSubCategoryName("Device");
+
+                            gccComponent.setLayerId(Component::LAYER_MCU);
+                            gccComponent.setType(Component::COMPONENT);
+
+                            gccComponent.setVersion(pack.release());
+                            gccComponent.setName("Compile_" + pack.release());
+
+                            gccComponent.setCategory(compileCategory);
+                            gccComponent.setDescription("CMSIS-Core compliant device header file");
+                            gccComponent.files().clear();
+                            gccComponent.files().append(device.compileHeaders());
+
+                            if(coComponentMap.values().contains(gccComponent))
+                            {
+                                for(auto it = coComponentMap.begin(); it != coComponentMap.end(); ++it)
+                                {
+                                    Component& existingComponent = it.value();
+
+                                    if(existingComponent == gccComponent)
+                                    {
+                                        compileComponent = &existingComponent;
+                                        existingComponent.addSupportedMcu(device.getName());
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                gccComponent.addSupportedMcu(device.getName());
+                                coComponentMap.insert(gccComponent.getUuid(), gccComponent);
+                                compileComponent = &coComponentMap[gccComponent.getUuid()];
+                            }
+                        }
+
+                        //
+                        // Компонент предназначен для данного устройства
+                        //
+                        if(checkRequirements(pack, vendor, family, series, device, pComponent, componentList))
+                        {
+                            Component coComponent;
+                            Category coCategory = Category::categoryCommon();
+
+                            // Принудительно задаем точку входа в программу main()
+                            if(pComponent.attributes().getCclass().toLower() == "device" &&
+                               pComponent.attributes().getCgroup().toLower() == "startup")
+                            {
+                                coCategory = Category::categoryBoot();
+                                coComponent.setMicro("__START=main");
+                            }
+
+                            coCategory.setSubCategoryName(pComponent.attributes().getCclass());
+
+                            coComponent.setLayerId(Component::LAYER_MCU);
+                            coComponent.setType(Component::COMPONENT);
+
+                            if(pComponent.attributes().getCversion().isEmpty())
+                            {
+                                coComponent.setVersion(pack.release());
+                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
+                                                    pack.release());
+                            }
+                            else
+                            {
+                                coComponent.setVersion(pComponent.attributes().getCversion());
+                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
+                                                    pComponent.attributes().getCversion());
+                            }
+
+                            coComponent.setCategory(coCategory);
+
+                            if(!pComponent.description().isEmpty())
+                                coComponent.setDescription(pComponent.description());
+                            else if(pComponent.hasCondition())
+                                coComponent.setDescription(pComponent.condition().description());
+
+                            coComponent.files().clear();
+                            coComponent.files().append(getFilteredFiles(pack,
+                                                                        vendor,
+                                                                        family,
+                                                                        series,
+                                                                        device,
+                                                                        pComponent,
+                                                                        componentList));
+
+                            //
+                            // Добавляем текущий компонент в карту
+                            //
+                            Component * coideComponent = nullptr;
+
+                            if(coComponentMap.values().contains(coComponent))
+                            {
+                                for(auto it = coComponentMap.begin(); it != coComponentMap.end(); ++it)
+                                {
+                                    Component& existingComponent = it.value();
+
+                                    if(existingComponent == coComponent)
+                                    {
+                                        coideComponent = &existingComponent;
+                                        existingComponent.addSupportedMcu(device.getName());
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                coComponent.addSupportedMcu(device.getName());
+                                coComponentMap.insert(coComponent.getUuid(), coComponent);
+                                coideComponent = &coComponentMap[coComponent.getUuid()];
+                            }
+
+                            //
+                            // Фиксируем связь с другими компонентами
+                            //
+                            QList<PdscRequirement> requiredComponents = pComponent.condition().requirementsMap()[PdscRequirement::Require].value(PdscRequirement::Component);
+
+                            foreach(PdscRequirement r, requiredComponents)
+                            {
+                                ParentComponentInfo newParent;
+                                newParent.Cclass = r.Cclass();
+                                newParent.Cgroup = r.Cgroup();
+
+                                if(r.Cclass().toUpper() == "CMSIS" && r.Cgroup().toUpper() == "CORE")
+                                    newParent.Cversion = "5.6.0";
+                                else
+                                    newParent.Cversion = r.Cversion();
+
+                                // Компонент не может быть связан сам с собой
+                                if(r.Cclass() == pComponent.attributes().getCclass() &&
+                                   r.Cgroup() == pComponent.attributes().getCgroup())
+                                {
+                                    continue;
+                                }
+
+                                updateParentComponentMap(parentComponentInfoMap,
+                                                         coideComponent->getUuid(),
+                                                         newParent);
+                            }
+
+                            //
+                            // Фиксируем связь компонента Device/Startup с компонентом Compile
+                            //
+                            if(compileComponent && coideComponent &&
+                               pComponent.attributes().getCclass().toLower() == "device" &&
+                               pComponent.attributes().getCgroup().toLower() == "startup")
+                            {
+                                ParentComponentInfo newParent;
+                                newParent.Cclass = "Device";
+                                newParent.Cgroup = "Compile";
+                                newParent.Cversion = compileComponent->getVersion();
+
+                                updateParentComponentMap(parentComponentInfoMap,
+                                                         coideComponent->getUuid(),
+                                                         newParent);
+
+                                // Принудительно связываем с CMSIS CORE
+                                // Некоторые версии пакетов не задают явную связь
+                                // Если связь отмечена, то она не дублируется
+                                newParent.Cclass = "CMSIS";
+                                newParent.Cgroup = "CORE";
+                                newParent.Cversion = "5.6.0";
+
+                                updateParentComponentMap(parentComponentInfoMap,
+                                                         coideComponent->getUuid(),
+                                                         newParent);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// Установить связь между компонентами и сформировать окончательную карту
+//------------------------------------------------------------------------------
+void PdscParser::linkComponents(const QMap<QString, Component> &coComponentMap,
+                                const QMap<QString, QList<PdscParser::ParentComponentInfo> > &parentComponentInfoMap,
+                                PackDescription &pack)
+{
+    QMap<QString, Component>& componentMap = pack.coComponentMap();
+    componentMap.unite(coComponentMap);
+
+    for(auto it = componentMap.begin(); it != componentMap.end(); ++it)
+    {
+        QString uuid = it.key();
+        Component& component = it.value();
+        QList<PdscParser::ParentComponentInfo> parents = parentComponentInfoMap.value(uuid);
+
+#if 0
+        if(parents.count() > 0)
+            qInfo() << "Component" << component.getName() << "has parents:";
+
+        foreach(auto parentInfo, parents)
+        {
+            QList<Component*> parentComponents = findParentsComponent(componentMap, parentInfo);
+
+            foreach(auto c, parentComponents)
+            {
+                qInfo() << "   " << c->getName();
+            }
+        }
+#else
+        foreach(auto parentInfo, parents)
+        {
+            QList<Component*> parentComponents = findParentsComponent(componentMap, parentInfo);
+
+            foreach(auto c, parentComponents)
+            {
+                component.addChild(c);
+            }
+        }
+#endif
+    }
+
+    // Связывание компонентов CMSIS со всеми Mcu
+    for(auto it = pack.cmsisComponents().begin(); it != pack.cmsisComponents().end(); ++it)
+    {
+        if(it.value() == nullptr)
+            continue;
+
+        Component * cmsisComponent = it.value();
+        QString cmsisUuid = cmsisComponent->getUuid();
+
+        for(auto cIt = componentMap.begin(); cIt != componentMap.end(); ++cIt)
+        {
+            if(cIt.key() == cmsisUuid)
+                continue;
+
+            cmsisComponent->addSupportedMcuList(cIt.value().supportedMcuList());
+        }
+    }
+    return;
 }
 
 //------------------------------------------------------------------------------
@@ -1237,5 +1528,59 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
     }
 
     return files;
+}
+
+//------------------------------------------------------------------------------
+// Добавляет в карту новую информацию о связи между компонентами
+//------------------------------------------------------------------------------
+void PdscParser::updateParentComponentMap(QMap<QString, QList<PdscParser::ParentComponentInfo> > &parentComponentInfoMap,
+                                          QString componentUuid,
+                                          PdscParser::ParentComponentInfo newParent)
+{
+    QList<ParentComponentInfo> * parentList = nullptr;
+
+    if(parentComponentInfoMap.contains(componentUuid))
+    {
+        parentList = &parentComponentInfoMap[componentUuid];
+    }
+    else
+    {
+        parentComponentInfoMap.insert(componentUuid, QList<ParentComponentInfo>());
+        parentList = &parentComponentInfoMap[componentUuid];
+    }
+
+    if(!parentList->contains(newParent))
+        parentList->append(newParent);
+}
+
+//------------------------------------------------------------------------------
+// Ищет компонент в карте по косвенным признакам
+//------------------------------------------------------------------------------
+QList<Component*> PdscParser::findParentsComponent(const QMap<QString, Component> &coComponentMap,
+                                                   const PdscParser::ParentComponentInfo &parent)
+{
+    QList<Component*> foundComponents;
+
+    for(auto it = coComponentMap.begin(); it != coComponentMap.end(); ++it)
+    {
+        const Component& c = it.value();
+
+        if(parent.Cclass.toUpper() == "CMSIS" && parent.Cgroup.toUpper() == "CORE")
+        {
+            if(c.getName().toUpper() == QString("%1_%2_%3").arg(parent.Cclass).arg(parent.Cgroup).arg(parent.Cversion).toUpper())
+            {
+                foundComponents.append(&const_cast<Component&>(c));
+            }
+        }
+        else
+        {
+            if(c.getName().startsWith(QString("%1_").arg(parent.Cgroup)))
+            {
+                foundComponents.append(&const_cast<Component&>(c));
+            }
+        }
+    }
+
+    return foundComponents;
 }
 

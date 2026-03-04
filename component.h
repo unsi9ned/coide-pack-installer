@@ -177,6 +177,7 @@ public:
     QStringList linkerScripts();
 
     void addSupportedMcu(const QString& mcuName);
+    void addSupportedMcuList(const QStringList& mcuList);
     void removeSupportedMcu(const QString& mcuName);
     QStringList supportedMcuList() const;
 
