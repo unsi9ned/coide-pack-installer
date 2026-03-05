@@ -4,7 +4,7 @@
 #include <QString>
 #include <QMap>
 #include "manufacturer.h"
-#include "pdsccomponent.h"
+#include "pdsc/pdsccomponent.h"
 
 class PackDescription
 {
