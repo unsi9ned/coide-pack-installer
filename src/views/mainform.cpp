@@ -2,11 +2,11 @@
 #include <QTimer>
 #include "mainform.h"
 #include "ui_mainform.h"
-#include "paths.h"
-#include "ziparchive.h"
-#include "packmanager.h"
-#include "dbgarbagecollector.h"
-#include "settings.h"
+#include "services/paths.h"
+#include "utils/ziparchive.h"
+#include "models/pack/packmanager.h"
+#include "models/database/dbgarbagecollector.h"
+#include "services/settings.h"
 
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),

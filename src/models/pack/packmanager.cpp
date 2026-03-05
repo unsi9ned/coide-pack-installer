@@ -3,12 +3,12 @@
 #include <QFileInfo>
 #include <QString>
 #include "packmanager.h"
-#include "paths.h"
-#include "ziparchive.h"
+#include "services/paths.h"
+#include "utils/ziparchive.h"
 #include "pdscparser.h"
-#include "manufacturer.h"
-#include "requestmanager.h"
-#include "makelink.h"
+#include "models/mcu/manufacturer.h"
+#include "models/database/requestmanager.h"
+#include "utils/makelink.h"
 
 PackManager::PackManager(QObject *parent) : QObject(parent)
 {

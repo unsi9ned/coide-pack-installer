@@ -4,7 +4,7 @@
 #include <QString>
 #include <QDomDocument>
 #include "packdescription.h"
-#include "pdsc/pdsccomponent.h"
+#include "models/pdsc/pdsccomponent.h"
 
 class PdscParser
 {

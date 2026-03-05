@@ -1,6 +1,6 @@
 #include "database.h"
-#include "logger.h"
-#include "paths.h"
+#include "services/logger.h"
+#include "services/paths.h"
 
 DataBase* DataBase::_m_instance = nullptr;
 

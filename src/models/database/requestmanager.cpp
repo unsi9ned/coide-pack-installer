@@ -1,6 +1,6 @@
 #include "requestmanager.h"
 #include "componentsinfo.h"
-#include "logger.h"
+#include "services/logger.h"
 
 RequestManager* RequestManager::_m_instance = nullptr;
 

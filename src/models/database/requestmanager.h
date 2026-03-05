@@ -7,14 +7,14 @@
 #include <QDir>
 #include <QFile>
 
-#include "mcu.h"
-#include "series.h"
-#include "family.h"
-#include "manufacturer.h"
+#include "models/mcu/mcu.h"
+#include "models/mcu/series.h"
+#include "models/mcu/family.h"
+#include "models/mcu/manufacturer.h"
+#include "models/components/component.h"
 #include "database.h"
-#include "logger.h"
-#include "paths.h"
-#include "component.h"
+#include "services/logger.h"
+#include "services/paths.h"
 #include "componentsinfo.h"
 
 class RequestManager : public ComponentsInfo

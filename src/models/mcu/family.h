@@ -7,7 +7,7 @@
 
 #include "series.h"
 #include "featurecontainer.h"
-#include "algorithmcontainer.h"
+#include "models/algorithms/algorithmcontainer.h"
 
 class Family
 {

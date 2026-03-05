@@ -1,6 +1,6 @@
 #include "componentsinfo.h"
 #include "database.h"
-#include "manufacturer.h"
+#include "models/mcu/manufacturer.h"
 
 QMap<int, Component> *ComponentsInfo::components()
 {

@@ -17,9 +17,9 @@
 #include <QListWidget>
 #include <QPoint>
 
-#include "pdscparser.h"
-#include "packdescription.h"
-#include "packmanager.h"
+#include "models/pack/pdscparser.h"
+#include "models/pack/packdescription.h"
+#include "models/pack/packmanager.h"
 
 namespace Ui {
 class MainForm;

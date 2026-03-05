@@ -7,10 +7,10 @@
 #include <QVector>
 #include <QPair>
 
-#include "component.h"
+#include "models/components/component.h"
+#include "models/components/category.h"
+#include "models/components/example.h"
 #include "database.h"
-#include "category.h"
-#include "example.h"
 
 class ComponentsInfo : public QObject
 {

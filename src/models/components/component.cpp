@@ -1,7 +1,7 @@
 #include <QUuid>
 #include <QDateTime>
 #include "component.h"
-#include "constants.h"
+#include "common/constants.h"
 
 int Component::getId() const
 {

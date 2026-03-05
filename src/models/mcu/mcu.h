@@ -8,13 +8,13 @@
 #include <QDateTime>
 #include <QList>
 
-#include "debugalgorithm.h"
-#include "progalgorithm.h"
+#include "models/algorithms/debugalgorithm.h"
+#include "models/algorithms/progalgorithm.h"
+#include "models/algorithms/algorithmcontainer.h"
+#include "models/components/component.h"
 #include "memory.h"
 #include "devicefeature.h"
 #include "featurecontainer.h"
-#include "algorithmcontainer.h"
-#include "component.h"
 
 class Mcu : public FeatureContainer, public AlgorithmContainer
 {
