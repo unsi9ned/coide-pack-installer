@@ -61,8 +61,6 @@ private slots:
     void refreshAlgorithms();
     void refreshNewDebAlgorithm();
     void refreshNewFlashAlgorithm();
-    void selectNewTab(int t);
-    void visitWebsite();
 
     void on_pushButtonDataLoad_clicked();
     void on_pushButtonSave_clicked();

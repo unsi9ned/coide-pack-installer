@@ -37,7 +37,7 @@ MainForm::MainForm(QWidget *parent) :
     connect(&packMgr,
             SIGNAL(eventOccured(QString)),
             SLOT(printLogMessages(QString)));
-
+#if 0
     //Выбор производителя
     connect(ui->listWidgetManufacturer,
             SIGNAL(clicked(QModelIndex)),
@@ -66,18 +66,7 @@ MainForm::MainForm(QWidget *parent) :
             SIGNAL(clicked(QModelIndex)),
             this,
             SLOT(showFeatures(QModelIndex)));
-
-    //Реакция на выбор вкладки
-    connect(ui->tabWidget,
-            SIGNAL(currentChanged(int)),
-            this,
-            SLOT(selectNewTab(int)));
-
-    //Посетить вебсайт автора
-    connect(ui->labelWebSite,
-            SIGNAL(clicked()),
-            this,
-            SLOT(visitWebsite()));
+#endif
 
     // Изменение пути к CoIDE
     connect(ui->actionPreferences,
@@ -96,6 +85,7 @@ MainForm::MainForm(QWidget *parent) :
     });
 
     connect(m_viewModel, &MainViewModel::loadFinished, [this]() {
+        ui->lineEditRelease->setText(m_viewModel->releaseVersion());
         ui->statusBar->showMessage("Готово", 3000);
     });
 
@@ -137,6 +127,9 @@ MainForm::MainForm(QWidget *parent) :
         ui->lineEditRamSize->setText(m_viewModel->ramSize());
         ui->plainTextEditFeatures->setPlainText(m_viewModel->features());
         ui->plainTextEditDescription->setPlainText(m_viewModel->description());
+        ui->lineEditUrl->setText(m_viewModel->webPageUrl());
+        ui->lineEditDatasheetUrl->setText(m_viewModel->datasheetUrl());
+        ui->lineEditSVD->setText(m_viewModel->svdLocalPath());
     });
 
 
@@ -383,33 +376,6 @@ void MainForm::refreshNewFlashAlgorithm()
         ui->listWidgetNewFlashAlg->addItem(itemText);
     }
 #endif
-}
-
-//------------------------------------------------------------------------------
-// обработка события открытия другой вкладки
-//------------------------------------------------------------------------------
-void MainForm::selectNewTab(int t)
-{
-    //Открыта вкладка алгоритмов
-//    if(ui->tabWidget->currentWidget() == ui->tabAlgorithm)
-//    {
-//        mcuInfo.loadAlgorithmFromDb();
-    //    }
-
-    //Открыта вкладка компонентов
-//    if(ui->tabWidget->currentWidget() == ui->tabComponents)
-//    {
-//        componInfo.loadDataFromDb();
-//    }
-}
-
-//------------------------------------------------------------------------------
-// Посетить веб-сайт автора
-//------------------------------------------------------------------------------
-void MainForm::visitWebsite()
-{
-    QDesktopServices::openUrl(QUrl(ui->labelWebSite->text()));
-    qDebug() << "web";
 }
 
 //------------------------------------------------------------------------------
@@ -812,7 +778,11 @@ void MainForm::loadDFP()
                                                 tr("Device Family Pack"),
                                                 packFileInfo.path(),
                                                 "*.pack");
-    loadDFP(path);
+    if(!path.isEmpty())
+    {
+        Settings::instance()->saveLastLoadedPack(path);
+        m_viewModel->loadDeviceFamilyPack();
+    }
 }
 
 //------------------------------------------------------------------------------

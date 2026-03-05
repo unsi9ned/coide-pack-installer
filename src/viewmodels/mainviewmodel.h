@@ -45,6 +45,11 @@ public:
     QString ramSize() const;
     QString features() const;
     QString description() const;
+    QString webPageUrl() const;
+    QString datasheetUrl() const;
+    QString svdLocalPath() const;
+
+    QString releaseVersion() const;
 
 public slots:
 
