@@ -1,3 +1,5 @@
+#include <QScrollBar>
+#include <QTimer>
 #include "mainform.h"
 #include "ui_mainform.h"
 #include "paths.h"
@@ -46,6 +48,22 @@ MainForm::MainForm(QWidget *parent) :
     //Версия программы
     ui->labelAppVersion->setText(compilationVersion());
     ui->lineEditIdePath->setText(Paths::instance()->coIdeDir());
+
+    ui->plainTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    connect(ui->plainTextEdit,
+            &QPlainTextEdit::customContextMenuRequested,
+            this,
+            &MainForm::showLogContextMenu);
+
+    // Вывод сообщений
+    connect(&packMgr,
+            SIGNAL(errorOccured(QString)),
+            SLOT(printLogMessages(QString)));
+
+    connect(&packMgr,
+            SIGNAL(eventOccured(QString)),
+            SLOT(printLogMessages(QString)));
 
     //Выбор производителя
     connect(ui->listWidgetManufacturer,
@@ -119,9 +137,8 @@ MainForm::MainForm(QWidget *parent) :
     connect(ui->actionOpen_DFP,
             SIGNAL(triggered(bool)),
             SLOT(loadDFP()));
-    //--------------------------------------------------------------------------
-    //Обновление данных на форме
-    loadDFP(Settings::instance()->lastLoadedPack());
+
+    QMetaObject::invokeMethod(this, "delayedInit", Qt::QueuedConnection);
 }
 
 //------------------------------------------------------------------------------
@@ -169,6 +186,15 @@ QString MainForm::compilationVersion()
     time_part = time_part.mid(0, 2) + time_part.mid(3, 2);
 
     return date_part + "." + time_part;
+}
+
+//------------------------------------------------------------------------------
+// Инициализация программы после прогрузки основного окна
+//------------------------------------------------------------------------------
+void MainForm::delayedInit()
+{
+    //Обновление данных на форме
+    loadDFP(Settings::instance()->lastLoadedPack());
 }
 
 //------------------------------------------------------------------------------
@@ -868,16 +894,44 @@ QString MainForm::extractNameFromItemText(QString text)
     return text.mid(text.indexOf(" - ") + 3);
 }
 
+//------------------------------------------------------------------------------
+// Запуск оптимизации банных в БД
+//------------------------------------------------------------------------------
 void MainForm::on_pushButtonDbOptimize_clicked()
 {
     ui->pushButtonDbOptimize->setEnabled(false);
 
     DBGarbageCollector gbCollector;
+
+    connect(&gbCollector, &DBGarbageCollector::errorOccured, this, &MainForm::printLogMessages);
+    connect(&gbCollector, &DBGarbageCollector::eventOccured, this, &MainForm::printLogMessages);
+
     gbCollector.deleteUnnecessaryTables();
     gbCollector.deleteObsoleteData();
 
+    disconnect(&gbCollector, &DBGarbageCollector::errorOccured, this, &MainForm::printLogMessages);
+    disconnect(&gbCollector, &DBGarbageCollector::eventOccured, this, &MainForm::printLogMessages);
 
     ui->pushButtonDbOptimize->setEnabled(true);
+}
+
+//------------------------------------------------------------------------------
+// Расширенное контекстное меню для окна логирования
+//------------------------------------------------------------------------------
+void MainForm::showLogContextMenu(const QPoint &pos)
+{
+    QMenu *menu = ui->plainTextEdit->createStandardContextMenu();
+
+    menu->addSeparator();
+
+    QAction *clearAction = menu->addAction("Clear");
+    clearAction->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
+
+    connect(clearAction, &QAction::triggered,
+            ui->plainTextEdit, &QPlainTextEdit::clear);
+
+    menu->exec(ui->plainTextEdit->mapToGlobal(pos));
+    delete menu;
 }
 
 //------------------------------------------------------------------------------
@@ -949,4 +1003,13 @@ void MainForm::loadDFP(const QString &path)
             }
         }
     }
+}
+
+//------------------------------------------------------------------------------
+// Печать сообщений об ошибках и событиях
+//------------------------------------------------------------------------------
+void MainForm::printLogMessages(QString msg)
+{
+    ui->plainTextEdit->appendPlainText(msg);
+    ui->plainTextEdit->verticalScrollBar()->setValue(ui->plainTextEdit->verticalScrollBar()->maximum());
 }

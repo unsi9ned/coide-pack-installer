@@ -15,6 +15,7 @@
 #include <QDesktopServices>
 #include <QString>
 #include <QListWidget>
+#include <QPoint>
 
 #include "pdscparser.h"
 #include "packdescription.h"
@@ -43,6 +44,7 @@ private:
 
 private slots:
 
+    void delayedInit();
     void showError(QString e);
     void showInfo(QString i);
 
@@ -69,9 +71,11 @@ private slots:
     void on_pushButtonSave_clicked();
     void on_pushButtonSetIdePath_clicked();
     void on_pushButtonDbOptimize_clicked();
+    void showLogContextMenu(const QPoint &pos);
 
     void changeCoIDEPath();
     void loadDFP();
+    void printLogMessages(QString msg);
 
 private:
     void loadDFP(const QString& path);
