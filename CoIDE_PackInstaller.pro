@@ -57,7 +57,8 @@ SOURCES += src/main.cpp\
     src/utils/makelink.cpp \
     src/services/settings.cpp \
     src/viewmodels/mcubrowserviewmodel.cpp \
-    src/viewmodels/mcudetailsviewmodel.cpp
+    src/viewmodels/mcudetailsviewmodel.cpp \
+    src/viewmodels/mainviewmodel.cpp
 
 HEADERS  += \
     src/models/pack/pdscparser.h \
@@ -96,7 +97,8 @@ HEADERS  += \
     src/utils/makelink.h \
     src/services/settings.h \
     src/viewmodels/mcubrowserviewmodel.h \
-    src/viewmodels/mcudetailsviewmodel.h
+    src/viewmodels/mcudetailsviewmodel.h \
+    src/viewmodels/mainviewmodel.h
 
 FORMS    += \
     src/views/mainform.ui

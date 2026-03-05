@@ -21,6 +21,8 @@
 #include "models/pack/packdescription.h"
 #include "models/pack/packmanager.h"
 
+#include "viewmodels/mainviewmodel.h"
+
 namespace Ui {
 class MainForm;
 }
@@ -33,6 +35,7 @@ private:
     PdscParser parser;
     PackDescription pack;
     PackManager packMgr;
+    MainViewModel * m_viewModel;
 
 public:
     explicit MainForm(QWidget *parent = 0);
@@ -53,12 +56,6 @@ private slots:
     void showSeriesList(QModelIndex index);
     void showMcuList(QModelIndex index);
     void showFeatures(QModelIndex index);
-
-    void showFamilyList(int index);
-    void showSeriesList(int index);
-    void showMcuList(int index);
-
-    void showFilteredComponents(int itemIndex = 1);
 
     void refreshData();
     void refreshAlgorithms();

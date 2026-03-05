@@ -10,37 +10,10 @@
 
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
+    m_viewModel(new MainViewModel(this)),
     ui(new Ui::MainForm)
 {
     ui->setupUi(this);
-
-#if 0
-#define  DANGEROUS_TEST  0
-
-#if 0
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.15.0.pack");
-#elif 0
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.28.0.pack");
-#elif 0
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1.pack");
-#elif 1 && DANGEROUS_TEST
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "NordicSemiconductor.nRF_DeviceFamilyPack.8.44.1.pack");
-#elif 0 && DANGEROUS_TEST
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.1.0.pack");
-#elif 0 && DANGEROUS_TEST
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F1xx_DFP.2.2.0.pack");
-#elif 1 && DANGEROUS_TEST
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.STM32F4xx_DFP.2.11.0.pack");
-#elif 0
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Keil.SAMD21_DFP.1.2.0.pack");
-#elif 1 && DANGEROUS_TEST
-    pack.setPathToArchive(QApplication::applicationDirPath() + "/" + "Microchip.SAMD21_DFP.3.7.262.atpack");
-#endif
-
-#undef DANGEROUS_TEST
-
-    packMgr.readPackDescription(pack);
-#endif
 
     //Иконка
     this->setWindowIcon(QIcon(":coide_project.ico"));
@@ -106,28 +79,6 @@ MainForm::MainForm(QWidget *parent) :
             this,
             SLOT(visitWebsite()));
 
-    //Перезаполнение списков в зависимости от выбора проивзодителя/семейства/Серии/чипа
-
-    connect(ui->comboBoxManufacturer,
-            SIGNAL(currentIndexChanged(int)),
-            this,
-            SLOT(showFamilyList(int)));
-
-    connect(ui->comboBoxFamily,
-            SIGNAL(currentIndexChanged(int)),
-            this,
-            SLOT(showSeriesList(int)));
-
-    connect(ui->comboBoxSerie,
-            SIGNAL(currentIndexChanged(int)),
-            this,
-            SLOT(showMcuList(int)));
-
-    connect(ui->comboBoxMcu,
-            SIGNAL(currentIndexChanged(int)),
-            this,
-            SLOT(showFilteredComponents(int)));
-
     // Изменение пути к CoIDE
     connect(ui->actionPreferences,
             SIGNAL(triggered(bool)),
@@ -138,6 +89,71 @@ MainForm::MainForm(QWidget *parent) :
             SIGNAL(triggered(bool)),
             SLOT(loadDFP()));
 
+    //--------------------------------------------------------------------------
+    // Сигналы загрузки
+    connect(m_viewModel, &MainViewModel::loadStarted, [this]() {
+        ui->statusBar->showMessage("Загрузка...");
+    });
+
+    connect(m_viewModel, &MainViewModel::loadFinished, [this]() {
+        ui->statusBar->showMessage("Готово", 3000);
+    });
+
+    connect(m_viewModel, &MainViewModel::loadFailed, [this](const QString& error) {
+        QMessageBox::critical(this, "Ошибка", error);
+    });
+
+    connect(m_viewModel, &MainViewModel::statusMessage,
+            ui->statusBar, &QStatusBar::showMessage);
+
+
+    // Обновление списков
+    connect(m_viewModel, &MainViewModel::vendorsChanged, [this]() {
+        ui->listWidgetManufacturer->clear();
+        ui->listWidgetManufacturer->addItems(m_viewModel->vendors());
+    });
+
+    connect(m_viewModel, &MainViewModel::familiesChanged, [this]() {
+        ui->listWidgetFamily->clear();
+        ui->listWidgetFamily->addItems(m_viewModel->families());
+    });
+
+    connect(m_viewModel, &MainViewModel::seriesChanged, [this]() {
+        ui->listWidgetSeries->clear();
+        ui->listWidgetSeries->addItems(m_viewModel->series());
+    });
+
+    connect(m_viewModel, &MainViewModel::mcusChanged, [this]() {
+        ui->listWidgetMcu->clear();
+        ui->listWidgetMcu->addItems(m_viewModel->mcus());
+    });
+
+
+    // Обновление детальной информации
+    connect(m_viewModel, &MainViewModel::mcuChanged, [this]() {
+        ui->lineEditFlashStart->setText(m_viewModel->flashStart());
+        ui->lineEditFlashSize->setText(m_viewModel->flashSize());
+        ui->lineEditRamStart->setText(m_viewModel->ramStart());
+        ui->lineEditRamSize->setText(m_viewModel->ramSize());
+        ui->plainTextEditFeatures->setPlainText(m_viewModel->features());
+        ui->plainTextEditDescription->setPlainText(m_viewModel->description());
+    });
+
+
+    // Пользовательский ввод
+    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged,
+            m_viewModel, &MainViewModel::selectVendor);
+
+    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged,
+            m_viewModel, &MainViewModel::selectFamily);
+
+    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged,
+            m_viewModel, &MainViewModel::selectSeries);
+
+    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged,
+            m_viewModel, &MainViewModel::selectMcu);
+    //--------------------------------------------------------------------------
+
     QMetaObject::invokeMethod(this, "delayedInit", Qt::QueuedConnection);
 }
 
@@ -146,6 +162,7 @@ MainForm::MainForm(QWidget *parent) :
 //------------------------------------------------------------------------------
 MainForm::~MainForm()
 {
+    delete m_viewModel;
     delete ui;
 }
 
@@ -194,7 +211,8 @@ QString MainForm::compilationVersion()
 void MainForm::delayedInit()
 {
     //Обновление данных на форме
-    loadDFP(Settings::instance()->lastLoadedPack());
+    //loadDFP(Settings::instance()->lastLoadedPack());
+    m_viewModel->loadDeviceFamilyPack();
 }
 
 //------------------------------------------------------------------------------
@@ -260,7 +278,6 @@ void MainForm::refreshData()
 //        ui->listWidgetComponents->addItem(itemText);
 //        ++compIterator;
 //    }
-    showFilteredComponents();
 
     ui->labelComponentsCount->setNum(ui->listWidgetComponents->count());
 }
@@ -442,92 +459,6 @@ void MainForm::showFamilyList(QModelIndex index)
     }
 
     Settings::instance()->saveSelectedVendor(currentItem->text());
-}
-
-//------------------------------------------------------------------------------
-// Показать список семейств для выпадающего списка
-//------------------------------------------------------------------------------
-void MainForm::showFamilyList(int index)
-{
-    Q_UNUSED(index);
-
-    ui->comboBoxFamily->clear();
-    ui->comboBoxFamily->addItem("- Не выбрано -");
-
-    //Список производителей пуст. Нет смысла пытаться загрузить список семейств
-    if(ui->comboBoxManufacturer->count() <= 1)
-    {
-        return;
-    }
-
-    QMap<QString, Family>& families = pack.vendor(ui->comboBoxManufacturer->currentText()).families();
-
-    for(auto it = families.begin(); it != families.end(); ++it)
-    {
-        ui->comboBoxFamily->addItem(it.key());
-    }
-
-    //if(ui->comboBoxManufacturer->currentIndex() > 0)
-    {
-        showFilteredComponents();
-    }
-}
-
-//------------------------------------------------------------------------------
-// Показать список серий для выпадающего списка
-//------------------------------------------------------------------------------
-void MainForm::showSeriesList(int index)
-{
-    Q_UNUSED(index);
-
-    ui->comboBoxSerie->clear();
-    ui->comboBoxSerie->addItem("- Не выбрана -");
-
-    //Список семейств пуст. Нет смысла пытаться загрузить список серий
-    if(ui->comboBoxFamily->count() <= 1)
-    {
-        return;
-    }
-
-    QString vendor = ui->comboBoxManufacturer->currentText();
-    QString armCore = ui->comboBoxFamily->currentText();
-    QMap<QString, Series>& series = pack.vendor(vendor).family(armCore).seriesMap();
-
-    for(auto it = series.begin(); it != series.end(); ++it)
-    {
-        ui->comboBoxSerie->addItem(it.key());
-    }
-
-    showFilteredComponents();
-}
-
-//------------------------------------------------------------------------------
-// Показать список процессоров для выпадающего списка
-//------------------------------------------------------------------------------
-void MainForm::showMcuList(int index)
-{
-    Q_UNUSED(index);
-
-    ui->comboBoxMcu->clear();
-    ui->comboBoxMcu->addItem("- Не выбран -");
-
-    //Список серий пуст. Нет смысла пытаться загрузить список процессоров
-    if(ui->comboBoxSerie->count() <= 1)
-    {
-        return;
-    }
-
-    QString vendor = ui->comboBoxManufacturer->currentText();
-    QString armCore = ui->comboBoxFamily->currentText();
-    QString series = ui->comboBoxSerie->currentText();
-    QMap<QString, Mcu>& mcuMap = pack.vendor(vendor).family(armCore).series(series).mcuMap();
-
-    for(auto it = mcuMap.begin(); it != mcuMap.end(); ++it)
-    {
-        ui->comboBoxMcu->addItem(it.key());
-    }
-
-    showFilteredComponents();
 }
 
 //------------------------------------------------------------------------------
@@ -786,85 +717,6 @@ void MainForm::on_pushButtonSetIdePath_clicked()
     Paths::instance()->setCoIdeDir(str);
     ui->lineEditIdePath->setText(str);
     refreshData();
-}
-
-//------------------------------------------------------------------------------
-// Отобразить только компоненты связанные с выбранным производителем
-//------------------------------------------------------------------------------
-void MainForm::showFilteredComponents(int itemIndex)
-{
-    //Q_UNUSED(itemIndex);
-
-    if(itemIndex <= 0)
-    {
-        return;
-    }
-
-    int manufacturerId = extractIdFromItemText(ui->comboBoxManufacturer->currentText());
-    int familyId = extractIdFromItemText(ui->comboBoxFamily->currentText());
-    int serieId = extractIdFromItemText(ui->comboBoxSerie->currentText());
-    int mcuId = extractIdFromItemText(ui->comboBoxMcu->currentText());
-
-    //Если есть фильтр хотя бы по какому-либо параметру
-//    if(manufacturerId >= 0 ||
-//       familyId >= 0 ||
-//       serieId >= 0 ||
-//       mcuId >= 0)
-    {
-        ui->listWidgetComponents->clear();
-#if 0
-        QMap<int, Component>::iterator compIterator = componInfo.components()->begin();
-
-        while(compIterator != componInfo.components()->end())
-        {
-            QString itemText;
-            Component currComponent = compIterator.value();
-            QList<int> mcuList = currComponent.getMcuListId();
-            QList<int> mcuFamilyList = currComponent.getMcuFamilyList();
-            QList<int> mcuSeriesList = currComponent.getMcuSeriesList();
-            QList<int> mcuManufacturerList = currComponent.getMcuManufacturerList();
-
-            //Компонент не подходит по производителю
-            if(manufacturerId >= 0 && !mcuManufacturerList.contains(manufacturerId))
-            {
-                ++compIterator;
-                continue;
-            }
-
-            //Компонент не подходит по семейству
-            if(familyId >= 0 && !mcuFamilyList.contains(familyId))
-            {
-                ++compIterator;
-                continue;
-            }
-
-            //Компонент не подходит по серии
-            if(serieId >= 0 && !mcuSeriesList.contains(serieId))
-            {
-                ++compIterator;
-                continue;
-            }
-
-            //Компонент не подходит по чипу
-            if(mcuId >= 0 && !mcuList.contains(mcuId))
-            {
-                ++compIterator;
-                continue;
-            }
-
-            itemText = QString("%1 - %2").
-                        arg(currComponent.getId()).
-                        arg(currComponent.getName());
-
-            ui->listWidgetComponents->addItem(itemText);
-            ++compIterator;
-        }
-#endif
-    }
-
-    ui->labelComponentsCount->setNum(ui->listWidgetComponents->count());
-
-    return;
 }
 
 //------------------------------------------------------------------------------
