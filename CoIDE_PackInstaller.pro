@@ -23,85 +23,85 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 
-SOURCES += main.cpp\
-    pdscparser.cpp \
-    packdescription.cpp \
-    memory.cpp \
-    mainform.cpp \
-    devicefeature.cpp \
-    featurecontainer.cpp \
-    algorithmcontainer.cpp \
-    progalgorithm.cpp \
-    debugalgorithm.cpp \
-    paths.cpp \
-    packmanager.cpp \
-    ziparchive.cpp \
-    manufacturer.cpp \
-    logger.cpp \
-    database.cpp \
-    requestmanager.cpp \
-    component.cpp \
-    componentsinfo.cpp \
-    category.cpp \
-    family.cpp \
-    series.cpp \
-    mcu.cpp \
-    dbgarbagecollector.cpp \
-    example.cpp \
-    pdsc/pdscelement.cpp \
-    pdsc/pdscfile.cpp \
-    pdsc/pdsccomponentattr.cpp \
-    pdsc/pdsccomponent.cpp \
-    pdsc/pdsccondition.cpp \
-    pdsc/pdscrequirement.cpp \
-    makelink.cpp \
-    settings.cpp
+SOURCES += src/main.cpp\
+    src/models/pack/pdscparser.cpp \
+    src/models/pack/packdescription.cpp \
+    src/models/pack/packmanager.cpp \
+    src/models/mcu/memory.cpp \
+    src/views/mainform.cpp \
+    src/models/mcu/devicefeature.cpp \
+    src/models/mcu/featurecontainer.cpp \
+    src/models/algorithms/algorithmcontainer.cpp \
+    src/models/algorithms/progalgorithm.cpp \
+    src/models/algorithms/debugalgorithm.cpp \
+    src/services/paths.cpp \
+    src/utils/ziparchive.cpp \
+    src/models/mcu/manufacturer.cpp \
+    src/services/logger.cpp \
+    src/models/database/database.cpp \
+    src/models/database/requestmanager.cpp \
+    src/models/components/component.cpp \
+    src/models/database/componentsinfo.cpp \
+    src/models/components/category.cpp \
+    src/models/mcu/family.cpp \
+    src/models/mcu/series.cpp \
+    src/models/mcu/mcu.cpp \
+    src/models/database/dbgarbagecollector.cpp \
+    src/models/components/example.cpp \
+    src/models/pdsc/pdscelement.cpp \
+    src/models/pdsc/pdscfile.cpp \
+    src/models/pdsc/pdsccomponentattr.cpp \
+    src/models/pdsc/pdsccomponent.cpp \
+    src/models/pdsc/pdsccondition.cpp \
+    src/models/pdsc/pdscrequirement.cpp \
+    src/utils/makelink.cpp \
+    src/services/settings.cpp
 
 HEADERS  += \
-    pdscparser.h \
-    mcu.h \
-    debugalgorithm.h \
-    family.h \
-    manufacturer.h \
-    packdescription.h \
-    series.h \
-    memory.h \
-    mainform.h \
-    qclickablelabel.h \
-    devicefeature.h \
-    featurecontainer.h \
-    algorithmcontainer.h \
-    progalgorithm.h \
-    paths.h \
-    packmanager.h \
-    ziparchive.h \
-    logger.h \
-    database.h \
-    requestmanager.h \
-    component.h \
-    componentsinfo.h \
-    category.h \
-    constants.h \
-    dbgarbagecollector.h \
-    example.h \
-    pdsc/pdscelement.h \
-    pdsc/pdscfile.h \
-    pdsc/pdscfilecategory.h \
-    pdsc/pdsccomponentattr.h \
-    pdsc/pdsccomponent.h \
-    pdsc/pdsccondition.h \
-    pdsc/pdscrequirement.h \
-    makelink.h \
-    settings.h
-
-INCLUDEPATH += \
-    pdsc/
+    src/models/pack/pdscparser.h \
+    src/models/pack/packdescription.h \
+    src/models/pack/packmanager.h \
+    src/models/mcu/mcu.h \
+    src/models/algorithms/debugalgorithm.h \
+    src/models/mcu/family.h \
+    src/models/mcu/manufacturer.h \
+    src/models/mcu/series.h \
+    src/models/mcu/memory.h \
+    src/views/mainform.h \
+    src/views/widgets/qclickablelabel.h \
+    src/models/mcu/devicefeature.h \
+    src/models/mcu/featurecontainer.h \
+    src/models/algorithms/algorithmcontainer.h \
+    src/models/algorithms/progalgorithm.h \
+    src/services/paths.h \
+    src/utils/ziparchive.h \
+    src/services/logger.h \
+    src/models/database/database.h \
+    src/models/database/requestmanager.h \
+    src/models/components/component.h \
+    src/models/database/componentsinfo.h \
+    src/models/components/category.h \
+    src/common/constants.h \
+    src/models/database/dbgarbagecollector.h \
+    src/models/components/example.h \
+    src/models/pdsc/pdscelement.h \
+    src/models/pdsc/pdscfile.h \
+    src/models/pdsc/pdscfilecategory.h \
+    src/models/pdsc/pdsccomponentattr.h \
+    src/models/pdsc/pdsccomponent.h \
+    src/models/pdsc/pdsccondition.h \
+    src/models/pdsc/pdscrequirement.h \
+    src/utils/makelink.h \
+    src/services/settings.h
 
 FORMS    += \
-    mainform.ui
+    src/views/mainform.ui
 
 RESOURCES += \
-    resources.qrc
+    resources/resources.qrc
+
+INCLUDEPATH += \
+    src \
 
 # Копирует utils в каталог сборки (debug/release)
 

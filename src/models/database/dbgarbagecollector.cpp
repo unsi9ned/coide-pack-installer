@@ -3,7 +3,7 @@
 #include <QDir>
 #include "dbgarbagecollector.h"
 #include "database.h"
-#include "paths.h"
+#include "services/paths.h"
 #include "requestmanager.h"
 
 //------------------------------------------------------------------------------

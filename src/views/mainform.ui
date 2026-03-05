@@ -26,7 +26,7 @@
    <string>CoIDE Pack Installer</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset resource="../../resources/resources.qrc">
     <normaloff>:/img/HamLab_favicon.ico</normaloff>:/img/HamLab_favicon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
@@ -991,11 +991,11 @@
   <customwidget>
    <class>QClickableLabel</class>
    <extends>QLabel</extends>
-   <header>qclickablelabel.h</header>
+   <header>views/widgets/qclickablelabel.h</header>
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../../resources/resources.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -1,6 +1,6 @@
 #include <QUuid>
 #include "debugalgorithm.h"
-#include "paths.h"
+#include "services/paths.h"
 
 DebugAlgorithm::DebugAlgorithm(const QString &name)
 {

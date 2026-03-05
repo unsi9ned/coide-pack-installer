@@ -6,7 +6,7 @@
 #include <QByteArray>
 #include <QMap>
 #include <QDateTime>
-#include "constants.h"
+#include "common/constants.h"
 
 class DebugAlgorithm
 {

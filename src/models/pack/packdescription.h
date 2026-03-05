@@ -3,8 +3,8 @@
 
 #include <QString>
 #include <QMap>
-#include "manufacturer.h"
-#include "pdsccomponent.h"
+#include "models/mcu/manufacturer.h"
+#include "models/pdsc/pdsccomponent.h"
 
 class PackDescription
 {

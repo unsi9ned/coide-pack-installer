@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <QFile>
 #include "ziparchive.h"
-#include "paths.h"
+#include "services/paths.h"
 
 ZipArchive::ZipArchive(QObject *parent) : QObject(parent)
 {
