@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "mainviewmodel.h"
 #include "services/settings.h"
 
@@ -140,6 +141,9 @@ void MainViewModel::loadDeviceFamilyPack(const QString &path)
     m_currentFamily.clear();
     m_currentSeries.clear();
     m_currentMcu.clear();
+    m_currentMcuObj = nullptr;
+    m_codeMemory = nullptr;
+    m_dataMemory = nullptr;
 
     emit familiesChanged();
     emit seriesChanged();
@@ -164,32 +168,24 @@ void MainViewModel::restoreSelection()
     QString mcu = Settings::instance()->selectedMcu();
 
     // Восстанавливаем производителя
-    if (!vendor.isEmpty()) {
-        int vendorIndex = m_vendors.indexOf(vendor);
-        if (vendorIndex >= 0) {
-            selectVendor(vendorIndex);
+    if (!vendor.isEmpty())
+    {
+        selectVendor(vendor);
 
-            // Восстанавливаем семейство
-            if (!family.isEmpty()) {
-                int familyIndex = m_families.indexOf(family);
-                if (familyIndex >= 0) {
-                    selectFamily(familyIndex);
+        // Восстанавливаем семейство
+        if (!family.isEmpty())
+        {
+            selectFamily(family);
 
-                    // Восстанавливаем серию
-                    if (!series.isEmpty()) {
-                        int seriesIndex = m_series.indexOf(series);
-                        if (seriesIndex >= 0) {
-                            selectSeries(seriesIndex);
+            // Восстанавливаем серию
+            if (!series.isEmpty())
+            {
+                selectSeries(series);
 
-                            // Восстанавливаем MCU
-                            if (!mcu.isEmpty()) {
-                                int mcuIndex = m_mcus.indexOf(mcu);
-                                if (mcuIndex >= 0) {
-                                    selectMcu(mcuIndex);
-                                }
-                            }
-                        }
-                    }
+                // Восстанавливаем MCU
+                if (!mcu.isEmpty())
+                {
+                    selectMcu(mcu);
                 }
             }
         }
@@ -277,11 +273,11 @@ void MainViewModel::updateMcuDetails()
 //------------------------------------------------------------------------------
 // Выбор производителя
 //------------------------------------------------------------------------------
-void MainViewModel::selectVendor(int index)
+void MainViewModel::selectVendor(const QString &vendor)
 {
-    if (index < 0 || index >= m_vendors.size()) return;
+    if(!m_pack.vendors().keys().contains(vendor)) return;
 
-    m_currentVendor = m_vendors[index];
+    m_currentVendor = vendor;
     Settings::instance()->saveSelectedVendor(m_currentVendor);
 
     updateFamilies();
@@ -290,11 +286,16 @@ void MainViewModel::selectVendor(int index)
 //------------------------------------------------------------------------------
 // Выбор семейства
 //------------------------------------------------------------------------------
-void MainViewModel::selectFamily(int index)
+void MainViewModel::selectFamily(const QString& family)
 {
-    if (index < 0 || index >= m_families.size()) return;
+    QStringList vendorList = m_pack.vendors().keys();
+    QStringList familyList = vendorList.contains(m_currentVendor) ?
+                             m_pack.vendor(m_currentVendor).families().keys() :
+                             QStringList();
 
-    m_currentFamily = m_families[index];
+    if(!familyList.contains(family)) return;
+
+    m_currentFamily = family;
     Settings::instance()->saveSelectedCore(m_currentFamily);
 
     updateSeries();
@@ -303,25 +304,32 @@ void MainViewModel::selectFamily(int index)
 //------------------------------------------------------------------------------
 // Выбор серии
 //------------------------------------------------------------------------------
-void MainViewModel::selectSeries(int index)
+void MainViewModel::selectSeries(const QString &series)
 {
-    if (index < 0 || index >= m_series.size()) return;
+    if(m_pack.vendors().keys().contains(m_currentVendor) &&
+       m_pack.vendor(m_currentVendor).families().keys().contains(m_currentFamily) &&
+       m_pack.vendor(m_currentVendor).family(m_currentFamily).seriesMap().keys().contains(series))
+    {
+        m_currentSeries = series;
+        Settings::instance()->saveSelectedSeries(m_currentSeries);
 
-    m_currentSeries = m_series[index];
-    Settings::instance()->saveSelectedSeries(m_currentSeries);
-
-    updateMcus();
+        updateMcus();
+    }
 }
 
 //------------------------------------------------------------------------------
 // Выбор устройства
 //------------------------------------------------------------------------------
-void MainViewModel::selectMcu(int index)
+void MainViewModel::selectMcu(const QString& mcu)
 {
-    if (index < 0 || index >= m_mcus.size()) return;
+    if(m_pack.vendors().keys().contains(m_currentVendor) &&
+       m_pack.vendor(m_currentVendor).families().keys().contains(m_currentFamily) &&
+       m_pack.vendor(m_currentVendor).family(m_currentFamily).seriesMap().keys().contains(m_currentSeries) &&
+       m_pack.vendor(m_currentVendor).family(m_currentFamily).series(m_currentSeries).mcuMap().keys().contains(mcu))
+    {
+        m_currentMcu = mcu;
+        Settings::instance()->saveSelectedMcu(m_currentMcu);
 
-    m_currentMcu = m_mcus[index];
-    Settings::instance()->saveSelectedMcu(m_currentMcu);
-
-    updateMcuDetails();
+        updateMcuDetails();
+    }
 }

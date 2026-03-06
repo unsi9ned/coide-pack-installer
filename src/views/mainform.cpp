@@ -80,8 +80,11 @@ MainForm::MainForm(QWidget *parent) :
 
     //--------------------------------------------------------------------------
     // Сигналы загрузки
-    connect(m_viewModel, &MainViewModel::loadStarted, [this]() {
+    connect(m_viewModel, &MainViewModel::loadStarted, [this]()
+    {
         ui->statusBar->showMessage("Загрузка...");
+        ui->plainTextEditFeatures->clear();
+        ui->plainTextEditDescription->clear();
     });
 
     connect(m_viewModel, &MainViewModel::loadFinished, [this]() {
@@ -113,14 +116,16 @@ MainForm::MainForm(QWidget *parent) :
         ui->listWidgetSeries->addItems(m_viewModel->series());
     });
 
-    connect(m_viewModel, &MainViewModel::mcusChanged, [this]() {
+    connect(m_viewModel, &MainViewModel::mcusChanged, [this]()
+    {
         ui->listWidgetMcu->clear();
         ui->listWidgetMcu->addItems(m_viewModel->mcus());
     });
 
 
     // Обновление детальной информации
-    connect(m_viewModel, &MainViewModel::mcuChanged, [this]() {
+    connect(m_viewModel, &MainViewModel::mcuChanged, [this]()
+    {
         ui->lineEditFlashStart->setText(m_viewModel->flashStart());
         ui->lineEditFlashSize->setText(m_viewModel->flashSize());
         ui->lineEditRamStart->setText(m_viewModel->ramStart());
@@ -130,21 +135,81 @@ MainForm::MainForm(QWidget *parent) :
         ui->lineEditUrl->setText(m_viewModel->webPageUrl());
         ui->lineEditDatasheetUrl->setText(m_viewModel->datasheetUrl());
         ui->lineEditSVD->setText(m_viewModel->svdLocalPath());
+
+        // Восстанавливаем выбор, если элемент еще существует
+        if (!m_viewModel->currentMcu().isEmpty())
+        {
+            auto items = ui->listWidgetMcu->findItems(m_viewModel->currentMcu(), Qt::MatchExactly);
+            if (!items.isEmpty())
+            {
+                ui->listWidgetMcu->setCurrentItem(items.first());
+            }
+        }
     });
 
 
     // Пользовательский ввод
-    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged,
-            m_viewModel, &MainViewModel::selectVendor);
+    //--------------------------------------------------------------------------
 
-    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged,
-            m_viewModel, &MainViewModel::selectFamily);
+    // Выбор производителя
+    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]()
+    {
+        QListWidgetItem * currentItem = ui->listWidgetManufacturer->currentItem();
 
-    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged,
-            m_viewModel, &MainViewModel::selectSeries);
+        if(currentItem)
+        {
+            m_viewModel->selectVendor(currentItem->text());
+        }
+    });
 
-    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged,
-            m_viewModel, &MainViewModel::selectMcu);
+    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged, [this]()
+    {
+        QListWidgetItem * currentItem = ui->listWidgetFamily->currentItem();
+
+        if(currentItem)
+        {
+            m_viewModel->selectFamily(currentItem->text());
+        }
+    });
+
+    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged, [this]()
+    {
+        QListWidgetItem * currentItem = ui->listWidgetSeries->currentItem();
+
+        if(currentItem)
+        {
+            m_viewModel->selectSeries(currentItem->text());
+        }
+    });
+
+    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]()
+    {
+        QListWidgetItem * currentItem = ui->listWidgetMcu->currentItem();
+
+        if(currentItem)
+        {
+            m_viewModel->selectMcu(currentItem->text());
+        }
+    });
+
+    // Отладка
+    //--------------------------------------------------------------------------
+    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "manufacturerChanged";
+    });
+
+    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "familyChanged";
+    });
+
+    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "seriesChanged";
+    });
+
+    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "mcuChanged";
+    });
+
     //--------------------------------------------------------------------------
 
     QMetaObject::invokeMethod(this, "delayedInit", Qt::QueuedConnection);

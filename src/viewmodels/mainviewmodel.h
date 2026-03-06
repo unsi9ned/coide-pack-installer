@@ -39,6 +39,11 @@ public:
     QStringList series() const { return m_series; }
     QStringList mcus() const { return m_mcus; }
 
+    QString currentVendor() const {return m_currentVendor;}
+    QString currentFamily() const {return m_currentFamily;}
+    QString currentSeries() const {return m_currentSeries;}
+    QString currentMcu() const {return m_currentMcu;}
+
     QString flashStart() const;
     QString flashSize() const;
     QString ramStart() const;
@@ -56,10 +61,10 @@ public slots:
     void loadDeviceFamilyPack();
 
     // Команды для UI
-    void selectVendor(int index);
-    void selectFamily(int index);
-    void selectSeries(int index);
-    void selectMcu(int index);
+    void selectVendor(const QString& vendor);
+    void selectFamily(const QString& family);
+    void selectSeries(const QString& series);
+    void selectMcu(const QString &mcu);
 
 private:
     void loadDeviceFamilyPack(const QString& path);
