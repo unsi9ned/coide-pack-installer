@@ -258,16 +258,22 @@ void MainViewModel::updateMcus()
 //------------------------------------------------------------------------------
 void MainViewModel::updateMcuDetails()
 {
-    // Получаем объект MCU
-    m_currentMcuObj = &m_pack.vendor(m_currentVendor)
-                           .family(m_currentFamily)
-                           .series(m_currentSeries)
-                           .mcu(m_currentMcu);
+    if(m_pack.vendors().keys().contains(m_currentVendor) &&
+       m_pack.vendor(m_currentVendor).families().keys().contains(m_currentFamily) &&
+       m_pack.vendor(m_currentVendor).family(m_currentFamily).seriesMap().keys().contains(m_currentSeries) &&
+       m_pack.vendor(m_currentVendor).family(m_currentFamily).series(m_currentSeries).mcuMap().keys().contains(m_currentMcu))
+    {
+        // Получаем объект MCU
+        m_currentMcuObj = &m_pack.vendor(m_currentVendor)
+                               .family(m_currentFamily)
+                               .series(m_currentSeries)
+                               .mcu(m_currentMcu);
 
-    m_codeMemory = m_currentMcuObj->getCodeMemory();
-    m_dataMemory = m_currentMcuObj->getDataMemory();
+        m_codeMemory = m_currentMcuObj->getCodeMemory();
+        m_dataMemory = m_currentMcuObj->getDataMemory();
 
-    emit mcuChanged();
+        emit mcuChanged();
+    }
 }
 
 //------------------------------------------------------------------------------
