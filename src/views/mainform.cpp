@@ -37,46 +37,12 @@ MainForm::MainForm(QWidget *parent) :
     connect(&packMgr,
             SIGNAL(eventOccured(QString)),
             SLOT(printLogMessages(QString)));
-#if 0
-    //Выбор производителя
-    connect(ui->listWidgetManufacturer,
-            SIGNAL(clicked(QModelIndex)),
-            this,
-            SLOT(showFamilyList(QModelIndex)));
 
-    connect(ui->listWidgetManufacturer,
-            SIGNAL(clicked(QModelIndex)),
-            this,
-            SLOT(showDFPInfo(QModelIndex)));
-
-    //Выбор семейства
-    connect(ui->listWidgetFamily,
-            SIGNAL(clicked(QModelIndex)),
-            this,
-            SLOT(showSeriesList(QModelIndex)));
-
-    //Выбор серии
-    connect(ui->listWidgetSeries,
-            SIGNAL(clicked(QModelIndex)),
-            this,
-            SLOT(showMcuList(QModelIndex)));
-
-    //Выбор процессора
-    connect(ui->listWidgetMcu,
-            SIGNAL(clicked(QModelIndex)),
-            this,
-            SLOT(showFeatures(QModelIndex)));
-#endif
-
-    // Изменение пути к CoIDE
-    connect(ui->actionPreferences,
-            SIGNAL(triggered(bool)),
-            SLOT(changeCoIDEPath()));
+    // Изменение пути к каталогу CoIDE
+    connect(ui->actionPreferences, SIGNAL(triggered(bool)), SLOT(changeCoIDEPath()));
 
     // Выбор пакета DFP и загрузка
-    connect(ui->actionOpen_DFP,
-            SIGNAL(triggered(bool)),
-            SLOT(loadDFP()));
+    connect(ui->actionOpen_DFP, SIGNAL(triggered(bool)), SLOT(loadDFP()));
 
     //--------------------------------------------------------------------------
     // Сигналы загрузки
@@ -109,17 +75,47 @@ MainForm::MainForm(QWidget *parent) :
     connect(m_viewModel, &MainViewModel::familiesChanged, [this]() {
         ui->listWidgetFamily->clear();
         ui->listWidgetFamily->addItems(m_viewModel->families());
+
+        if(!m_viewModel->currentVendor().isEmpty())
+        {
+            auto items = ui->listWidgetManufacturer->findItems(m_viewModel->currentVendor(), Qt::MatchExactly);
+
+            if(!items.isEmpty())
+            {
+                ui->listWidgetManufacturer->setCurrentItem(items.first());
+            }
+        }
     });
 
     connect(m_viewModel, &MainViewModel::seriesChanged, [this]() {
         ui->listWidgetSeries->clear();
         ui->listWidgetSeries->addItems(m_viewModel->series());
+
+        if(!m_viewModel->currentFamily().isEmpty())
+        {
+            auto items = ui->listWidgetFamily->findItems(m_viewModel->currentFamily(), Qt::MatchExactly);
+
+            if(!items.isEmpty())
+            {
+                ui->listWidgetFamily->setCurrentItem(items.first());
+            }
+        }
     });
 
     connect(m_viewModel, &MainViewModel::mcusChanged, [this]()
     {
         ui->listWidgetMcu->clear();
         ui->listWidgetMcu->addItems(m_viewModel->mcus());
+
+        if(!m_viewModel->currentSeries().isEmpty())
+        {
+            auto items = ui->listWidgetSeries->findItems(m_viewModel->currentSeries(), Qt::MatchExactly);
+
+            if(!items.isEmpty())
+            {
+                ui->listWidgetSeries->setCurrentItem(items.first());
+            }
+        }
     });
 
 
@@ -135,6 +131,30 @@ MainForm::MainForm(QWidget *parent) :
         ui->lineEditUrl->setText(m_viewModel->webPageUrl());
         ui->lineEditDatasheetUrl->setText(m_viewModel->datasheetUrl());
         ui->lineEditSVD->setText(m_viewModel->svdLocalPath());
+
+        // Заполнение списка алгоритмов отладки
+        ui->comboBoxDebugAlg->clear();
+
+        if(!m_viewModel->debugAlgorithm().isEmpty())
+        {
+            ui->comboBoxDebugAlg->addItem(m_viewModel->debugAlgorithm());
+            ui->comboBoxDebugAlg->setCurrentIndex(0);
+        }
+
+        // Заполнение списка алгоритмов программирования
+        ui->comboBoxFlashAlg->clear();
+
+        for(int i = 0; i < m_viewModel->flashAlgorithms().count(); i++)
+        {
+            QString algo = m_viewModel->flashAlgorithms().at(i);
+
+            ui->comboBoxFlashAlg->addItem(algo);
+
+            if(algo == m_viewModel->currentFlashAlgorithm())
+            {
+                ui->comboBoxFlashAlg->setCurrentIndex(i);
+            }
+        }
 
         // Восстанавливаем выбор, если элемент еще существует
         if (!m_viewModel->currentMcu().isEmpty())
@@ -194,6 +214,7 @@ MainForm::MainForm(QWidget *parent) :
 
     // Отладка
     //--------------------------------------------------------------------------
+#if 0
     connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]() {
        qInfo()  << "manufacturerChanged";
     });
@@ -209,10 +230,14 @@ MainForm::MainForm(QWidget *parent) :
     connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]() {
        qInfo()  << "mcuChanged";
     });
-
+#endif
     //--------------------------------------------------------------------------
 
+#if 1
     QMetaObject::invokeMethod(this, "delayedInit", Qt::QueuedConnection);
+#else
+    delayedInit();
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -269,14 +294,13 @@ QString MainForm::compilationVersion()
 void MainForm::delayedInit()
 {
     //Обновление данных на форме
-    //loadDFP(Settings::instance()->lastLoadedPack());
     m_viewModel->loadDeviceFamilyPack();
 }
 
 //------------------------------------------------------------------------------
 // Отобразить ошибку
 //------------------------------------------------------------------------------
-void MainForm::showError(QString e)
+void MainForm::showErrorMessage(QString e)
 {
     QMessageBox::critical(this, tr("Ошибка"), e, QMessageBox::Ok);
 }
@@ -284,432 +308,9 @@ void MainForm::showError(QString e)
 //------------------------------------------------------------------------------
 // Отобразить информацию
 //------------------------------------------------------------------------------
-void MainForm::showInfo(QString i)
+void MainForm::showInfoMessage(QString i)
 {
     QMessageBox::information(this, tr("Информация"), i, QMessageBox::Ok);
-}
-
-//------------------------------------------------------------------------------
-// Обновить списки
-//------------------------------------------------------------------------------
-void MainForm::refreshData()
-{
-    QString itemText = "";
-
-    ui->listWidgetManufacturer->clear();
-    ui->listWidgetFamily->clear();
-    ui->listWidgetSeries->clear();
-    ui->listWidgetMcu->clear();
-    ui->lineEditUrl->clear();
-    ui->lineEditDatasheetUrl->clear();
-
-    //Очистка списков компонентов
-//    ui->comboBoxMcu->clear();
-//    ui->comboBoxSerie->clear();
-//    ui->comboBoxFamily->clear();
-//    ui->comboBoxManufacturer->clear();
-//    ui->listWidgetComponents->clear();
-    //----------------------------------------
-
-    ui->comboBoxManufacturer->addItem(tr("- Не выбран -"));
-    //ui->comboBoxFamily->addItem(tr("- Не выбрано -"));
-
-    foreach (QString vendorName, pack.vendors().keys())
-    {
-        ui->listWidgetManufacturer->addItem(vendorName);
-        ui->comboBoxManufacturer->addItem(vendorName);
-    }
-
-    //Загрузка алгоритмов отладки и программирования
-    refreshAlgorithms();
-
-//    //Загрузка списка компонентов
-//    QMap<int, Component>::iterator compIterator = componInfo.components()->begin();
-
-//    while(compIterator != componInfo.components()->end())
-//    {
-//        Component currentComponent = compIterator.value();
-//        QString itemText = QString("%1 - %2").
-//                            arg(currentComponent.getId()).
-//                            arg(currentComponent.getName());
-
-//        ui->listWidgetComponents->addItem(itemText);
-//        ++compIterator;
-//    }
-
-    ui->labelComponentsCount->setNum(ui->listWidgetComponents->count());
-}
-
-//------------------------------------------------------------------------------
-// Обновить список алгоритмов
-//------------------------------------------------------------------------------
-void MainForm::refreshAlgorithms()
-{
-    int debugAlgIndex = ui->comboBoxDebugAlg->currentIndex();
-    int flashAlgIndex = ui->comboBoxFlashAlg->currentIndex();
-
-    QString itemText;
-
-    //Загрузка алгоритмов отладки
-    ui->comboBoxDebugAlg->clear();
-    ui->listWidgetDebAlg->clear();
-
-#if 0
-    QList<int> daKeys = mcuInfo.getDebugAlgKeys();
-    QList<int> faKeys = mcuInfo.getFlashAlgKeys();
-
-    foreach(int daKey, daKeys)
-    {
-        DebugAlgorithm da = mcuInfo.getDebugAlg(daKey);
-
-        itemText = QString("%1 - %2").arg(da.getId()).arg(da.getName());
-
-        ui->comboBoxDebugAlg->addItem(itemText);
-        ui->listWidgetDebAlg->addItem(itemText);
-    }
-
-    //Загрузка алгоритмов программирования
-    ui->comboBoxFlashAlg->clear();
-    ui->listWidgetFlashAlg->clear();
-
-    foreach(int faKey, faKeys)
-    {
-        FlashAlgorithm fa = mcuInfo.getFlashAlg(faKey);
-
-        itemText = QString("%1 - %2").arg(fa.getId()).arg(fa.getName());
-
-        ui->comboBoxFlashAlg->addItem(itemText);
-        ui->listWidgetFlashAlg->addItem(itemText);
-    }
-    ui->comboBoxFlashAlg->addItem(tr("Отсутствует"));
-
-    //Выбираем алгоритм тот, который был выбран ранее
-    if(debugAlgIndex > -1 &&
-       debugAlgIndex< ui->comboBoxDebugAlg->count())
-    {
-        ui->comboBoxDebugAlg->setCurrentIndex(debugAlgIndex);
-    }
-
-    if(flashAlgIndex > -1 &&
-       flashAlgIndex< ui->comboBoxFlashAlg->count())
-    {
-        ui->comboBoxFlashAlg->setCurrentIndex(flashAlgIndex);
-    }
-#endif
-
-    refreshNewDebAlgorithm();
-    refreshNewFlashAlgorithm();
-}
-
-//------------------------------------------------------------------------------
-// Обновить список новых алгоритмов отладки
-//------------------------------------------------------------------------------
-void MainForm::refreshNewDebAlgorithm()
-{
-    ui->listWidgetNewDebAlg->clear();
-
-#if 0
-    mcuInfo.searchNewDebugAlgorithm();
-    QList<int> newDaKeys = mcuInfo.getNewDebugAlgKeys();
-    QString itemText;
-
-    foreach(int daKey, newDaKeys)
-    {
-        DebugAlgorithm newDA = mcuInfo.getNewDebugAlg(daKey);
-        itemText = QString("%1 - %2").arg(newDA.getId()).arg(newDA.getName());
-        ui->listWidgetNewDebAlg->addItem(itemText);
-    }
-#endif
-}
-
-//------------------------------------------------------------------------------
-// Обновить список новых алгоритмов программирования
-//------------------------------------------------------------------------------
-void MainForm::refreshNewFlashAlgorithm()
-{
-    ui->listWidgetNewFlashAlg->clear();
-#if 0
-    mcuInfo.searchNewFlashAlgorithm();
-
-    QList<int> newFaKeys = mcuInfo.getNewFlashAlgKeys();
-    QString itemText;
-
-    foreach(int faKey, newFaKeys)
-    {
-        FlashAlgorithm newFA = mcuInfo.getNewFlashAlg(faKey);
-        itemText = QString("%1 - %2").arg(newFA.getId()).arg(newFA.getName());
-        ui->listWidgetNewFlashAlg->addItem(itemText);
-    }
-#endif
-}
-
-//------------------------------------------------------------------------------
-// Отображение информации о пакете от производителя
-//------------------------------------------------------------------------------
-void MainForm::showDFPInfo(QModelIndex index)
-{
-    ui->lineEditUrl->clear();
-    ui->lineEditDatasheetUrl->clear();
-    ui->plainTextEditDescription->clear();
-
-    QListWidgetItem * currentItem = ui->listWidgetManufacturer->item(index.row());
-
-    if(currentItem == NULL)
-    {
-        return;
-    }
-
-    ui->lineEditUrl->setText(pack.url());
-    ui->lineEditRelease->setText(pack.release());
-    ui->plainTextEditDescription->setPlainText(pack.description());
-}
-
-//------------------------------------------------------------------------------
-// Показать список семейств
-//------------------------------------------------------------------------------
-void MainForm::showFamilyList(QModelIndex index)
-{
-    Q_UNUSED(index)
-
-    ui->listWidgetFamily->clear();
-    ui->listWidgetSeries->clear();
-    ui->listWidgetMcu->clear();
-
-    QListWidgetItem * currentItem = ui->listWidgetManufacturer->item(index.row());
-
-    if(currentItem == NULL)
-    {
-        return;
-    }
-
-    QMap<QString, Family>& families = pack.vendor(currentItem->text()).families();
-
-    for(auto it = families.begin(); it != families.end(); ++it)
-    {
-        ui->listWidgetFamily->addItem(it.key());
-    }
-
-    Settings::instance()->saveSelectedVendor(currentItem->text());
-}
-
-//------------------------------------------------------------------------------
-// Показать список серий
-//------------------------------------------------------------------------------
-void MainForm::showSeriesList(QModelIndex index)
-{
-    Q_UNUSED(index)
-
-    QListWidgetItem * currentItem = ui->listWidgetFamily->item(index.row());
-    QListWidgetItem * currentFamilyItem = ui->listWidgetFamily->currentItem();
-    QListWidgetItem * currentManItem = ui->listWidgetManufacturer->currentItem();
-
-    if(currentItem == NULL || currentFamilyItem == NULL || currentManItem == NULL)
-    {
-        return;
-    }
-
-    ui->listWidgetSeries->clear();
-    ui->listWidgetMcu->clear();
-
-    QString vendor = currentManItem->text();
-    QString armCore = currentFamilyItem->text();
-    QMap<QString, Series>& seriesMap = pack.vendor(vendor).family(armCore).seriesMap();
-
-    for(auto it = seriesMap.begin(); it != seriesMap.end(); ++it)
-    {
-        ui->listWidgetSeries->addItem(it.key());
-    }
-
-    Settings::instance()->saveSelectedCore(currentItem->text());
-}
-
-//------------------------------------------------------------------------------
-// Показать список микроконтроллеров
-//------------------------------------------------------------------------------
-void MainForm::showMcuList(QModelIndex index)
-{
-    Q_UNUSED(index)
-
-    QListWidgetItem * currentSeries = ui->listWidgetSeries->item(index.row());
-    QListWidgetItem * currentFamilyItem = ui->listWidgetFamily->currentItem();
-    QListWidgetItem * currentManItem = ui->listWidgetManufacturer->currentItem();
-
-    if(currentSeries == NULL ||
-       currentFamilyItem == NULL ||
-       currentManItem == NULL)
-    {
-        return;
-    }
-
-    ui->listWidgetMcu->clear();
-
-    QString vendor = currentManItem->text();
-    QString armCore = currentFamilyItem->text();
-    QString series = currentSeries->text();
-    QMap<QString, Mcu>& mcuMap = pack.vendor(vendor).family(armCore).series(series).mcuMap();
-
-    for(auto it = mcuMap.begin(); it != mcuMap.end(); ++it)
-    {
-        ui->listWidgetMcu->addItem(it.key());
-    }
-
-    Settings::instance()->saveSelectedSeries(series);
-}
-
-//------------------------------------------------------------------------------
-// Показать параметры микроконтроллера
-//------------------------------------------------------------------------------
-void MainForm::showFeatures(QModelIndex index)
-{
-    Q_UNUSED(index)
-
-    QListWidgetItem * currentManItem = ui->listWidgetManufacturer->currentItem();
-    QListWidgetItem * currentFamilyItem = ui->listWidgetFamily->currentItem();
-    QListWidgetItem * currentSeries = ui->listWidgetSeries->currentItem();
-    QListWidgetItem * currentMcu = ui->listWidgetMcu->item(index.row());
-
-    if(currentSeries == NULL ||
-       currentFamilyItem == NULL ||
-       currentManItem == NULL)
-    {
-        return;
-    }
-
-    ui->plainTextEditFeatures->clear();
-
-    QString vendor = currentManItem->text();
-    QString armCore = currentFamilyItem->text();
-    QString series = currentSeries->text();
-    QString mcu = currentMcu->text();
-
-    //
-    // Загрузка данных о памяти
-    //
-    Family& devCore = pack.vendor(vendor).family(armCore);
-    Series& devSeries = devCore.series(series);
-    Mcu& device = devSeries.mcu(mcu);
-    Memory * codeMemory = device.getCodeMemory();
-    Memory * dataMemory = device.getDataMemory();
-
-    if(codeMemory)
-    {
-        ui->lineEditFlashStart->setText(codeMemory->startAddrHex());
-        ui->lineEditFlashSize->setText(codeMemory->sizeHex());
-    }
-    else
-    {
-        ui->lineEditFlashStart->clear();
-        ui->lineEditFlashSize->clear();
-    }
-
-    if(dataMemory)
-    {
-        ui->lineEditRamStart->setText(dataMemory->startAddrHex());
-        ui->lineEditRamSize->setText(dataMemory->sizeHex());
-    }
-    else
-    {
-        ui->lineEditRamStart->clear();
-        ui->lineEditRamSize->clear();
-    }
-
-    //
-    // Загрузка данных о фичах
-    //
-#if 1
-    QStringList deviceFeatures = device.featuresSummary();
-    QString featuresText;
-
-    if(!deviceFeatures.isEmpty())
-        featuresText += deviceFeatures.join('\n');
-
-    ui->plainTextEditFeatures->setPlainText(featuresText);
-#else
-    ui->plainTextEditFeatures->setPlainText(device.coFeaturesSummary());
-#endif
-
-    //
-    // Загрузка описания
-    //
-#if 1
-    if(!device.getDescription().isEmpty())
-        ui->plainTextEditDescription->setPlainText(device.getDescription());
-    else if(!device.coDescription().isEmpty())
-        ui->plainTextEditDescription->setPlainText(device.coDescription());
-    else
-        ui->plainTextEditDescription->setPlainText(pack.description());
-#elif 0
-    ui->plainTextEditDescription->setPlainText(device.coMemInfo());
-#else
-    ui->plainTextEditDescription->setPlainText(device.defSym2coMicro());
-#endif
-
-    //
-    // Загрузка алгоритмов программирования
-    //
-    int32_t flashStartAddr = codeMemory ? codeMemory->startAddr() : -1;
-    ProgAlgorithm * devAlgorithm = device.getFlashAlgorithm(flashStartAddr);
-
-    ui->comboBoxFlashAlg->clear();
-
-    for(int i = 0; i < device.algorithms().count(); i++)
-    {
-        ProgAlgorithm a = device.algorithms().at(i);
-
-        if(devAlgorithm && devAlgorithm->name() == a.name())
-        {
-            ui->comboBoxFlashAlg->setCurrentIndex(i);
-        }
-
-        ui->comboBoxFlashAlg->addItem(a.name());
-    }
-
-    //
-    // Вывод алгоритмов отладки
-    //
-    ui->comboBoxDebugAlg->clear();
-
-    if(!device.getDebugAlgorithm().name().isEmpty())
-    {
-        ui->comboBoxDebugAlg->addItem(device.getDebugAlgorithm().name());
-        ui->comboBoxDebugAlg->setCurrentIndex(0);
-    }
-
-    //
-    // Вывод URL
-    //
-    ui->lineEditUrl->setText(device.getWebPageURL());
-    ui->lineEditDatasheetUrl->setText(device.getDatasheetURL());
-
-    //
-    // Вывод пути к SVD-файлу
-    //
-    ui->lineEditSVD->setText(device.svdLocalPath());
-
-    Settings::instance()->saveSelectedMcu(mcu);
-}
-
-//------------------------------------------------------------------------------
-// Выбор элемента в списке по его тексту
-//------------------------------------------------------------------------------
-void MainForm::selectListItemByText(QListWidget* listWidget, const QString &text)
-{
-    // Поиск по всем элементам
-    QList<QListWidgetItem*> items = listWidget->findItems(text, Qt::MatchExactly);
-
-    if (!items.isEmpty())
-    {
-        // Выбираем первый найденный элемент
-        listWidget->setCurrentItem(items.first());
-
-        // Если нужно выделить (подсветить) элемент
-        items.first()->setSelected(true);
-
-        // Прокрутить до выбранного элемента
-        listWidget->scrollToItem(items.first());
-
-        emit listWidget->clicked(listWidget->currentIndex());
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -718,14 +319,7 @@ void MainForm::selectListItemByText(QListWidget* listWidget, const QString &text
 void MainForm::on_pushButtonDataLoad_clicked()
 {
     ui->pushButtonDataLoad->setEnabled(false);
-
-#if 0
-    mcuInfo.loadDataFromDb();
-    componInfo.loadDataFromDb();
-#endif
-
-    refreshData();
-
+    m_viewModel->loadDeviceFamilyPack();
     ui->pushButtonDataLoad->setEnabled(true);
 }
 
@@ -744,37 +338,11 @@ void MainForm::on_pushButtonSave_clicked()
 //------------------------------------------------------------------------------
 void MainForm::on_pushButtonSetIdePath_clicked()
 {
-    QString str = QFileDialog::getExistingDirectory(this, tr("Директория установки CooCox IDE"), QApplication::applicationDirPath());
+    QString str = QFileDialog::getExistingDirectory(this,
+                                                    tr("Директория установки CooCox IDE"),
+                                                    QApplication::applicationDirPath());
     Paths::instance()->setCoIdeDir(str);
     ui->lineEditIdePath->setText(str);
-    refreshData();
-}
-
-//------------------------------------------------------------------------------
-// Вытащить идентификатор из текущего поля списка
-//------------------------------------------------------------------------------
-int MainForm::extractIdFromItemText(QString text)
-{
-    int id = -1;
-    bool status = false;
-
-    QString idSubStr = text.mid(0, text.indexOf(" - "));
-    id = idSubStr.toInt(&status);
-
-    if(!status)
-    {
-        id = -1;
-    }
-
-    return id;
-}
-
-//------------------------------------------------------------------------------
-// Вытащить имя из текущего поля списка
-//------------------------------------------------------------------------------
-QString MainForm::extractNameFromItemText(QString text)
-{
-    return text.mid(text.indexOf(" - ") + 3);
 }
 
 //------------------------------------------------------------------------------
@@ -829,7 +397,6 @@ void MainForm::changeCoIDEPath()
     {
         Paths::instance()->setCoIdeDir(str);
         ui->lineEditIdePath->setText(str);
-        refreshData();
     }
 }
 
@@ -839,56 +406,16 @@ void MainForm::changeCoIDEPath()
 void MainForm::loadDFP()
 {
     QFileInfo packFileInfo(Settings::instance()->lastLoadedPack());
-    QString path = QFileDialog::getOpenFileName(this,
-                                                tr("Device Family Pack"),
-                                                packFileInfo.path(),
-                                                "*.pack");
-    if(!path.isEmpty())
+    QFileDialog dialog(this, tr("Device Family Pack"), packFileInfo.path(), "*.pack");
+
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+
+    if (dialog.exec())
     {
+        QString path = dialog.selectedFiles().first();
         Settings::instance()->saveLastLoadedPack(path);
         m_viewModel->loadDeviceFamilyPack();
-    }
-}
-
-//------------------------------------------------------------------------------
-// Загрузка DFP
-//------------------------------------------------------------------------------
-void MainForm::loadDFP(const QString &path)
-{
-    if(!path.isEmpty())
-    {
-        // Загрузка
-        Settings::instance()->saveLastLoadedPack(path);
-        pack.clear();
-        pack.setPathToArchive(path);
-        packMgr.readPackDescription(pack);
-        refreshData();
-
-        // Выбор элементов
-        QString vendor = Settings::instance()->selectedVendor();
-        QString core = Settings::instance()->selectedCore();
-        QString series = Settings::instance()->selectedSeries();
-        QString mcu = Settings::instance()->selectedMcu();
-
-        if(!vendor.isEmpty())
-        {
-            selectListItemByText(ui->listWidgetManufacturer, vendor);
-
-            if(!core.isEmpty())
-            {
-                selectListItemByText(ui->listWidgetFamily, core);
-
-                if(!series.isEmpty())
-                {
-                    selectListItemByText(ui->listWidgetSeries, series);
-
-                    if(!mcu.isEmpty())
-                    {
-                        selectListItemByText(ui->listWidgetMcu, mcu);
-                    }
-                }
-            }
-        }
     }
 }
 

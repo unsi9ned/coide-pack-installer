@@ -93,6 +93,15 @@ QString MainViewModel::svdLocalPath() const
 }
 
 //------------------------------------------------------------------------------
+// Алгоритм отладки
+//------------------------------------------------------------------------------
+QString MainViewModel::debugAlgorithm() const
+{
+    if (!m_debugAlgorithm) return QString();
+    return m_debugAlgorithm->name();
+}
+
+//------------------------------------------------------------------------------
 // Версия пакета
 //------------------------------------------------------------------------------
 QString MainViewModel::releaseVersion() const
@@ -136,6 +145,11 @@ void MainViewModel::loadDeviceFamilyPack(const QString &path)
     }
     emit vendorsChanged();
 
+    // Обнуляем списки
+    m_families.clear();
+    m_series.clear();
+    m_mcus.clear();
+
     // Сбрасываем выбор
     m_currentVendor.clear();
     m_currentFamily.clear();
@@ -144,6 +158,9 @@ void MainViewModel::loadDeviceFamilyPack(const QString &path)
     m_currentMcuObj = nullptr;
     m_codeMemory = nullptr;
     m_dataMemory = nullptr;
+    m_flashAlgorithms.clear();
+    m_currentFlashAlgorithm = nullptr;
+    m_debugAlgorithm = nullptr;
 
     emit familiesChanged();
     emit seriesChanged();
@@ -271,6 +288,18 @@ void MainViewModel::updateMcuDetails()
 
         m_codeMemory = m_currentMcuObj->getCodeMemory();
         m_dataMemory = m_currentMcuObj->getDataMemory();
+        m_debugAlgorithm = &m_currentMcuObj->getDebugAlgorithm();
+
+        int32_t flashStartAddr = m_codeMemory ? m_codeMemory->startAddr() : -1;
+        ProgAlgorithm * flashAlgorithm = m_currentMcuObj->getFlashAlgorithm(flashStartAddr);
+
+        m_currentFlashAlgorithm = flashAlgorithm ? flashAlgorithm->name() : QString();
+        m_flashAlgorithms.clear();
+
+        foreach(auto algo, m_currentMcuObj->algorithms())
+        {
+            m_flashAlgorithms.append(algo.name());
+        }
 
         emit mcuChanged();
     }

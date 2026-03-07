@@ -30,6 +30,11 @@ private:
     Memory* m_codeMemory = nullptr;
     Memory* m_dataMemory = nullptr;
 
+    DebugAlgorithm * m_debugAlgorithm = nullptr;
+
+    QString m_currentFlashAlgorithm;
+    QStringList m_flashAlgorithms;
+
 public:
     explicit MainViewModel(QObject *parent = 0);
 
@@ -43,6 +48,10 @@ public:
     QString currentFamily() const {return m_currentFamily;}
     QString currentSeries() const {return m_currentSeries;}
     QString currentMcu() const {return m_currentMcu;}
+    QString currentFlashAlgorithm() const {return m_currentFlashAlgorithm;}
+
+    QStringList flashAlgorithms() const {return m_flashAlgorithms;}
+    QString debugAlgorithm() const;
 
     QString flashStart() const;
     QString flashSize() const;

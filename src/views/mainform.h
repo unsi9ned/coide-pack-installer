@@ -48,19 +48,9 @@ private:
 private slots:
 
     void delayedInit();
-    void showError(QString e);
-    void showInfo(QString i);
-
-    void showDFPInfo(QModelIndex index);
-    void showFamilyList(QModelIndex index);
-    void showSeriesList(QModelIndex index);
-    void showMcuList(QModelIndex index);
-    void showFeatures(QModelIndex index);
-
-    void refreshData();
-    void refreshAlgorithms();
-    void refreshNewDebAlgorithm();
-    void refreshNewFlashAlgorithm();
+    void showErrorMessage(QString e);
+    void showInfoMessage(QString i);
+    void printLogMessages(QString msg);
 
     void on_pushButtonDataLoad_clicked();
     void on_pushButtonSave_clicked();
@@ -70,13 +60,8 @@ private slots:
 
     void changeCoIDEPath();
     void loadDFP();
-    void printLogMessages(QString msg);
 
 private:
-    void loadDFP(const QString& path);
-    int extractIdFromItemText(QString text);
-    QString extractNameFromItemText(QString text);
-    void selectListItemByText(QListWidget *listWidget, const QString& text);
     Ui::MainForm *ui;
 };
 
