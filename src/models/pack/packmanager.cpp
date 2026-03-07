@@ -111,7 +111,7 @@ void PackManager::readPackDescription(PackDescription &pack)
 //------------------------------------------------------------------------------
 // Установка пакета
 //------------------------------------------------------------------------------
-void PackManager::packInstall(PackDescription &pack)
+bool PackManager::packInstall(PackDescription &pack, QString& errorString)
 {
     //
     // Проверка валидности устанавливаемого пакета
@@ -119,7 +119,7 @@ void PackManager::packInstall(PackDescription &pack)
     if(!pack.isValid())
     {
         emit errorOccured(QString("The '%1' package is not valid").arg(pack.name()));
-        return;
+        return false;
     }
 
     emit eventOccured(QString("The '%1' package is being installed").arg(pack.name()));
@@ -127,7 +127,6 @@ void PackManager::packInstall(PackDescription &pack)
     //
     // Подготовка каталога пакета
     //
-    QString errorString;
     QDir packInstallDir;
     Manufacturer vendor = pack.vendors().first();
     QString path = Paths::instance()->coIdePackDir(vendor.getName(), pack.release());
@@ -143,7 +142,7 @@ void PackManager::packInstall(PackDescription &pack)
     if(!packInstallDir.exists() && !packInstallDir.mkpath(packInstallDir.path()))
     {
         emit errorOccured("The package directory cannot be created");
-        return;
+        return false;
     }
 
     //
@@ -158,7 +157,7 @@ void PackManager::packInstall(PackDescription &pack)
         else
             emit errorOccured(QString("Couldn't extract pdsc file: %1").arg(errorString));
 
-        return;
+        return false;
     }
 
     //
@@ -171,7 +170,7 @@ void PackManager::packInstall(PackDescription &pack)
         else
             emit errorOccured(QString("Couldn't extract SVD files: %1").arg(errorString));
 
-        return;
+        return false;
     }
 
     //
@@ -184,7 +183,7 @@ void PackManager::packInstall(PackDescription &pack)
         else
             emit errorOccured(QString("An error occurred when creating the SVD database: %1").arg(errorString));
 
-        return;
+        return false;
     }
 
     //
@@ -197,7 +196,7 @@ void PackManager::packInstall(PackDescription &pack)
         else
             emit errorOccured(QString("Couldn't extract sources files: %1").arg(errorString));
 
-        return;
+        return false;
     }
 
     //
@@ -212,7 +211,7 @@ void PackManager::packInstall(PackDescription &pack)
         else
             emit errorOccured(QString("An error occurred during the fix of the manufacturer's ID: %1").arg(errorString));
 
-        return;
+        return false;
     }
 
     //
@@ -306,7 +305,7 @@ void PackManager::packInstall(PackDescription &pack)
                                       arg(component.getName()).
                                       arg(errorString));
 
-                return;
+                return false;
             }
         }
     }
@@ -321,7 +320,7 @@ void PackManager::packInstall(PackDescription &pack)
         else
             emit errorOccured(QString("Couldn't create component mirror: %1").arg(errorString));
 
-        return;
+        return false;
     }
 
 #if 0
@@ -344,6 +343,8 @@ void PackManager::packInstall(PackDescription &pack)
     // Завершение установки
     //
     emit eventOccured(QString("Package installation '%1' completed").arg(pack.name()));
+
+    return true;
 }
 
 //------------------------------------------------------------------------------

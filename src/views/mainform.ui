@@ -233,7 +233,7 @@
          <string>Характеристики</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="pushButtonSave">
+       <widget class="QPushButton" name="pushButtonInstall">
         <property name="geometry">
          <rect>
           <x>600</x>
@@ -252,7 +252,7 @@
          <string>Установить пакет</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="pushButtonDataLoad">
+       <widget class="QPushButton" name="pushButtonReload">
         <property name="geometry">
          <rect>
           <x>730</x>

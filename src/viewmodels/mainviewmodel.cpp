@@ -1,13 +1,17 @@
 #include <QDebug>
+#include <QtConcurrent/QtConcurrent>
 #include "mainviewmodel.h"
 #include "services/settings.h"
+#include "models/database/dbgarbagecollector.h"
 
 //------------------------------------------------------------------------------
 // Конструктор
 //------------------------------------------------------------------------------
 MainViewModel::MainViewModel(QObject *parent) : QObject(parent)
 {
-
+    connect(this, &MainViewModel::installResult,
+            this, &MainViewModel::onInstallResult,
+            Qt::QueuedConnection);
 }
 
 //------------------------------------------------------------------------------
@@ -367,4 +371,82 @@ void MainViewModel::selectMcu(const QString& mcu)
 
         updateMcuDetails();
     }
+}
+
+//------------------------------------------------------------------------------
+// Установка пакета
+//------------------------------------------------------------------------------
+void MainViewModel::installCurrentPack()
+{
+    if (m_pack.pathToArchive().isEmpty()) {
+        emit installError("Нет загруженного пакета");
+        return;
+    }
+
+    emit installStarted();
+    emit statusMessage("Установка пакета...", 0);
+
+    // Асинхронная установка
+    QtConcurrent::run([this]() {
+        QString errorString;
+        PackDescription localPack = m_pack;
+        PackManager localManager;
+
+        QObject::connect(&localManager, &PackManager::errorOccured,[this](const QString& e)
+        {
+            emit installError(e);
+        });
+
+        QObject::connect(&localManager, &PackManager::eventOccured,[this](const QString& e)
+        {
+            emit installLogMessage(e);
+        });
+
+        bool success = localManager.packInstall(localPack, errorString);
+        emit installResult(success, errorString);
+    });
+}
+
+//------------------------------------------------------------------------------
+// Возврат состояния установки пакета
+//------------------------------------------------------------------------------
+void MainViewModel::onInstallResult(bool success, QString errorString)
+{
+    if (success) {
+        emit installFinished(true, "Пакет успешно установлен");
+        emit statusMessage("Установка завершена", 3000);
+    } else {
+        emit installError("Ошибка установки: " + errorString);
+        emit statusMessage("Ошибка установки", 5000);
+    }
+}
+
+//------------------------------------------------------------------------------
+// Запуск оптимизации банных в БД
+//------------------------------------------------------------------------------
+void MainViewModel::optimizeDatabase()
+{
+    emit dbOptimizeStarted();
+
+    QtConcurrent::run([this]()
+    {
+        DBGarbageCollector collector;
+
+        // Соединяем сигналы (Qt::DirectConnection, т.к. мы в одном потоке)
+        QObject::connect(&collector, &DBGarbageCollector::errorOccured,
+                        [this](const QString& e) {
+            emit dbOptimizeError(e);
+        });
+
+        QObject::connect(&collector, &DBGarbageCollector::eventOccured,
+                        [this](const QString& e) {
+            emit dbLogMessage(e);
+        });
+
+        collector.deleteUnnecessaryTables();
+        collector.deleteObsoleteData();
+
+        QMetaObject::invokeMethod(this, "dbOptimizeFinished", Qt::QueuedConnection);
+        //emit dbOptimizeFinished();
+    });
 }

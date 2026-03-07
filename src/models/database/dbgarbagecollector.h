@@ -26,8 +26,8 @@ private:
     bool removeDirectory(const QString &dirPath);
 
 signals:
-    void eventOccured(QString e);
-    void errorOccured(QString e);
+    void eventOccured(const QString& e);
+    void errorOccured(const QString& e);
 
 private slots:
     void printEvents(QString e);

@@ -7,7 +7,11 @@
 #include "models/pack/packmanager.h"
 #include "models/database/dbgarbagecollector.h"
 #include "services/settings.h"
+#include "utils/versionhelper.h"
 
+//------------------------------------------------------------------------------
+// Конструктор окна
+//------------------------------------------------------------------------------
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
     m_viewModel(new MainViewModel(this)),
@@ -15,21 +19,35 @@ MainForm::MainForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    //Иконка
+    // Иконка
     this->setWindowIcon(QIcon(":coide_project.ico"));
 
-    //Версия программы
-    ui->labelAppVersion->setText(compilationVersion());
+    // Версия программы
+    ui->labelAppVersion->setText(VersionHelper::compilationVersion());
     ui->lineEditIdePath->setText(Paths::instance()->coIdeDir());
-
     ui->plainTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(ui->plainTextEdit,
-            &QPlainTextEdit::customContextMenuRequested,
-            this,
-            &MainForm::showLogContextMenu);
+    //--------------------------------------------------------------------------
+    // Добавление кнопки очистки в контекстное меню окна логирования
+    //--------------------------------------------------------------------------
+    connect(ui->plainTextEdit, &QPlainTextEdit::customContextMenuRequested, [this](const QPoint &pos)
+    {
+        QMenu *menu = ui->plainTextEdit->createStandardContextMenu();
+
+        menu->addSeparator();
+
+        QAction *clearAction = menu->addAction("Clear");
+        clearAction->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
+
+        connect(clearAction, &QAction::triggered,
+                ui->plainTextEdit, &QPlainTextEdit::clear);
+
+        menu->exec(ui->plainTextEdit->mapToGlobal(pos));
+        delete menu;
+    });
 
     // Вывод сообщений
+#if 0
     connect(&packMgr,
             SIGNAL(errorOccured(QString)),
             SLOT(printLogMessages(QString)));
@@ -37,36 +55,82 @@ MainForm::MainForm(QWidget *parent) :
     connect(&packMgr,
             SIGNAL(eventOccured(QString)),
             SLOT(printLogMessages(QString)));
-
-    // Изменение пути к каталогу CoIDE
-    connect(ui->actionPreferences, SIGNAL(triggered(bool)), SLOT(changeCoIDEPath()));
-
-    // Выбор пакета DFP и загрузка
-    connect(ui->actionOpen_DFP, SIGNAL(triggered(bool)), SLOT(loadDFP()));
+#endif
 
     //--------------------------------------------------------------------------
     // Сигналы загрузки
+    //--------------------------------------------------------------------------
     connect(m_viewModel, &MainViewModel::loadStarted, [this]()
     {
         ui->statusBar->showMessage("Загрузка...");
+        ui->pushButtonReload->setEnabled(false);
         ui->plainTextEditFeatures->clear();
         ui->plainTextEditDescription->clear();
     });
 
     connect(m_viewModel, &MainViewModel::loadFinished, [this]() {
         ui->lineEditRelease->setText(m_viewModel->releaseVersion());
+        ui->pushButtonReload->setEnabled(true);
         ui->statusBar->showMessage("Готово", 3000);
     });
 
     connect(m_viewModel, &MainViewModel::loadFailed, [this](const QString& error) {
         QMessageBox::critical(this, "Ошибка", error);
+        ui->pushButtonReload->setEnabled(true);
     });
 
     connect(m_viewModel, &MainViewModel::statusMessage,
             ui->statusBar, &QStatusBar::showMessage);
 
+    //--------------------------------------------------------------------------
+    // Сигналы установки
+    //--------------------------------------------------------------------------
+    connect(m_viewModel, &MainViewModel::installStarted, [this]() {
+        ui->statusBar->showMessage("Установка...");
+        ui->pushButtonInstall->setEnabled(false);  // блокируем кнопку
+        // можно показать прогресс-бар
+    });
 
+    connect(m_viewModel, &MainViewModel::installFinished, [this](bool success, const QString& message) {
+        ui->statusBar->showMessage(message, 3000);
+        ui->pushButtonInstall->setEnabled(true);
+        if (success) {
+            QMessageBox::information(this, "Успех", message);
+        }
+    });
+
+    connect(m_viewModel, &MainViewModel::installError, [this](const QString& error) {
+        ui->statusBar->showMessage("Ошибка", 5000);
+        ui->pushButtonInstall->setEnabled(true);
+        QMessageBox::critical(this, "Ошибка", error);
+    });
+
+    connect(m_viewModel, &MainViewModel::installLogMessage, this, &MainForm::printLogMessages);
+
+    //--------------------------------------------------------------------------
+    // Отслеживаем процесс оптимизации
+    //--------------------------------------------------------------------------
+    connect(m_viewModel, &MainViewModel::dbOptimizeStarted, [this]() {
+        ui->pushButtonDbOptimize->setEnabled(false);
+        ui->statusBar->showMessage("Оптимизация БД...");
+    });
+
+    connect(m_viewModel, &MainViewModel::dbOptimizeFinished, [this]() {
+        ui->pushButtonDbOptimize->setEnabled(true);
+        ui->statusBar->showMessage("Оптимизация завершена", 3000);
+    });
+
+    connect(m_viewModel, &MainViewModel::dbOptimizeError, [this](const QString& error) {
+        ui->pushButtonDbOptimize->setEnabled(true);
+        ui->statusBar->showMessage("Ошибка: " + error, 5000);
+        QMessageBox::warning(this, "Ошибка", error);
+    });
+
+    connect(m_viewModel, &MainViewModel::dbLogMessage, this, &MainForm::printLogMessages);
+
+    //--------------------------------------------------------------------------
     // Обновление списков
+    //--------------------------------------------------------------------------
     connect(m_viewModel, &MainViewModel::vendorsChanged, [this]() {
         ui->listWidgetManufacturer->clear();
         ui->listWidgetManufacturer->addItems(m_viewModel->vendors());
@@ -168,6 +232,7 @@ MainForm::MainForm(QWidget *parent) :
     });
 
 
+    //--------------------------------------------------------------------------
     // Пользовательский ввод
     //--------------------------------------------------------------------------
 
@@ -212,9 +277,28 @@ MainForm::MainForm(QWidget *parent) :
         }
     });
 
+    // Подключаем кнопку выбора пути к IDE к команде ViewModel
+    connect(ui->pushButtonSetIdePath, &QPushButton::clicked, this, &MainForm::changeCoIDEPath);
+
+    // Подключаем кнопку оптимизации БД к команде ViewModel
+    connect(ui->pushButtonDbOptimize, &QPushButton::clicked, m_viewModel, &MainViewModel::optimizeDatabase);
+
+    // Подключаем кнопку установки к команде ViewModel
+    connect(ui->pushButtonInstall, &QPushButton::clicked, m_viewModel, &MainViewModel::installCurrentPack);
+
+    // Подключаем кнопку перезагрузки данных к команде ViewModel
+    connect(ui->pushButtonReload, SIGNAL(clicked(bool)), m_viewModel, SLOT(loadDeviceFamilyPack()));
+
+    // Изменение пути к каталогу CoIDE
+    connect(ui->actionPreferences, SIGNAL(triggered(bool)), SLOT(changeCoIDEPath()));
+
+    // Выбор пакета DFP и загрузка
+    connect(ui->actionOpen_DFP, SIGNAL(triggered(bool)), SLOT(loadDFP()));
+
+#if 0
+    //--------------------------------------------------------------------------
     // Отладка
     //--------------------------------------------------------------------------
-#if 0
     connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]() {
        qInfo()  << "manufacturerChanged";
     });
@@ -230,8 +314,8 @@ MainForm::MainForm(QWidget *parent) :
     connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]() {
        qInfo()  << "mcuChanged";
     });
-#endif
     //--------------------------------------------------------------------------
+#endif
 
 #if 1
     QMetaObject::invokeMethod(this, "delayedInit", Qt::QueuedConnection);
@@ -247,45 +331,6 @@ MainForm::~MainForm()
 {
     delete m_viewModel;
     delete ui;
-}
-
-//------------------------------------------------------------------------------
-// Дата компиляции программы
-//------------------------------------------------------------------------------
-QString MainForm::compilationVersion()
-{
-    QString compilation_date = QString(__DATE__);
-    QStringList months;
-    QString date_part;
-    QString time_part = QString(__TIME__);
-    int month = 0;
-
-    months << "Jan" << "Feb" << "Mar" << "Apr" << "May" << "Jun" <<
-              "Jul" << "Aug" << "Sep" << "Oct" << "Nov" << "Dec";
-
-    for(int m = 0; m < months.count(); m++)
-    {
-        if(months.at(m) == compilation_date.mid(0, 3))
-        {
-            month = m + 1;
-            break;
-        }
-    }
-
-    if(month == 0)
-    {
-        date_part = "19000101";
-    }
-    else
-    {
-        date_part = compilation_date.mid(7, 4);
-        date_part += QString("%1").arg(month, 2, 10, QChar('0'));
-        date_part += compilation_date.mid(4, 2).replace(' ', '0');
-    }
-
-    time_part = time_part.mid(0, 2) + time_part.mid(3, 2);
-
-    return date_part + "." + time_part;
 }
 
 //------------------------------------------------------------------------------
@@ -314,89 +359,23 @@ void MainForm::showInfoMessage(QString i)
 }
 
 //------------------------------------------------------------------------------
-// Загрузка данных из базы
-//------------------------------------------------------------------------------
-void MainForm::on_pushButtonDataLoad_clicked()
-{
-    ui->pushButtonDataLoad->setEnabled(false);
-    m_viewModel->loadDeviceFamilyPack();
-    ui->pushButtonDataLoad->setEnabled(true);
-}
-
-//------------------------------------------------------------------------------
-// Сохранить параметры процессора
-//------------------------------------------------------------------------------
-void MainForm::on_pushButtonSave_clicked()
-{
-    ui->pushButtonSave->setEnabled(false);
-    packMgr.packInstall(pack);
-    ui->pushButtonSave->setEnabled(true);
-}
-
-//------------------------------------------------------------------------------
-// Задать путь к среде разработки
-//------------------------------------------------------------------------------
-void MainForm::on_pushButtonSetIdePath_clicked()
-{
-    QString str = QFileDialog::getExistingDirectory(this,
-                                                    tr("Директория установки CooCox IDE"),
-                                                    QApplication::applicationDirPath());
-    Paths::instance()->setCoIdeDir(str);
-    ui->lineEditIdePath->setText(str);
-}
-
-//------------------------------------------------------------------------------
-// Запуск оптимизации банных в БД
-//------------------------------------------------------------------------------
-void MainForm::on_pushButtonDbOptimize_clicked()
-{
-    ui->pushButtonDbOptimize->setEnabled(false);
-
-    DBGarbageCollector gbCollector;
-
-    connect(&gbCollector, &DBGarbageCollector::errorOccured, this, &MainForm::printLogMessages);
-    connect(&gbCollector, &DBGarbageCollector::eventOccured, this, &MainForm::printLogMessages);
-
-    gbCollector.deleteUnnecessaryTables();
-    gbCollector.deleteObsoleteData();
-
-    disconnect(&gbCollector, &DBGarbageCollector::errorOccured, this, &MainForm::printLogMessages);
-    disconnect(&gbCollector, &DBGarbageCollector::eventOccured, this, &MainForm::printLogMessages);
-
-    ui->pushButtonDbOptimize->setEnabled(true);
-}
-
-//------------------------------------------------------------------------------
-// Расширенное контекстное меню для окна логирования
-//------------------------------------------------------------------------------
-void MainForm::showLogContextMenu(const QPoint &pos)
-{
-    QMenu *menu = ui->plainTextEdit->createStandardContextMenu();
-
-    menu->addSeparator();
-
-    QAction *clearAction = menu->addAction("Clear");
-    clearAction->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
-
-    connect(clearAction, &QAction::triggered,
-            ui->plainTextEdit, &QPlainTextEdit::clear);
-
-    menu->exec(ui->plainTextEdit->mapToGlobal(pos));
-    delete menu;
-}
-
-//------------------------------------------------------------------------------
 // Изменение пути к каталогу CoIDE
 //------------------------------------------------------------------------------
 void MainForm::changeCoIDEPath()
 {
-    QString str = QFileDialog::getExistingDirectory(this,
-                                                    tr("Директория установки CooCox IDE"),
-                                                    Paths::instance()->coIdeDir());
-    if(!str.isEmpty())
+    QFileDialog dialog(this, tr("CoIDE install path"), Paths::instance()->coIdeDir());
+
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setOption(QFileDialog::ShowDirsOnly, true);
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+
+    if (dialog.exec())
     {
-        Paths::instance()->setCoIdeDir(str);
-        ui->lineEditIdePath->setText(str);
+        QString selectedDir = dialog.selectedFiles().first();
+
+        // Сохраняем выбранную папку
+        Paths::instance()->setCoIdeDir(selectedDir);
+        ui->lineEditIdePath->setText(selectedDir);
     }
 }
 

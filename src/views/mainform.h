@@ -17,10 +17,6 @@
 #include <QListWidget>
 #include <QPoint>
 
-#include "models/pack/pdscparser.h"
-#include "models/pack/packdescription.h"
-#include "models/pack/packmanager.h"
-
 #include "viewmodels/mainviewmodel.h"
 
 namespace Ui {
@@ -32,9 +28,6 @@ class MainForm : public QMainWindow
     Q_OBJECT
 
 private:
-    PdscParser parser;
-    PackDescription pack;
-    PackManager packMgr;
     MainViewModel * m_viewModel;
 
 public:
@@ -43,21 +36,12 @@ public:
 
 private:
 
-    QString compilationVersion();
-
 private slots:
 
     void delayedInit();
     void showErrorMessage(QString e);
     void showInfoMessage(QString i);
     void printLogMessages(QString msg);
-
-    void on_pushButtonDataLoad_clicked();
-    void on_pushButtonSave_clicked();
-    void on_pushButtonSetIdePath_clicked();
-    void on_pushButtonDbOptimize_clicked();
-    void showLogContextMenu(const QPoint &pos);
-
     void changeCoIDEPath();
     void loadDFP();
 

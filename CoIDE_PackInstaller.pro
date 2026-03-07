@@ -98,7 +98,8 @@ HEADERS  += \
     src/services/settings.h \
     src/viewmodels/mcubrowserviewmodel.h \
     src/viewmodels/mcudetailsviewmodel.h \
-    src/viewmodels/mainviewmodel.h
+    src/viewmodels/mainviewmodel.h \
+    src/utils/versionhelper.h
 
 FORMS    += \
     src/views/mainform.ui

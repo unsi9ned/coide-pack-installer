@@ -8,12 +8,12 @@ class PackManager : public QObject
 {
     Q_OBJECT
 private:
-    PackDescription _pdsc;
+
 public:
     explicit PackManager(QObject *parent = 0);
 
     void readPackDescription(PackDescription& pack);
-    void packInstall(PackDescription& pack);
+    bool packInstall(PackDescription& pack, QString &errorString);
 
 private:
     QString findPDSC(const PackDescription& pack);

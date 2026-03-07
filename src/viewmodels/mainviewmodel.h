@@ -75,6 +75,9 @@ public slots:
     void selectSeries(const QString& series);
     void selectMcu(const QString &mcu);
 
+    void installCurrentPack();
+    void optimizeDatabase();
+
 private:
     void loadDeviceFamilyPack(const QString& path);
 
@@ -86,6 +89,7 @@ private:
     void restoreSelection();
 
 private slots:
+    void onInstallResult(bool success, QString errorString);
 
 signals:
     // Сигналы для UI
@@ -98,6 +102,18 @@ signals:
     void loadStarted();
     void loadFinished();
     void loadFailed(const QString& error);
+
+    void installStarted();
+    void installProgress(int percent);
+    void installResult(bool success, QString errorString);
+    void installFinished(bool success, const QString& message);
+    void installError(const QString& error);
+    void installLogMessage(const QString& message);
+
+    void dbOptimizeStarted();
+    void dbOptimizeFinished();
+    void dbOptimizeError(const QString& error);
+    void dbLogMessage(const QString& message);
 
     void statusMessage(const QString& message, int timeout = 3000);
 
