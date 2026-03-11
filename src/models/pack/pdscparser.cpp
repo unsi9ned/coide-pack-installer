@@ -150,6 +150,10 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         for(int i = 0; i < conditions.count(); i++)
         {
             QDomNode conditionNode = conditions.at(i);
+
+            if(conditionNode.isComment())
+                continue;
+
             PdscCondition cond = parseCondition(conditionNode);
             conditionList.append(cond);
         }
@@ -162,6 +166,10 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         for(int i = 0; i < components.count(); i++)
         {
             QDomNode componentNode = components.at(i);
+
+            if(componentNode.isComment())
+                continue;
+
             PdscComponent component = parseComponent(componentNode, conditionList);
             componentList.append(component);
         }
