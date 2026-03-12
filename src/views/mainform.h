@@ -18,10 +18,6 @@
 #include <QPoint>
 #include <QTreeWidgetItem>
 
-#include "models/pack/pdscparser.h"
-#include "models/pack/packdescription.h"
-#include "models/pack/packmanager.h"
-
 #include "viewmodels/mainviewmodel.h"
 
 namespace Ui {
@@ -41,9 +37,11 @@ class MainForm : public QMainWindow
     };
 
 private:
-    PdscParser parser;
-    PackDescription pack;
-    PackManager packMgr;
+    QAction * actionLoadDfp;
+    QAction * actionReloadDfp;
+    QAction * actionDbOptimize;
+    QAction * actionInstall;
+    QAction * actionSettings;
 
     MainViewModel * m_viewModel;
 
