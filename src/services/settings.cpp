@@ -144,7 +144,7 @@ void Settings::saveSelectedMcu(const QString &mcu)
 //------------------------------------------------------------------------------
 void Settings::saveCustomParameter(const QString &group, const QString &key, QVariant value)
 {
-    Settings::settingsAccessMutex.lock();
+    if(!Settings::settingsAccessMutex.tryLock(1000)) return;
 
     QSettings settings(Paths::instance()->appSettingsFile(), QSettings::IniFormat);
 
@@ -162,7 +162,7 @@ QVariant Settings::getCustomParameter(const QString &group, const QString &key, 
 {
     QVariant value;
 
-    Settings::settingsAccessMutex.lock();
+    if(!Settings::settingsAccessMutex.tryLock(1000)) return defaultValue;
 
     QSettings settings(Paths::instance()->appSettingsFile(), QSettings::IniFormat);
 
