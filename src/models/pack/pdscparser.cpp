@@ -1103,9 +1103,10 @@ void PdscParser::linkComponents(const QMap<QString, Component> &coComponentMap,
         {
             QList<Component*> parentComponents = findParentsComponent(componentMap, parentInfo);
 
-            foreach(auto c, parentComponents)
+            foreach(auto parent, parentComponents)
             {
-                component.addChild(c);
+                component.addParent(parent);
+                parent->addChild(&component);
             }
         }
 #endif

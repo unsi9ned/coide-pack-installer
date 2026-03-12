@@ -534,7 +534,7 @@ bool ComponentsInfo::removeStatusPhantomRelations(QString *errorString)
 bool ComponentsInfo::createComponent(Component &component, QString *errorString)
 {
     // Сначала создаем компаненты, от которых зависим
-    QList<Component *> children = component.getDependencies();
+    QList<Component *> children = component.getChildren();
 
     foreach (Component* child, children)
     {

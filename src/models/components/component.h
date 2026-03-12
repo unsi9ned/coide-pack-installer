@@ -82,7 +82,9 @@ private:
     QDateTime updateDate;
     QString tags;
 
-    QList<Component*> dependencies;
+    QList<Component*> m_children;
+    QList<Component*> m_parents;
+
     QList<int> mcuListId;
     QList<int> mcuFamilyList;
     QList<int> mcuSeriesList;
@@ -148,13 +150,22 @@ public:
 
     QString getTags() const;
     void setTags(const QString &value);
-    QList<Component *> getDependencies() const;
-    void setDependencies(const QList<Component *> &value);
+
+
+    QList<Component *> getChildren() const;
+    void setChildren(const QList<Component *> &value);
     void addChild(Component * getChild);
     bool hasChild(const QString& childName);
     bool hasChild(Component* child);
     bool hasChildren();
     Component* getChild(const QString& childName);
+
+    QList<Component *> getParents() const;
+    void setParents(const QList<Component *> &value);
+    void addParent(Component * parent);
+    bool hasParents();
+
+
     QList<int> getMcuListId() const;
     void setMcuListId(const QList<int> &value);
     void appendMcuId(int id);

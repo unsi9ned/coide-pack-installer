@@ -233,45 +233,45 @@ void Component::setTags(const QString &value)
     tags = value;
 }
 
-QList<Component *> Component::getDependencies() const
+QList<Component *> Component::getChildren() const
 {
-    return dependencies;
+    return m_children;
 }
 
-void Component::setDependencies(const QList<Component *> &value)
+void Component::setChildren(const QList<Component *> &value)
 {
-    dependencies = value;
+    m_children = value;
 }
 
 void Component::addChild(Component *child)
 {
-    if(!dependencies.contains(child))
-        dependencies.append(child);
+    if(!m_children.contains(child))
+        m_children.append(child);
 }
 
-bool Component::hasChild(const QString &childName)
-{
-    Component * c = getChild(childName);
-    return c != nullptr;
-}
+//bool Component::hasChild(const QString &childName)
+//{
+//    Component * c = getChild(childName);
+//    return c != nullptr;
+//}
 
-bool Component::hasChild(Component *child)
-{
-    return dependencies.contains(child);
-}
+//bool Component::hasChild(Component *child)
+//{
+//    return m_children.contains(child);
+//}
 
 bool Component::hasChildren()
 {
-    return !dependencies.isEmpty();
+    return !m_children.isEmpty();
 }
 
 Component *Component::getChild(const QString &childName)
 {
     Component * child = nullptr;
 
-    if(!dependencies.isEmpty())
+    if(!m_children.isEmpty())
     {
-        foreach (Component* c, dependencies)
+        foreach (Component* c, m_children)
         {
             if(c && c->getName() == childName)
             {
@@ -282,6 +282,27 @@ Component *Component::getChild(const QString &childName)
     }
 
     return child;
+}
+
+QList<Component *> Component::getParents() const
+{
+    return m_parents;
+}
+
+void Component::setParents(const QList<Component *> &value)
+{
+    m_parents = value;
+}
+
+void Component::addParent(Component *parent)
+{
+    if(!m_parents.contains(parent))
+        m_parents.append(parent);
+}
+
+bool Component::hasParents()
+{
+    return !m_parents.isEmpty();
 }
 
 QList<int> Component::getMcuListId() const
