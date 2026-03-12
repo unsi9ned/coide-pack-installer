@@ -22,6 +22,50 @@ MainForm::MainForm(QWidget *parent) :
     // Иконка
     this->setWindowIcon(QIcon(":coide_project.ico"));
 
+    // Панель инструментов
+    QAction * actionLoadDfp = ui->toolBar->addAction(QIcon(":/img/file_open.png"), "Load DFP");
+    QAction * actionReloadDfp = ui->toolBar->addAction(QIcon(":/img/file_reload.png"), "Reload DFP");
+    QAction * actionDbOptimize = ui->toolBar->addAction(QIcon(":/img/cleaning.png"), "DB optimization");
+    QAction * actionInstall = ui->toolBar->addAction(QIcon(":/img/install.png"), "Package install");
+    QAction * actionSettings = ui->toolBar->addAction(QIcon(":/img/settings.png"), "Settings");
+
+    connect(actionLoadDfp, &QAction::triggered, [this]()
+    {
+        loadDFP();
+    });
+
+    connect(actionReloadDfp, &QAction::triggered, [this]()
+    {
+        loadDFP(true);
+    });
+
+    connect(actionDbOptimize, &QAction::triggered, [this]()
+    {
+//        on_pushButtonDbOptimize_clicked();
+    });
+
+    connect(actionInstall, &QAction::triggered, [this]()
+    {
+//        packMgr.packInstall(pack);
+    });
+
+    connect(actionSettings, &QAction::triggered, [this]()
+    {
+        changeCoIDEPath();
+    });
+
+    // Дерево устройств
+    ui->treeWidgetDevices->setColumnCount(1);
+    ui->treeWidgetDevices->setHeaderLabel("MCU Browser");
+    ui->treeWidgetDevices->setHeaderHidden(true);
+
+    // Дерево компонентов
+    ui->treeWidgetComponents->setColumnCount(2);
+    ui->treeWidgetComponents->setHeaderLabels(QStringList() << "Component" << "Description");
+
+    // Подключаем выбор элемента
+    connect(ui->treeWidgetDevices, &QTreeWidget::itemClicked, this, &MainForm::onDeviceTreeItemClicked);
+
     // Версия программы
     ui->labelAppVersion->setText(VersionHelper::compilationVersion());
     ui->lineEditIdePath->setText(Paths::instance()->coIdeDir());
@@ -382,7 +426,7 @@ void MainForm::changeCoIDEPath()
 //------------------------------------------------------------------------------
 // Выбор и загрузка DFP
 //------------------------------------------------------------------------------
-void MainForm::loadDFP()
+void MainForm::loadDFP(bool hideFileDialog)
 {
     QFileInfo packFileInfo(Settings::instance()->lastLoadedPack());
     QFileDialog dialog(this, tr("Device Family Pack"), packFileInfo.path(), "*.pack");
@@ -405,4 +449,56 @@ void MainForm::printLogMessages(QString msg)
 {
     ui->plainTextEdit->appendPlainText(msg);
     ui->plainTextEdit->verticalScrollBar()->setValue(ui->plainTextEdit->verticalScrollBar()->maximum());
+}
+
+
+
+void MainForm::showFeatures(QTreeWidgetItem *item)
+{
+
+}
+
+void MainForm::clearForm()
+{
+
+}
+
+void MainForm::updateDeviceTree()
+{
+
+}
+
+void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
+{
+
+}
+
+void MainForm::updateComponentsTree()
+{
+
+}
+
+void MainForm::showFeatures(const QString &vendor, const QString &core, const QString &series, const QString &mcu)
+{
+
+}
+
+void MainForm::selectMcu(const QString &vendor, const QString &family, const QString &series, const QString &mcu)
+{
+
+}
+
+void MainForm::updateComponentsTree(QTreeWidgetItem *parentItem, Component *component)
+{
+
+}
+
+QTreeWidgetItem *MainForm::findVendorItem(const QString &vendor)
+{
+
+}
+
+QTreeWidgetItem *MainForm::findChildItem(QTreeWidgetItem *parent, const QString &text)
+{
+
 }

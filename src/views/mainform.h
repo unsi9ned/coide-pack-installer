@@ -16,6 +16,11 @@
 #include <QString>
 #include <QListWidget>
 #include <QPoint>
+#include <QTreeWidgetItem>
+
+#include "models/pack/pdscparser.h"
+#include "models/pack/packdescription.h"
+#include "models/pack/packmanager.h"
 
 #include "viewmodels/mainviewmodel.h"
 
@@ -27,7 +32,19 @@ class MainForm : public QMainWindow
 {
     Q_OBJECT
 
+    enum DeviceTreeItemType
+    {
+        TypeVendor,
+        TypeFamily,
+        TypeSeries,
+        TypeMcu
+    };
+
 private:
+    PdscParser parser;
+    PackDescription pack;
+    PackManager packMgr;
+
     MainViewModel * m_viewModel;
 
 public:
@@ -43,9 +60,26 @@ private slots:
     void showInfoMessage(QString i);
     void printLogMessages(QString msg);
     void changeCoIDEPath();
-    void loadDFP();
+    void loadDFP(bool hideFileDialog = false);
+
+
+    void showFeatures(QTreeWidgetItem * item);
+    void clearForm();
+    void updateDeviceTree();
+    void onDeviceTreeItemClicked(QTreeWidgetItem *item, int column);
+    void updateComponentsTree();
 
 private:
+    void showFeatures(const QString& vendor, const QString& core, const QString& series, const QString& mcu);
+    void selectMcu(const QString& vendor,
+                   const QString& family,
+                   const QString& series,
+                   const QString& mcu);
+    void updateComponentsTree(QTreeWidgetItem *parentItem, Component * component);
+    QTreeWidgetItem* findVendorItem(const QString& vendor);
+    QTreeWidgetItem* findChildItem(QTreeWidgetItem * parent, const QString& text);
+
+
     Ui::MainForm *ui;
 };
 
