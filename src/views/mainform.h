@@ -17,9 +17,7 @@
 #include <QListWidget>
 #include <QPoint>
 
-#include "models/pack/pdscparser.h"
-#include "models/pack/packdescription.h"
-#include "models/pack/packmanager.h"
+#include "viewmodels/mainviewmodel.h"
 
 namespace Ui {
 class MainForm;
@@ -30,9 +28,7 @@ class MainForm : public QMainWindow
     Q_OBJECT
 
 private:
-    PdscParser parser;
-    PackDescription pack;
-    PackManager packMgr;
+    MainViewModel * m_viewModel;
 
 public:
     explicit MainForm(QWidget *parent = 0);
@@ -40,48 +36,16 @@ public:
 
 private:
 
-    QString compilationVersion();
-
 private slots:
 
     void delayedInit();
-    void showError(QString e);
-    void showInfo(QString i);
-
-    void showDFPInfo(QModelIndex index);
-    void showFamilyList(QModelIndex index);
-    void showSeriesList(QModelIndex index);
-    void showMcuList(QModelIndex index);
-    void showFeatures(QModelIndex index);
-
-    void showFamilyList(int index);
-    void showSeriesList(int index);
-    void showMcuList(int index);
-
-    void showFilteredComponents(int itemIndex = 1);
-
-    void refreshData();
-    void refreshAlgorithms();
-    void refreshNewDebAlgorithm();
-    void refreshNewFlashAlgorithm();
-    void selectNewTab(int t);
-    void visitWebsite();
-
-    void on_pushButtonDataLoad_clicked();
-    void on_pushButtonSave_clicked();
-    void on_pushButtonSetIdePath_clicked();
-    void on_pushButtonDbOptimize_clicked();
-    void showLogContextMenu(const QPoint &pos);
-
+    void showErrorMessage(QString e);
+    void showInfoMessage(QString i);
+    void printLogMessages(QString msg);
     void changeCoIDEPath();
     void loadDFP();
-    void printLogMessages(QString msg);
 
 private:
-    void loadDFP(const QString& path);
-    int extractIdFromItemText(QString text);
-    QString extractNameFromItemText(QString text);
-    void selectListItemByText(QListWidget *listWidget, const QString& text);
     Ui::MainForm *ui;
 };
 

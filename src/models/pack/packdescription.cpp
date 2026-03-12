@@ -23,7 +23,7 @@ QString PackDescription::url()
     return this->_url;
 }
 
-QString PackDescription::description()
+QString PackDescription::description() const
 {
     return this->_description;
 }
