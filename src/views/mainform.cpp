@@ -82,14 +82,12 @@ MainForm::MainForm(QWidget *parent) :
     connect(m_viewModel, &MainViewModel::loadStarted, [this]()
     {
         ui->statusBar->showMessage("Загрузка...");
-        ui->pushButtonReload->setEnabled(false);
         actionLoadDfp->setEnabled(false);
         clearForm();
     });
 
     connect(m_viewModel, &MainViewModel::loadFinished, [this]() {
         ui->lineEditRelease->setText(m_viewModel->releaseVersion());
-        ui->pushButtonReload->setEnabled(true);
         actionLoadDfp->setEnabled(true);
         ui->statusBar->showMessage("Готово", 3000);
 
@@ -104,7 +102,6 @@ MainForm::MainForm(QWidget *parent) :
 
     connect(m_viewModel, &MainViewModel::loadFailed, [this](const QString& error) {
         QMessageBox::critical(this, "Ошибка", error);
-        ui->pushButtonReload->setEnabled(true);
         actionLoadDfp->setEnabled(true);
     });
 
@@ -116,13 +113,11 @@ MainForm::MainForm(QWidget *parent) :
     //--------------------------------------------------------------------------
     connect(m_viewModel, &MainViewModel::installStarted, [this]() {
         ui->statusBar->showMessage("Установка...");
-        ui->pushButtonInstall->setEnabled(false);  // блокируем кнопку
         // можно показать прогресс-бар
     });
 
     connect(m_viewModel, &MainViewModel::installFinished, [this](bool success, const QString& message) {
         ui->statusBar->showMessage(message, 3000);
-        ui->pushButtonInstall->setEnabled(true);
         if (success) {
             QMessageBox::information(this, "Успех", message);
         }
@@ -130,7 +125,6 @@ MainForm::MainForm(QWidget *parent) :
 
     connect(m_viewModel, &MainViewModel::installError, [this](const QString& error) {
         ui->statusBar->showMessage("Ошибка", 5000);
-        ui->pushButtonInstall->setEnabled(true);
         QMessageBox::critical(this, "Ошибка", error);
     });
 
@@ -140,19 +134,16 @@ MainForm::MainForm(QWidget *parent) :
     // Отслеживаем процесс оптимизации
     //--------------------------------------------------------------------------
     connect(m_viewModel, &MainViewModel::dbOptimizeStarted, [this]() {
-        ui->pushButtonDbOptimize->setEnabled(false);
         actionDbOptimize->setEnabled(false);
         ui->statusBar->showMessage("Оптимизация БД...");
     });
 
     connect(m_viewModel, &MainViewModel::dbOptimizeFinished, [this]() {
-        ui->pushButtonDbOptimize->setEnabled(true);
         actionDbOptimize->setEnabled(true);
         ui->statusBar->showMessage("Оптимизация завершена", 3000);
     });
 
     connect(m_viewModel, &MainViewModel::dbOptimizeError, [this](const QString& error) {
-        ui->pushButtonDbOptimize->setEnabled(true);
         actionDbOptimize->setEnabled(true);
         ui->statusBar->showMessage("Ошибка: " + error, 5000);
         QMessageBox::warning(this, "Ошибка", error);
@@ -313,15 +304,12 @@ MainForm::MainForm(QWidget *parent) :
 #endif
 
     // Подключаем кнопку оптимизации БД к команде ViewModel
-    connect(ui->pushButtonDbOptimize, &QPushButton::clicked, m_viewModel, &MainViewModel::optimizeDatabase);
     connect(actionDbOptimize, &QAction::triggered, m_viewModel, &MainViewModel::optimizeDatabase);
 
     // Подключаем кнопку установки к команде ViewModel
-    connect(ui->pushButtonInstall, &QPushButton::clicked, m_viewModel, &MainViewModel::installCurrentPack);
     connect(actionInstall, &QAction::triggered, m_viewModel, &MainViewModel::installCurrentPack);
 
     // Подключаем кнопку перезагрузки данных к команде ViewModel
-    connect(ui->pushButtonReload, SIGNAL(clicked(bool)), m_viewModel, SLOT(loadDeviceFamilyPack()));
     connect(actionReloadDfp, &QAction::triggered, [this]()
     {
         loadDFP(true);
