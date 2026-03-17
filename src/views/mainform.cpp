@@ -15,6 +15,7 @@
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
     m_viewModel(new MainViewModel(this)),
+    m_deviceViewModel(new DeviceViewModel(this)),
     ui(new Ui::MainForm)
 {
     ui->setupUi(this);
@@ -79,6 +80,7 @@ MainForm::MainForm(QWidget *parent) :
     //--------------------------------------------------------------------------
     // Сигналы загрузки
     //--------------------------------------------------------------------------
+#if 0
     connect(m_viewModel, &MainViewModel::loadStarted, [this]()
     {
         ui->statusBar->showMessage("Загрузка...");
@@ -107,7 +109,27 @@ MainForm::MainForm(QWidget *parent) :
 
     connect(m_viewModel, &MainViewModel::statusMessage,
             ui->statusBar, &QStatusBar::showMessage);
+#else
+    connect(m_deviceViewModel, &DeviceViewModel::loadStarted, [this]()
+    {
+        ui->statusBar->showMessage("Загрузка...");
+        actionLoadDfp->setEnabled(false);
+        clearForm();
+    });
 
+    connect(m_deviceViewModel, &DeviceViewModel::loadFinished, [this]()
+    {
+        ui->lineEditRelease->setText(m_deviceViewModel->releaseVersion());
+        actionLoadDfp->setEnabled(true);
+        ui->statusBar->showMessage("Готово", 3000);
+    });
+
+    connect(m_deviceViewModel, &DeviceViewModel::loadError, [this](const QString& error)
+    {
+        QMessageBox::critical(this, "Ошибка", error);
+        actionLoadDfp->setEnabled(true);
+    });
+#endif
     //--------------------------------------------------------------------------
     // Сигналы установки
     //--------------------------------------------------------------------------
@@ -254,6 +276,8 @@ MainForm::MainForm(QWidget *parent) :
             }
         }
     });
+#else
+    connect(m_deviceViewModel, &DeviceViewModel::deviceTreeChanged, this, &MainForm::updateDeviceTree);
 #endif
 
 
@@ -367,8 +391,7 @@ MainForm::~MainForm()
 //------------------------------------------------------------------------------
 void MainForm::delayedInit()
 {
-    //Обновление данных на форме
-    m_viewModel->loadDeviceFamilyPack();
+    loadDFP(true);
 }
 
 //------------------------------------------------------------------------------
@@ -416,6 +439,7 @@ void MainForm::loadDFP(bool hideFileDialog)
     if(hideFileDialog)
     {
         m_viewModel->loadDeviceFamilyPack();
+        m_deviceViewModel->loadDeviceFamilyPack();
         return;
     }
 
@@ -430,6 +454,7 @@ void MainForm::loadDFP(bool hideFileDialog)
         QString path = dialog.selectedFiles().first();
         Settings::instance()->saveLastLoadedPack(path);
         m_viewModel->loadDeviceFamilyPack();
+        m_deviceViewModel->loadDeviceFamilyPack();
     }
 }
 
@@ -485,35 +510,29 @@ void MainForm::updateDeviceTree()
 {
     ui->treeWidgetDevices->clear();
 
-    for (QString vendor : m_viewModel->vendors())
+    for (auto& vNode : m_deviceViewModel->deviceTree())
     {
         QTreeWidgetItem* vItem = new QTreeWidgetItem(ui->treeWidgetDevices);
-        vItem->setText(0, vendor);
-        vItem->setData(0, Qt::UserRole, MainForm::TypeVendor);
+        vItem->setText(0, vNode.name);
+        vItem->setData(0, Qt::UserRole, vNode.type);
 
-        m_viewModel->selectVendor(vendor);
-
-        for (QString family : m_viewModel->families())
+        for (auto& fNode : vNode.children)
         {
             QTreeWidgetItem* fItem = new QTreeWidgetItem(vItem);
-            fItem->setText(0, family);
-            fItem->setData(0, Qt::UserRole, MainForm::TypeFamily);
+            fItem->setText(0, fNode.name);
+            fItem->setData(0, Qt::UserRole, fNode.type);
 
-            m_viewModel->selectFamily(family);
-
-            for (QString series : m_viewModel->series())
+            for (auto& sNode : fNode.children)
             {
                 QTreeWidgetItem* sItem = new QTreeWidgetItem(fItem);
-                sItem->setText(0, series);
-                sItem->setData(0, Qt::UserRole, MainForm::TypeSeries);
+                sItem->setText(0, sNode.name);
+                sItem->setData(0, Qt::UserRole, sNode.type);
 
-                m_viewModel->selectSeries(series);
-
-                for (QString mcu : m_viewModel->mcus())
+                for (auto& mNode : sNode.children)
                 {
                     QTreeWidgetItem* mItem = new QTreeWidgetItem(sItem);
-                    mItem->setText(0, mcu);
-                    mItem->setData(0, Qt::UserRole, MainForm::TypeMcu);
+                    mItem->setText(0, mNode.name);
+                    mItem->setData(0, Qt::UserRole, mNode.type);
                 }
             }
         }
@@ -597,10 +616,11 @@ void MainForm::showFeatures(const QString &vendor,
         return;
     }
 
-    m_viewModel->selectVendor(vendor);
-    m_viewModel->selectFamily(core);
-    m_viewModel->selectSeries(series);
-    m_viewModel->selectMcu(mcu);
+//    m_viewModel->selectVendor(vendor);
+//    m_viewModel->selectFamily(core);
+//    m_viewModel->selectSeries(series);
+//    m_viewModel->selectMcu(mcu);
+    qInfo() << vendor << core << series << mcu;
 }
 
 //------------------------------------------------------------------------------

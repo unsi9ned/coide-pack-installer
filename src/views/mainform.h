@@ -19,6 +19,7 @@
 #include <QTreeWidgetItem>
 
 #include "viewmodels/mainviewmodel.h"
+#include "viewmodels/deviceviewmodel.h"
 
 namespace Ui {
 class MainForm;
@@ -44,6 +45,7 @@ private:
     QAction * actionSettings;
 
     MainViewModel * m_viewModel;
+    DeviceViewModel * m_deviceViewModel;
 
 public:
     explicit MainForm(QWidget *parent = 0);

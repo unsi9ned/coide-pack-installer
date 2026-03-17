@@ -58,7 +58,8 @@ SOURCES += src/main.cpp\
     src/services/settings.cpp \
     src/viewmodels/mcubrowserviewmodel.cpp \
     src/viewmodels/mcudetailsviewmodel.cpp \
-    src/viewmodels/mainviewmodel.cpp
+    src/viewmodels/mainviewmodel.cpp \
+    src/viewmodels/deviceviewmodel.cpp
 
 HEADERS  += \
     src/models/pack/pdscparser.h \
@@ -99,7 +100,8 @@ HEADERS  += \
     src/viewmodels/mcubrowserviewmodel.h \
     src/viewmodels/mcudetailsviewmodel.h \
     src/viewmodels/mainviewmodel.h \
-    src/utils/versionhelper.h
+    src/utils/versionhelper.h \
+    src/viewmodels/deviceviewmodel.h
 
 FORMS    += \
     src/views/mainform.ui
