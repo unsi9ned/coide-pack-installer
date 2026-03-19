@@ -18,8 +18,6 @@
 #include <QPoint>
 #include <QTreeWidgetItem>
 
-#include "viewmodels/mainviewmodel.h"
-#include "viewmodels/deviceviewmodel.h"
 #include "viewmodels/mcubrowserviewmodel.h"
 
 namespace Ui {
