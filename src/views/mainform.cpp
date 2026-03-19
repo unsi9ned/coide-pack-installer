@@ -1,5 +1,6 @@
 #include <QScrollBar>
 #include <QTimer>
+#include <QThread>
 #include "mainform.h"
 #include "ui_mainform.h"
 #include "services/paths.h"
@@ -14,7 +15,7 @@
 //------------------------------------------------------------------------------
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
-    m_viewModel(new MainViewModel(this)),
+    //m_viewModel(new MainViewModel(this)),
     m_deviceViewModel(new DeviceViewModel(this)),
     ui(new Ui::MainForm)
 {
@@ -38,9 +39,6 @@ MainForm::MainForm(QWidget *parent) :
     // Дерево компонентов
     ui->treeWidgetComponents->setColumnCount(2);
     ui->treeWidgetComponents->setHeaderLabels(QStringList() << "Component" << "Description");
-
-    // Подключаем выбор элемента
-    connect(ui->treeWidgetDevices, &QTreeWidget::itemClicked, this, &MainForm::onDeviceTreeItemClicked);
 
     // Версия программы
     ui->labelAppVersion->setText(VersionHelper::compilationVersion());
@@ -75,6 +73,52 @@ MainForm::MainForm(QWidget *parent) :
     connect(&packMgr,
             SIGNAL(eventOccured(QString)),
             SLOT(printLogMessages(QString)));
+#endif
+
+#if 0
+    //--------------------------------------------------------------------------
+    // Отладка
+    //--------------------------------------------------------------------------
+    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "manufacturerChanged";
+    });
+
+    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "familyChanged";
+    });
+
+    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "seriesChanged";
+    });
+
+    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]() {
+       qInfo()  << "mcuChanged";
+    });
+    //--------------------------------------------------------------------------
+#elif 0
+    connect(m_deviceViewModel, &DeviceViewModel::deviceTreeChanged, [this](){
+        qInfo()  << "deviceTreeChanged";
+    });
+
+    connect(m_deviceViewModel, &DeviceViewModel::mcuSelected, [this](){
+        qInfo()  << "mcuSelected";
+    });
+
+    connect(m_deviceViewModel, &DeviceViewModel::loadStarted, [this]()
+    {
+        qInfo()  << "--------------------------------------------------------------------------";
+        qInfo()  << "loadStarted";
+    });
+
+    connect(m_deviceViewModel, &DeviceViewModel::loadFinished, [this]()
+    {
+        qInfo()  << "loadFinished";
+    });
+
+    connect(m_deviceViewModel, &DeviceViewModel::loadError, [this](const QString& error)
+    {
+        qInfo()  << "loadError";
+    });
 #endif
 
     //--------------------------------------------------------------------------
@@ -114,6 +158,7 @@ MainForm::MainForm(QWidget *parent) :
     {
         ui->statusBar->showMessage("Загрузка...");
         actionLoadDfp->setEnabled(false);
+        ui->treeWidgetDevices->setEnabled(false);
         clearForm();
     });
 
@@ -121,18 +166,38 @@ MainForm::MainForm(QWidget *parent) :
     {
         ui->lineEditRelease->setText(m_deviceViewModel->releaseVersion());
         actionLoadDfp->setEnabled(true);
+        ui->treeWidgetDevices->setEnabled(true);
         ui->statusBar->showMessage("Готово", 3000);
+        expandDeviceTree();
     });
 
     connect(m_deviceViewModel, &DeviceViewModel::loadError, [this](const QString& error)
     {
         QMessageBox::critical(this, "Ошибка", error);
         actionLoadDfp->setEnabled(true);
+        ui->treeWidgetDevices->setEnabled(true);
+    });
+
+
+    connect(m_deviceViewModel, &DeviceViewModel::mcuLoadDetailsStarted, [this]()
+    {
+        ui->treeWidgetDevices->setEnabled(false);
+    });
+
+    connect(m_deviceViewModel, &DeviceViewModel::mcuLoadDetailsFinished, [this]()
+    {
+        ui->treeWidgetDevices->setEnabled(true);
+    });
+
+    connect(m_deviceViewModel, &DeviceViewModel::mcuLoadDetailsFailed, [this]()
+    {
+        ui->treeWidgetDevices->setEnabled(true);
     });
 #endif
     //--------------------------------------------------------------------------
     // Сигналы установки
     //--------------------------------------------------------------------------
+#if 0
     connect(m_viewModel, &MainViewModel::installStarted, [this]() {
         ui->statusBar->showMessage("Установка...");
         // можно показать прогресс-бар
@@ -151,10 +216,12 @@ MainForm::MainForm(QWidget *parent) :
     });
 
     connect(m_viewModel, &MainViewModel::installLogMessage, this, &MainForm::printLogMessages);
+#endif
 
     //--------------------------------------------------------------------------
     // Отслеживаем процесс оптимизации
     //--------------------------------------------------------------------------
+#if 0
     connect(m_viewModel, &MainViewModel::dbOptimizeStarted, [this]() {
         actionDbOptimize->setEnabled(false);
         ui->statusBar->showMessage("Оптимизация БД...");
@@ -172,7 +239,7 @@ MainForm::MainForm(QWidget *parent) :
     });
 
     connect(m_viewModel, &MainViewModel::dbLogMessage, this, &MainForm::printLogMessages);
-
+#endif
     //--------------------------------------------------------------------------
     // Обновление списков
     //--------------------------------------------------------------------------
@@ -277,7 +344,11 @@ MainForm::MainForm(QWidget *parent) :
         }
     });
 #else
+    // Обновление дерева устройств
     connect(m_deviceViewModel, &DeviceViewModel::deviceTreeChanged, this, &MainForm::updateDeviceTree);
+
+    // Обновление информации об устройстве
+    connect(m_deviceViewModel, &DeviceViewModel::mcuSelected, this, &MainForm::showMcuDetails);
 #endif
 
 
@@ -327,11 +398,16 @@ MainForm::MainForm(QWidget *parent) :
     });
 #endif
 
+    // Подключаем выбор элемента дерева устройств
+    connect(ui->treeWidgetDevices, &QTreeWidget::itemClicked, this, &MainForm::onDeviceTreeItemClicked);
+
+#if 0
     // Подключаем кнопку оптимизации БД к команде ViewModel
     connect(actionDbOptimize, &QAction::triggered, m_viewModel, &MainViewModel::optimizeDatabase);
 
     // Подключаем кнопку установки к команде ViewModel
     connect(actionInstall, &QAction::triggered, m_viewModel, &MainViewModel::installCurrentPack);
+#endif
 
     // Подключаем кнопку перезагрузки данных к команде ViewModel
     connect(actionReloadDfp, &QAction::triggered, [this]()
@@ -348,28 +424,6 @@ MainForm::MainForm(QWidget *parent) :
     connect(actionLoadDfp, &QAction::triggered, this, &MainForm::loadDFP);
     connect(ui->actionOpen_DFP, &QAction::triggered, this, &MainForm::loadDFP);
 
-#if 0
-    //--------------------------------------------------------------------------
-    // Отладка
-    //--------------------------------------------------------------------------
-    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "manufacturerChanged";
-    });
-
-    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "familyChanged";
-    });
-
-    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "seriesChanged";
-    });
-
-    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "mcuChanged";
-    });
-    //--------------------------------------------------------------------------
-#endif
-
 #if 1
     QMetaObject::invokeMethod(this, "delayedInit", Qt::QueuedConnection);
 #else
@@ -382,7 +436,7 @@ MainForm::MainForm(QWidget *parent) :
 //------------------------------------------------------------------------------
 MainForm::~MainForm()
 {
-    delete m_viewModel;
+    //delete m_viewModel;
     delete ui;
 }
 
@@ -438,7 +492,7 @@ void MainForm::loadDFP(bool hideFileDialog)
 {
     if(hideFileDialog)
     {
-        m_viewModel->loadDeviceFamilyPack();
+        //m_viewModel->loadDeviceFamilyPack();
         m_deviceViewModel->loadDeviceFamilyPack();
         return;
     }
@@ -453,7 +507,7 @@ void MainForm::loadDFP(bool hideFileDialog)
     {
         QString path = dialog.selectedFiles().first();
         Settings::instance()->saveLastLoadedPack(path);
-        m_viewModel->loadDeviceFamilyPack();
+        //m_viewModel->loadDeviceFamilyPack();
         m_deviceViewModel->loadDeviceFamilyPack();
     }
 }
@@ -470,9 +524,9 @@ void MainForm::printLogMessages(QString msg)
 
 
 //------------------------------------------------------------------------------
-// Показать параметры микроконтроллера
+// Запросить данные о микроконтроллере
 //------------------------------------------------------------------------------
-void MainForm::showFeatures(QTreeWidgetItem *item)
+void MainForm::requestMcuDetails(QTreeWidgetItem *item)
 {
     if(item->data(0, Qt::UserRole).toInt() != MainForm::TypeMcu) return;
 
@@ -481,7 +535,47 @@ void MainForm::showFeatures(QTreeWidgetItem *item)
     QString series = item->parent()->text(0);
     QString mcu = item->text(0);
 
-    showFeatures(vendor, armCore, series, mcu);
+    m_deviceViewModel->selectNodeByPath(vendor, armCore, series, mcu);
+}
+
+//------------------------------------------------------------------------------
+// Отображение подробной информации о выбранном микроконтроллере
+//------------------------------------------------------------------------------
+void MainForm::showMcuDetails()
+{
+    ui->lineEditFlashStart->setText(m_deviceViewModel->mcuDetails()->flashStart());
+    ui->lineEditFlashSize->setText(m_deviceViewModel->mcuDetails()->flashSize());
+    ui->lineEditRamStart->setText(m_deviceViewModel->mcuDetails()->ramStart());
+    ui->lineEditRamSize->setText(m_deviceViewModel->mcuDetails()->ramSize());
+    ui->plainTextEditFeatures->setPlainText(m_deviceViewModel->mcuDetails()->features());
+    ui->plainTextEditDescription->setPlainText(m_deviceViewModel->mcuDetails()->description());
+    ui->lineEditUrl->setText(m_deviceViewModel->mcuDetails()->webPageUrl());
+    ui->lineEditDatasheetUrl->setText(m_deviceViewModel->mcuDetails()->datasheetUrl());
+    ui->lineEditSVD->setText(m_deviceViewModel->mcuDetails()->svdLocalPath());
+
+    // Заполнение списка алгоритмов отладки
+    ui->comboBoxDebugAlg->clear();
+
+    if(!m_deviceViewModel->mcuDetails()->debugAlgorithm().isEmpty())
+    {
+        ui->comboBoxDebugAlg->addItem(m_deviceViewModel->mcuDetails()->debugAlgorithm());
+        ui->comboBoxDebugAlg->setCurrentIndex(0);
+    }
+
+    // Заполнение списка алгоритмов программирования
+    ui->comboBoxFlashAlg->clear();
+
+    for(int i = 0; i < m_deviceViewModel->mcuDetails()->flashAlgorithms().count(); i++)
+    {
+        QString algo = m_deviceViewModel->mcuDetails()->flashAlgorithms().at(i);
+
+        ui->comboBoxFlashAlg->addItem(algo);
+
+        if(algo == m_deviceViewModel->mcuDetails()->currentFlashAlgorithm())
+        {
+            ui->comboBoxFlashAlg->setCurrentIndex(i);
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -540,37 +634,6 @@ void MainForm::updateDeviceTree()
 }
 
 //------------------------------------------------------------------------------
-// Реакция на выбор элемента в дереве устройств
-//------------------------------------------------------------------------------
-void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
-{
-    Q_UNUSED(column);
-
-    if (!item) return;
-
-    int type = item->data(0, Qt::UserRole).toInt();
-
-    switch(type)
-    {
-        case TypeVendor:
-//            ui->lineEditUrl->setText(pack.url());
-//            ui->lineEditRelease->setText(pack.release());
-//            ui->plainTextEditDescription->setPlainText(pack.description());
-            break;
-
-        case TypeFamily:
-            break;
-
-        case TypeSeries:
-            break;
-
-        case TypeMcu:
-            showFeatures(item);
-            break;
-    }
-}
-
-//------------------------------------------------------------------------------
 // Обновление дерева компонентов
 //------------------------------------------------------------------------------
 void MainForm::updateComponentsTree()
@@ -604,33 +667,48 @@ void MainForm::updateComponentsTree()
 }
 
 //------------------------------------------------------------------------------
-// Показать параметры микроконтроллера
+// Реакция на выбор элемента в дереве устройств
 //------------------------------------------------------------------------------
-void MainForm::showFeatures(const QString &vendor,
-                            const QString &core,
-                            const QString &series,
-                            const QString &mcu)
+void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 {
-    if(vendor.isEmpty() || core.isEmpty() || series.isEmpty() || mcu.isEmpty())
-    {
-        return;
-    }
+    Q_UNUSED(column);
 
-//    m_viewModel->selectVendor(vendor);
-//    m_viewModel->selectFamily(core);
-//    m_viewModel->selectSeries(series);
-//    m_viewModel->selectMcu(mcu);
-    qInfo() << vendor << core << series << mcu;
+    if (!item) return;
+
+    int type = item->data(0, Qt::UserRole).toInt();
+
+    switch(type)
+    {
+        case TypeVendor:
+#if 0
+            ui->lineEditUrl->setText(pack.url());
+            ui->lineEditRelease->setText(pack.release());
+            ui->plainTextEditDescription->setPlainText(pack.description());
+#endif
+            break;
+
+        case TypeFamily:
+            break;
+
+        case TypeSeries:
+            break;
+
+        case TypeMcu:
+            requestMcuDetails(item);
+            break;
+    }
 }
 
 //------------------------------------------------------------------------------
 // Развернуть дерево устройств
 //------------------------------------------------------------------------------
-void MainForm::selectMcu(const QString &vendor,
-                         const QString &family,
-                         const QString &series,
-                         const QString &mcu)
+void MainForm::expandDeviceTree()
 {
+    QString vendor = m_deviceViewModel->currentVendor();
+    QString family = m_deviceViewModel->currentFamily();
+    QString series = m_deviceViewModel->currentSeries();
+    QString mcu = m_deviceViewModel->currentMcu();
+
     // Поиск без полного разворачивания
     QTreeWidgetItem* vItem = findVendorItem(vendor);
     if (!vItem) return;

@@ -44,7 +44,7 @@ private:
     QAction * actionInstall;
     QAction * actionSettings;
 
-    MainViewModel * m_viewModel;
+    //MainViewModel * m_viewModel;
     DeviceViewModel * m_deviceViewModel;
 
 public:
@@ -63,18 +63,15 @@ private slots:
     void loadDFP(bool hideFileDialog = false);
 
 
-    void showFeatures(QTreeWidgetItem * item);
+    void requestMcuDetails(QTreeWidgetItem * item);
+    void showMcuDetails();
     void clearForm();
     void updateDeviceTree();
-    void onDeviceTreeItemClicked(QTreeWidgetItem *item, int column);
     void updateComponentsTree();
+    void onDeviceTreeItemClicked(QTreeWidgetItem *item, int column);
 
 private:
-    void showFeatures(const QString& vendor, const QString& core, const QString& series, const QString& mcu);
-    void selectMcu(const QString& vendor,
-                   const QString& family,
-                   const QString& series,
-                   const QString& mcu);
+    void expandDeviceTree();
     void updateComponentsTree(QTreeWidgetItem *parentItem, Component * component);
     QTreeWidgetItem* findVendorItem(const QString& vendor);
     QTreeWidgetItem* findChildItem(QTreeWidgetItem * parent, const QString& text);

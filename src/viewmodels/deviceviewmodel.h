@@ -8,6 +8,7 @@
 
 #include "models/pack/packdescription.h"
 #include "models/pack/packmanager.h"
+#include "mcudetailsviewmodel.h"
 
 //------------------------------------------------------------------------------
 // Структура для представления узла дерева
@@ -69,8 +70,20 @@ private:
     QString m_currentSeries;
     QString m_currentMcu;
 
+    McuDetailsViewModel* m_mcuDetailsViewModel;
+
 public:
     explicit DeviceViewModel(QObject *parent = 0);
+
+    QString currentVendor() const {return m_currentVendor;}
+    QString currentFamily() const {return m_currentFamily;}
+    QString currentSeries() const {return m_currentSeries;}
+    QString currentMcu() const {return m_currentMcu;}
+
+    McuDetailsViewModel* mcuDetails()
+    {
+        return m_mcuDetailsViewModel;
+    }
 
     // Геттеры
     QList<DeviceTreeNode> deviceTree() const
@@ -113,6 +126,11 @@ signals:
     void deviceTreeChanged(); // дерево обновлено
     void nodeSelected(); // выбран узел
     void mcuSelected(); // выбран MCU (специфичный сигнал)
+    void mcuChanged();
+
+    void mcuLoadDetailsStarted();
+    void mcuLoadDetailsFinished();
+    void mcuLoadDetailsFailed();
 
     // Сигналы для процесса загрузки
     void loadStarted();

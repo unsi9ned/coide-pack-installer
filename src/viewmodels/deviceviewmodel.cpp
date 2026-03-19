@@ -5,8 +5,16 @@
 //------------------------------------------------------------------------------
 // Конструктор
 //------------------------------------------------------------------------------
-DeviceViewModel::DeviceViewModel(QObject *parent): QObject(parent)
+DeviceViewModel::DeviceViewModel(QObject *parent):
+    QObject(parent),
+    m_mcuDetailsViewModel(new McuDetailsViewModel(this))
 {
+    m_mcuDetailsViewModel->setPack(&m_pack);
+
+    connect(m_mcuDetailsViewModel, &McuDetailsViewModel::mcuChanged, this, &DeviceViewModel::mcuChanged);
+    connect(m_mcuDetailsViewModel, &McuDetailsViewModel::loadDataStarted, this, &DeviceViewModel::mcuLoadDetailsStarted);
+    connect(m_mcuDetailsViewModel, &McuDetailsViewModel::loadDataFinished, this, &DeviceViewModel::mcuLoadDetailsFinished);
+    connect(m_mcuDetailsViewModel, &McuDetailsViewModel::loadDataFailed, this, &DeviceViewModel::mcuLoadDetailsFailed);
 }
 
 //------------------------------------------------------------------------------
@@ -42,6 +50,7 @@ void DeviceViewModel::loadDeviceFamilyPack(const QString &path)
     // Сохраняем путь
     Settings::instance()->saveLastLoadedPack(path);
 
+#if 0
     // Асинхронная загрузка
     QtConcurrent::run([this, path]()
     {
@@ -62,6 +71,14 @@ void DeviceViewModel::loadDeviceFamilyPack(const QString &path)
                                       Q_ARG(QString, QString(e.what())));
         }
     });
+#else
+    m_pack.clear();
+    m_pack.setPathToArchive(path);
+    m_packManager.readPackDescription(m_pack);
+
+    buildDeviceTree();
+    onLoadSuccess();
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -70,8 +87,6 @@ void DeviceViewModel::loadDeviceFamilyPack(const QString &path)
 void DeviceViewModel::onLoadSuccess()
 {
     emit deviceTreeChanged();
-    emit loadFinished(true, "Пакет загружен");
-    emit logMessage("Загрузка завершена");
 
     QString vendor = Settings::instance()->selectedVendor();
 
@@ -81,6 +96,9 @@ void DeviceViewModel::onLoadSuccess()
                          Settings::instance()->selectedSeries(),
                          Settings::instance()->selectedMcu());
     }
+
+    emit loadFinished(true, "Пакет загружен");
+    emit logMessage("Загрузка завершена");
 }
 
 //------------------------------------------------------------------------------
@@ -235,6 +253,7 @@ void DeviceViewModel::selectNodeByPath(const QString& vendor,
 
         if (node->type == DeviceTreeNode::McuType)
         {
+            m_mcuDetailsViewModel->selectMcu(vendor, family, series, mcu);
             emit mcuSelected();
         }
     }
