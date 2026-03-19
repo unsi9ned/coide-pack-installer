@@ -33,7 +33,7 @@ public:
     QString packVendor() const;
     QString name() const;
     QString url();
-    QString description();
+    QString description() const;
     QString release() const;
     QString pathToArchive() const;
     QString installDir() const;

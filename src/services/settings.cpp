@@ -5,7 +5,6 @@
 //------------------------------------------------------------------------------
 // Статические переменные
 //------------------------------------------------------------------------------
-QMutex Settings::settingsAccessMutex;
 Settings* Settings::m_instance = nullptr;
 
 //------------------------------------------------------------------------------
@@ -144,15 +143,12 @@ void Settings::saveSelectedMcu(const QString &mcu)
 //------------------------------------------------------------------------------
 void Settings::saveCustomParameter(const QString &group, const QString &key, QVariant value)
 {
-    Settings::settingsAccessMutex.lock();
-
     QSettings settings(Paths::instance()->appSettingsFile(), QSettings::IniFormat);
 
     settings.beginGroup(group);
     settings.setValue(key, value.toString());
     settings.endGroup();
-
-    Settings::settingsAccessMutex.unlock();
+    settings.sync();
 }
 
 //------------------------------------------------------------------------------
@@ -161,16 +157,11 @@ void Settings::saveCustomParameter(const QString &group, const QString &key, QVa
 QVariant Settings::getCustomParameter(const QString &group, const QString &key, QVariant defaultValue)
 {
     QVariant value;
-
-    Settings::settingsAccessMutex.lock();
-
     QSettings settings(Paths::instance()->appSettingsFile(), QSettings::IniFormat);
 
     settings.beginGroup(group);
     value = settings.value(key, defaultValue);
     settings.endGroup();
-
-    Settings::settingsAccessMutex.unlock();
 
     return value;
 }

@@ -55,7 +55,8 @@ SOURCES += src/main.cpp\
     src/models/pdsc/pdsccondition.cpp \
     src/models/pdsc/pdscrequirement.cpp \
     src/utils/makelink.cpp \
-    src/services/settings.cpp
+    src/services/settings.cpp \
+    src/viewmodels/mcubrowserviewmodel.cpp
 
 HEADERS  += \
     src/models/pack/pdscparser.h \
@@ -92,7 +93,9 @@ HEADERS  += \
     src/models/pdsc/pdsccondition.h \
     src/models/pdsc/pdscrequirement.h \
     src/utils/makelink.h \
-    src/services/settings.h
+    src/services/settings.h \
+    src/viewmodels/mcubrowserviewmodel.h \
+    src/utils/versionhelper.h
 
 FORMS    += \
     src/views/mainform.ui
