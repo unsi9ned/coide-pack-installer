@@ -1,6 +1,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include "mcubrowserviewmodel.h"
 #include "services/settings.h"
+#include "models/database/dbgarbagecollector.h"
 
 //------------------------------------------------------------------------------
 // Конструктор
@@ -9,6 +10,10 @@ McuBrowserViewModel::McuBrowserViewModel(QObject *parent) : QObject(parent)
 {
     connect(this, &McuBrowserViewModel::loadResult,
             this, &McuBrowserViewModel::onLoadResult,
+            Qt::QueuedConnection);
+
+    connect(this, &McuBrowserViewModel::installResult,
+            this, &McuBrowserViewModel::onInstallResult,
             Qt::QueuedConnection);
 }
 
@@ -131,6 +136,82 @@ void McuBrowserViewModel::onLoadResult(bool success, QString errorString)
     Q_UNUSED(errorString)
 
     emit packLoaded(success);
+}
+
+//------------------------------------------------------------------------------
+// Установка пакета
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::installCurrentPack()
+{
+    if (m_pack.pathToArchive().isEmpty())
+    {
+        emit installLogMessage("Нет загруженного пакета");
+        return;
+    }
+
+    emit installStarted();
+
+    // Асинхронная установка
+    QtConcurrent::run([this]()
+    {
+        QString errorString;
+        PackDescription localPack = m_pack;
+        PackManager localManager;
+
+        QObject::connect(&localManager, &PackManager::errorOccured,[this](const QString& e)
+        {
+            emit installLogMessage(e);
+        });
+
+        QObject::connect(&localManager, &PackManager::eventOccured,[this](const QString& e)
+        {
+            emit installLogMessage(e);
+        });
+
+        bool success = localManager.packInstall(localPack, errorString);
+        emit installResult(success, errorString);
+    });
+}
+
+void McuBrowserViewModel::onInstallResult(bool success, QString errorString)
+{
+    if (success)
+    {
+        emit packInstalled(true, QString());
+    }
+    else
+    {
+        emit packInstalled(false, "Ошибка установки: " + errorString);
+    }
+}
+
+//------------------------------------------------------------------------------
+// Очистка БД от мусора
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::optimizeDatabase()
+{
+    emit dbOptimizeStarted();
+
+    QtConcurrent::run([this]()
+    {
+        DBGarbageCollector collector;
+
+        // Соединяем сигналы (Qt::DirectConnection, т.к. мы в одном потоке)
+        QObject::connect(&collector, &DBGarbageCollector::errorOccured,
+                        [this](const QString& e) {
+            emit dbOptimizeError(e);
+        });
+
+        QObject::connect(&collector, &DBGarbageCollector::eventOccured,
+                        [this](const QString& e) {
+            emit dbLogMessage(e);
+        });
+
+        collector.deleteUnnecessaryTables();
+        collector.deleteObsoleteData();
+
+        QMetaObject::invokeMethod(this, "dbOptimizeFinished", Qt::QueuedConnection);
+    });
 }
 
 //------------------------------------------------------------------------------

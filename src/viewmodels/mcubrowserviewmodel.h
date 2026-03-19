@@ -68,6 +68,8 @@ public:
     bool loadPack(const QString& path);
     void loadPackAsync();
     void loadPackAsync(const QString& path);
+    void installCurrentPack();
+    void optimizeDatabase();
 
     // Доступ к дереву
     const QList<DeviceNode>& deviceTree() const { return m_deviceTree; }
@@ -116,11 +118,22 @@ private:
                          const QString &mcu = QString());
 signals:
     void loadStarted();
-    void packLoaded(bool success);
     void loadResult(bool success, QString errorString);
+    void packLoaded(bool success);
+
+    void installStarted();
+    void installResult(bool success, QString errorString);
+    void installLogMessage(const QString& message);
+    void packInstalled(bool success, QString errorString);
+
+    void dbOptimizeStarted();
+    void dbOptimizeFinished();
+    void dbOptimizeError(const QString& error);
+    void dbLogMessage(const QString& message);
 
 private slots:
     void onLoadResult(bool success, QString errorString);
+    void onInstallResult(bool success, QString errorString);
 };
 
 #endif // MCUBROWSERVIEWMODEL_H

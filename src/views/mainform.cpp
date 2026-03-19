@@ -82,14 +82,12 @@ MainForm::MainForm(QWidget *parent) :
     connect(m_mcuBrowserViewModel, &McuBrowserViewModel::loadStarted, [this]()
     {
         ui->statusBar->showMessage("Загрузка...");
-        actionLoadDfp->setEnabled(false);
-        ui->treeWidgetDevices->setEnabled(false);
+        lockUI(true);
     });
 
     connect(m_mcuBrowserViewModel, &McuBrowserViewModel::packLoaded, [this](bool success)
     {
-        actionLoadDfp->setEnabled(true);
-        ui->treeWidgetDevices->setEnabled(true);
+        lockUI(false);
 
         if(success)
         {
@@ -107,49 +105,51 @@ MainForm::MainForm(QWidget *parent) :
     //--------------------------------------------------------------------------
     // Сигналы установки
     //--------------------------------------------------------------------------
-#if 0
-    connect(m_viewModel, &MainViewModel::installStarted, [this]() {
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::installStarted, [this]()
+    {
+        lockUI(true);
         ui->statusBar->showMessage("Установка...");
-        // можно показать прогресс-бар
     });
 
-    connect(m_viewModel, &MainViewModel::installFinished, [this](bool success, const QString& message) {
-        ui->statusBar->showMessage(message, 3000);
-        if (success) {
-            QMessageBox::information(this, "Успех", message);
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::packInstalled, [this](bool success, QString e)
+    {
+        lockUI(false);
+
+        if(success)
+        {
+            ui->statusBar->showMessage("Готово", 3000);
+            QMessageBox::information(this, "Успех", tr("Пакет успешно установлен"));
+        }
+        else
+        {
+            ui->statusBar->showMessage("Ошибка", 5000);
+            QMessageBox::critical(this, "Ошибка", e);
         }
     });
 
-    connect(m_viewModel, &MainViewModel::installError, [this](const QString& error) {
-        ui->statusBar->showMessage("Ошибка", 5000);
-        QMessageBox::critical(this, "Ошибка", error);
-    });
-
-    connect(m_viewModel, &MainViewModel::installLogMessage, this, &MainForm::printLogMessages);
-#endif
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::installLogMessage, this, &MainForm::printLogMessages);
 
     //--------------------------------------------------------------------------
     // Отслеживаем процесс оптимизации
     //--------------------------------------------------------------------------
-#if 0
-    connect(m_viewModel, &MainViewModel::dbOptimizeStarted, [this]() {
-        actionDbOptimize->setEnabled(false);
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::dbOptimizeStarted, [this]()
+    {
+        lockUI(true);
         ui->statusBar->showMessage("Оптимизация БД...");
     });
 
-    connect(m_viewModel, &MainViewModel::dbOptimizeFinished, [this]() {
-        actionDbOptimize->setEnabled(true);
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::dbOptimizeFinished, [this]() {
+        lockUI(false);
         ui->statusBar->showMessage("Оптимизация завершена", 3000);
     });
 
-    connect(m_viewModel, &MainViewModel::dbOptimizeError, [this](const QString& error) {
-        actionDbOptimize->setEnabled(true);
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::dbOptimizeError, [this](const QString& error) {
+        lockUI(false);
         ui->statusBar->showMessage("Ошибка: " + error, 5000);
         QMessageBox::warning(this, "Ошибка", error);
     });
 
-    connect(m_viewModel, &MainViewModel::dbLogMessage, this, &MainForm::printLogMessages);
-#endif
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::dbLogMessage, this, &MainForm::printLogMessages);
 
     //--------------------------------------------------------------------------
     // Пользовательский ввод
@@ -158,13 +158,11 @@ MainForm::MainForm(QWidget *parent) :
     // Подключаем выбор элемента дерева устройств
     connect(ui->treeWidgetDevices, &QTreeWidget::itemClicked, this, &MainForm::onDeviceTreeItemClicked);
 
-#if 0
     // Подключаем кнопку оптимизации БД к команде ViewModel
-    connect(actionDbOptimize, &QAction::triggered, m_viewModel, &MainViewModel::optimizeDatabase);
+    connect(actionDbOptimize, &QAction::triggered, m_mcuBrowserViewModel, &McuBrowserViewModel::optimizeDatabase);
 
     // Подключаем кнопку установки к команде ViewModel
-    connect(actionInstall, &QAction::triggered, m_viewModel, &MainViewModel::installCurrentPack);
-#endif
+    connect(actionInstall, &QAction::triggered, m_mcuBrowserViewModel, &McuBrowserViewModel::installCurrentPack);
 
     // Подключаем кнопку перезагрузки данных к команде ViewModel
     connect(actionReloadDfp, &QAction::triggered, [this]()
@@ -339,36 +337,21 @@ void MainForm::clearForm()
 }
 
 //------------------------------------------------------------------------------
-// Обновление дерева компонентов
+// Блокировка интерфейса для безопасного выполнения критических операций
 //------------------------------------------------------------------------------
-void MainForm::updateComponentsTree()
+void MainForm::lockUI(bool enabled)
 {
-#if 0
-    if(pack.coComponentMap().isEmpty()) return;
-
-    ui->treeWidgetComponents->clear();
-
-    for(auto& component : pack.coComponentMap())
-    {
-        if(!component.hasParents())
-        {
-            QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidgetComponents);
-            item->setText(0, component.getName());
-            item->setText(1, component.getDescription());
-
-            if(component.hasChildren())
-            {
-                updateComponentsTree(item, &component);
-            }
-        }
-    }
-#if 1
-    ui->treeWidgetComponents->resizeColumnToContents(0);
-    ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->columnWidth(0) + 20);
-#else
-    ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->width()/2);
-#endif
-#endif
+    enabled = !enabled;
+    ui->treeWidgetDevices->setEnabled(enabled);
+    ui->treeWidgetComponents->setEnabled(enabled);
+    actionLoadDfp->setEnabled(enabled);
+    ui->actionOpen_DFP->setEnabled(enabled);
+    actionReloadDfp->setEnabled(enabled);
+    actionDbOptimize->setEnabled(enabled);
+    actionInstall->setEnabled(enabled);
+    ui->pushButtonSetIdePath->setEnabled(enabled);
+    ui->actionPreferences->setEnabled(enabled);
+    actionSettings->setEnabled(enabled);
 }
 
 //------------------------------------------------------------------------------
@@ -520,6 +503,40 @@ QTreeWidgetItem *MainForm::findChildItem(QTreeWidgetItem *parent, const QString 
     }
     return nullptr;
 }
+
+//------------------------------------------------------------------------------
+// Обновление дерева компонентов
+//------------------------------------------------------------------------------
+void MainForm::updateComponentsTree()
+{
+#if 0
+    if(pack.coComponentMap().isEmpty()) return;
+
+    ui->treeWidgetComponents->clear();
+
+    for(auto& component : pack.coComponentMap())
+    {
+        if(!component.hasParents())
+        {
+            QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidgetComponents);
+            item->setText(0, component.getName());
+            item->setText(1, component.getDescription());
+
+            if(component.hasChildren())
+            {
+                updateComponentsTree(item, &component);
+            }
+        }
+    }
+#if 1
+    ui->treeWidgetComponents->resizeColumnToContents(0);
+    ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->columnWidth(0) + 20);
+#else
+    ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->width()/2);
+#endif
+#endif
+}
+
 
 //------------------------------------------------------------------------------
 // Обновление дерева компонентов
