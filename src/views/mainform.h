@@ -20,6 +20,7 @@
 
 #include "viewmodels/mainviewmodel.h"
 #include "viewmodels/deviceviewmodel.h"
+#include "viewmodels/mcubrowserviewmodel.h"
 
 namespace Ui {
 class MainForm;
@@ -46,6 +47,7 @@ private:
 
     //MainViewModel * m_viewModel;
     DeviceViewModel * m_deviceViewModel;
+    McuBrowserViewModel * m_mcuBrowserViewModel;
 
 public:
     explicit MainForm(QWidget *parent = 0);
@@ -71,6 +73,9 @@ private slots:
     void onDeviceTreeItemClicked(QTreeWidgetItem *item, int column);
 
 private:
+    void updateTreeFromModel();
+    QTreeWidgetItem* createTreeItem(const DeviceNode& node, QTreeWidgetItem* parent = nullptr);
+
     void expandDeviceTree();
     void updateComponentsTree(QTreeWidgetItem *parentItem, Component * component);
     QTreeWidgetItem* findVendorItem(const QString& vendor);

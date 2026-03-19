@@ -10,6 +10,8 @@
 #include "services/settings.h"
 #include "utils/versionhelper.h"
 
+#define ASYNC_VIEW_MODEL 0
+
 //------------------------------------------------------------------------------
 // Конструктор окна
 //------------------------------------------------------------------------------
@@ -17,6 +19,7 @@ MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
     //m_viewModel(new MainViewModel(this)),
     m_deviceViewModel(new DeviceViewModel(this)),
+    m_mcuBrowserViewModel(new McuBrowserViewModel()),
     ui(new Ui::MainForm)
 {
     ui->setupUi(this);
@@ -153,7 +156,7 @@ MainForm::MainForm(QWidget *parent) :
 
     connect(m_viewModel, &MainViewModel::statusMessage,
             ui->statusBar, &QStatusBar::showMessage);
-#else
+#elif ASYNC_VIEW_MODEL
     connect(m_deviceViewModel, &DeviceViewModel::loadStarted, [this]()
     {
         ui->statusBar->showMessage("Загрузка...");
@@ -343,7 +346,7 @@ MainForm::MainForm(QWidget *parent) :
             }
         }
     });
-#else
+#elif ASYNC_VIEW_MODEL
     // Обновление дерева устройств
     connect(m_deviceViewModel, &DeviceViewModel::deviceTreeChanged, this, &MainForm::updateDeviceTree);
 
@@ -437,6 +440,7 @@ MainForm::MainForm(QWidget *parent) :
 MainForm::~MainForm()
 {
     //delete m_viewModel;
+    delete m_mcuBrowserViewModel;
     delete ui;
 }
 
@@ -492,8 +496,16 @@ void MainForm::loadDFP(bool hideFileDialog)
 {
     if(hideFileDialog)
     {
+#if ASYNC_VIEW_MODEL
         //m_viewModel->loadDeviceFamilyPack();
         m_deviceViewModel->loadDeviceFamilyPack();
+#else
+        if(m_mcuBrowserViewModel->loadPack())
+        {
+            updateTreeFromModel();
+            expandDeviceTree();
+        }
+#endif
         return;
     }
 
@@ -507,8 +519,17 @@ void MainForm::loadDFP(bool hideFileDialog)
     {
         QString path = dialog.selectedFiles().first();
         Settings::instance()->saveLastLoadedPack(path);
+
+#if ASYNC_VIEW_MODEL
         //m_viewModel->loadDeviceFamilyPack();
         m_deviceViewModel->loadDeviceFamilyPack();
+#else
+        if(m_mcuBrowserViewModel->loadPack())
+        {
+            updateTreeFromModel();
+            expandDeviceTree();
+        }
+#endif
     }
 }
 
@@ -543,6 +564,7 @@ void MainForm::requestMcuDetails(QTreeWidgetItem *item)
 //------------------------------------------------------------------------------
 void MainForm::showMcuDetails()
 {
+#if ASYNC_VIEW_MODEL
     ui->lineEditFlashStart->setText(m_deviceViewModel->mcuDetails()->flashStart());
     ui->lineEditFlashSize->setText(m_deviceViewModel->mcuDetails()->flashSize());
     ui->lineEditRamStart->setText(m_deviceViewModel->mcuDetails()->ramStart());
@@ -576,6 +598,42 @@ void MainForm::showMcuDetails()
             ui->comboBoxFlashAlg->setCurrentIndex(i);
         }
     }
+#else
+    ui->lineEditRelease->setText(m_mcuBrowserViewModel->releaseVersion());
+    ui->lineEditFlashStart->setText(m_mcuBrowserViewModel->flashStart());
+    ui->lineEditFlashSize->setText(m_mcuBrowserViewModel->flashSize());
+    ui->lineEditRamStart->setText(m_mcuBrowserViewModel->ramStart());
+    ui->lineEditRamSize->setText(m_mcuBrowserViewModel->ramSize());
+    ui->plainTextEditFeatures->setPlainText(m_mcuBrowserViewModel->features());
+    ui->plainTextEditDescription->setPlainText(m_mcuBrowserViewModel->description());
+    ui->lineEditUrl->setText(m_mcuBrowserViewModel->webPageUrl());
+    ui->lineEditDatasheetUrl->setText(m_mcuBrowserViewModel->datasheetUrl());
+    ui->lineEditSVD->setText(m_mcuBrowserViewModel->svdLocalPath());
+
+    // Заполнение списка алгоритмов отладки
+    ui->comboBoxDebugAlg->clear();
+
+    if(!m_mcuBrowserViewModel->debugAlgorithm().isEmpty())
+    {
+        ui->comboBoxDebugAlg->addItem(m_mcuBrowserViewModel->debugAlgorithm());
+        ui->comboBoxDebugAlg->setCurrentIndex(0);
+    }
+
+    // Заполнение списка алгоритмов программирования
+    ui->comboBoxFlashAlg->clear();
+
+    for(int i = 0; i < m_mcuBrowserViewModel->flashAlgorithms().count(); i++)
+    {
+        QString algo = m_mcuBrowserViewModel->flashAlgorithms().at(i);
+
+        ui->comboBoxFlashAlg->addItem(algo);
+
+        if(algo == m_mcuBrowserViewModel->defaultFlashAlgorithm())
+        {
+            ui->comboBoxFlashAlg->setCurrentIndex(i);
+        }
+    }
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -675,6 +733,7 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 
     if (!item) return;
 
+#if ASYNC_VIEW_MODEL
     int type = item->data(0, Qt::UserRole).toInt();
 
     switch(type)
@@ -697,6 +756,74 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
             requestMcuDetails(item);
             break;
     }
+#else
+    DeviceNode node = item->data(0, Qt::UserRole).value<DeviceNode>();
+
+    // 1. Обновляем модель
+    m_mcuBrowserViewModel->selectNode(node);
+
+    // 2. Обновляем информацию об MCU
+    showMcuDetails();
+
+#endif
+}
+
+//------------------------------------------------------------------------------
+// Построение дерева устройств
+//------------------------------------------------------------------------------
+void MainForm::updateTreeFromModel()
+{
+    ui->treeWidgetDevices->clear();
+
+    const auto& tree = m_mcuBrowserViewModel->deviceTree();
+
+    for (const auto& node : tree)
+    {
+        createTreeItem(node, nullptr);
+    }
+
+    // Разворачиваем до первого уровня
+    for (int i = 0; i < ui->treeWidgetDevices->topLevelItemCount(); ++i)
+    {
+        ui->treeWidgetDevices->topLevelItem(i)->setExpanded(true);
+    }
+}
+
+//------------------------------------------------------------------------------
+// Создание элемента дерева устройств
+//------------------------------------------------------------------------------
+QTreeWidgetItem*MainForm::createTreeItem(const DeviceNode& node, QTreeWidgetItem* parent)
+{
+    QTreeWidgetItem* item = parent ?
+                            new QTreeWidgetItem(parent) :
+                            new QTreeWidgetItem(ui->treeWidgetDevices);
+
+    item->setText(0, node.displayName);
+    item->setData(0, Qt::UserRole, QVariant::fromValue(node));
+
+    // Иконки для разных типов
+    QIcon icon;
+
+    switch (node.type)
+    {
+        case DeviceNode::VendorType: icon = style()->standardIcon(QStyle::SP_ComputerIcon); break;
+        case DeviceNode::FamilyType: icon = style()->standardIcon(QStyle::SP_DirIcon); break;
+        case DeviceNode::SeriesType: icon = style()->standardIcon(QStyle::SP_FileIcon); break;
+        case DeviceNode::McuType: icon = style()->standardIcon(QStyle::SP_FileLinkIcon); break;
+        default: break;
+    }
+
+    if (!icon.isNull())
+    {
+        item->setIcon(0, icon);
+    }
+
+    for (const auto& child : node.children)
+    {
+        createTreeItem(child, item);
+    }
+
+    return item;
 }
 
 //------------------------------------------------------------------------------
@@ -704,10 +831,19 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 //------------------------------------------------------------------------------
 void MainForm::expandDeviceTree()
 {
+#if ASYNC_VIEW_MODEL
     QString vendor = m_deviceViewModel->currentVendor();
     QString family = m_deviceViewModel->currentFamily();
     QString series = m_deviceViewModel->currentSeries();
     QString mcu = m_deviceViewModel->currentMcu();
+#else
+    if(!m_mcuBrowserViewModel->selectedNode().isValid()) return;
+
+    QString vendor = m_mcuBrowserViewModel->selectedVendor();
+    QString family = m_mcuBrowserViewModel->selectedFamily();
+    QString series = m_mcuBrowserViewModel->selectedSeries();
+    QString mcu = m_mcuBrowserViewModel->selectedMcu();
+#endif
 
     // Поиск без полного разворачивания
     QTreeWidgetItem* vItem = findVendorItem(vendor);
@@ -730,6 +866,11 @@ void MainForm::expandDeviceTree()
 
     ui->treeWidgetDevices->setCurrentItem(mItem);
     ui->treeWidgetDevices->scrollToItem(mItem);
+
+    if(m_mcuBrowserViewModel->selectedNode().isMcu())
+    {
+        showMcuDetails();
+    }
 }
 
 //------------------------------------------------------------------------------
