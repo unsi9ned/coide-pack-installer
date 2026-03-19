@@ -5,9 +5,11 @@
 //------------------------------------------------------------------------------
 // Конструктор
 //------------------------------------------------------------------------------
-McuBrowserViewModel::McuBrowserViewModel()
+McuBrowserViewModel::McuBrowserViewModel(QObject *parent) : QObject(parent)
 {
-
+    connect(this, &McuBrowserViewModel::loadResult,
+            this, &McuBrowserViewModel::onLoadResult,
+            Qt::QueuedConnection);
 }
 
 //------------------------------------------------------------------------------
@@ -69,6 +71,8 @@ void McuBrowserViewModel::selectNode(const DeviceNode& node)
 //------------------------------------------------------------------------------
 void McuBrowserViewModel::saveSelection()
 {
+    if(!m_selectedNode.isValid()) return;
+
     // Сохраняем в настройках
     Settings::instance()->saveSelectedVendor(m_selectedNode.vendorName);
     Settings::instance()->saveSelectedCore(m_selectedNode.familyName);
@@ -97,6 +101,36 @@ bool McuBrowserViewModel::loadPack(const QString& path)
     restoreSelection();
 
     return true;
+}
+
+//------------------------------------------------------------------------------
+// Загрузка и разбор пакета
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::loadPackAsync()
+{
+    loadPackAsync(Settings::instance()->lastLoadedPack());
+}
+
+//------------------------------------------------------------------------------
+// Загрузка и разбор пакета
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::loadPackAsync(const QString &path)
+{
+    emit loadStarted();
+
+    QtConcurrent::run([this, path]()
+    {
+        QString errorString;
+        bool success = loadPack(path);
+        emit loadResult(success, errorString);
+    });
+}
+
+void McuBrowserViewModel::onLoadResult(bool success, QString errorString)
+{
+    Q_UNUSED(errorString)
+
+    emit packLoaded(success);
 }
 
 //------------------------------------------------------------------------------

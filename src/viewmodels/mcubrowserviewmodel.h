@@ -45,8 +45,10 @@ Q_DECLARE_METATYPE(DeviceNode)
 //------------------------------------------------------------------------------
 // Контроллер устройств
 //------------------------------------------------------------------------------
-class McuBrowserViewModel
+class McuBrowserViewModel : public QObject
 {
+    Q_OBJECT
+
 private:
     PackDescription m_pack;
     PackManager m_packManager;
@@ -58,12 +60,14 @@ private:
     QMap<QString, Mcu*> m_mcuCache;
 
 public:
-    explicit McuBrowserViewModel();
+    explicit McuBrowserViewModel(QObject *parent = 0);
     ~McuBrowserViewModel();
 
     // Загрузка данных
     bool loadPack();
     bool loadPack(const QString& path);
+    void loadPackAsync();
+    void loadPackAsync(const QString& path);
 
     // Доступ к дереву
     const QList<DeviceNode>& deviceTree() const { return m_deviceTree; }
@@ -110,7 +114,13 @@ private:
                          const QString &family = QString(),
                          const QString &series = QString(),
                          const QString &mcu = QString());
+signals:
+    void loadStarted();
+    void packLoaded(bool success);
+    void loadResult(bool success, QString errorString);
 
+private slots:
+    void onLoadResult(bool success, QString errorString);
 };
 
 #endif // MCUBROWSERVIEWMODEL_H

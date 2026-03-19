@@ -17,9 +17,7 @@
 //------------------------------------------------------------------------------
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
-    //m_viewModel(new MainViewModel(this)),
-    m_deviceViewModel(new DeviceViewModel(this)),
-    m_mcuBrowserViewModel(new McuBrowserViewModel()),
+    m_mcuBrowserViewModel(new McuBrowserViewModel(this)),
     ui(new Ui::MainForm)
 {
     ui->setupUi(this);
@@ -78,125 +76,34 @@ MainForm::MainForm(QWidget *parent) :
             SLOT(printLogMessages(QString)));
 #endif
 
-#if 0
-    //--------------------------------------------------------------------------
-    // Отладка
-    //--------------------------------------------------------------------------
-    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "manufacturerChanged";
-    });
-
-    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "familyChanged";
-    });
-
-    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "seriesChanged";
-    });
-
-    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]() {
-       qInfo()  << "mcuChanged";
-    });
-    //--------------------------------------------------------------------------
-#elif 0
-    connect(m_deviceViewModel, &DeviceViewModel::deviceTreeChanged, [this](){
-        qInfo()  << "deviceTreeChanged";
-    });
-
-    connect(m_deviceViewModel, &DeviceViewModel::mcuSelected, [this](){
-        qInfo()  << "mcuSelected";
-    });
-
-    connect(m_deviceViewModel, &DeviceViewModel::loadStarted, [this]()
-    {
-        qInfo()  << "--------------------------------------------------------------------------";
-        qInfo()  << "loadStarted";
-    });
-
-    connect(m_deviceViewModel, &DeviceViewModel::loadFinished, [this]()
-    {
-        qInfo()  << "loadFinished";
-    });
-
-    connect(m_deviceViewModel, &DeviceViewModel::loadError, [this](const QString& error)
-    {
-        qInfo()  << "loadError";
-    });
-#endif
-
     //--------------------------------------------------------------------------
     // Сигналы загрузки
     //--------------------------------------------------------------------------
-#if 0
-    connect(m_viewModel, &MainViewModel::loadStarted, [this]()
-    {
-        ui->statusBar->showMessage("Загрузка...");
-        actionLoadDfp->setEnabled(false);
-        clearForm();
-    });
-
-    connect(m_viewModel, &MainViewModel::loadFinished, [this]() {
-        ui->lineEditRelease->setText(m_viewModel->releaseVersion());
-        actionLoadDfp->setEnabled(true);
-        ui->statusBar->showMessage("Готово", 3000);
-
-        updateDeviceTree();
-        updateComponentsTree();
-
-        selectMcu(m_viewModel->currentMcu(),
-                  m_viewModel->currentFamily(),
-                  m_viewModel->currentSeries(),
-                  m_viewModel->currentMcu());
-    });
-
-    connect(m_viewModel, &MainViewModel::loadFailed, [this](const QString& error) {
-        QMessageBox::critical(this, "Ошибка", error);
-        actionLoadDfp->setEnabled(true);
-    });
-
-    connect(m_viewModel, &MainViewModel::statusMessage,
-            ui->statusBar, &QStatusBar::showMessage);
-#elif ASYNC_VIEW_MODEL
-    connect(m_deviceViewModel, &DeviceViewModel::loadStarted, [this]()
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::loadStarted, [this]()
     {
         ui->statusBar->showMessage("Загрузка...");
         actionLoadDfp->setEnabled(false);
         ui->treeWidgetDevices->setEnabled(false);
-        clearForm();
     });
 
-    connect(m_deviceViewModel, &DeviceViewModel::loadFinished, [this]()
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::packLoaded, [this](bool success)
     {
-        ui->lineEditRelease->setText(m_deviceViewModel->releaseVersion());
         actionLoadDfp->setEnabled(true);
         ui->treeWidgetDevices->setEnabled(true);
-        ui->statusBar->showMessage("Готово", 3000);
-        expandDeviceTree();
+
+        if(success)
+        {
+            ui->statusBar->showMessage("Готово", 3000);
+
+            updateTreeFromModel();
+            expandDeviceTree();
+        }
+        else
+        {
+            ui->statusBar->showMessage("Ошибка загрузки пакета", 3000);
+        }
     });
 
-    connect(m_deviceViewModel, &DeviceViewModel::loadError, [this](const QString& error)
-    {
-        QMessageBox::critical(this, "Ошибка", error);
-        actionLoadDfp->setEnabled(true);
-        ui->treeWidgetDevices->setEnabled(true);
-    });
-
-
-    connect(m_deviceViewModel, &DeviceViewModel::mcuLoadDetailsStarted, [this]()
-    {
-        ui->treeWidgetDevices->setEnabled(false);
-    });
-
-    connect(m_deviceViewModel, &DeviceViewModel::mcuLoadDetailsFinished, [this]()
-    {
-        ui->treeWidgetDevices->setEnabled(true);
-    });
-
-    connect(m_deviceViewModel, &DeviceViewModel::mcuLoadDetailsFailed, [this]()
-    {
-        ui->treeWidgetDevices->setEnabled(true);
-    });
-#endif
     //--------------------------------------------------------------------------
     // Сигналы установки
     //--------------------------------------------------------------------------
@@ -243,163 +150,10 @@ MainForm::MainForm(QWidget *parent) :
 
     connect(m_viewModel, &MainViewModel::dbLogMessage, this, &MainForm::printLogMessages);
 #endif
-    //--------------------------------------------------------------------------
-    // Обновление списков
-    //--------------------------------------------------------------------------
-#if 0
-    connect(m_viewModel, &MainViewModel::vendorsChanged, [this]() {
-        ui->listWidgetManufacturer->clear();
-        ui->listWidgetManufacturer->addItems(m_viewModel->vendors());
-    });
-
-    connect(m_viewModel, &MainViewModel::familiesChanged, [this]() {
-        ui->listWidgetFamily->clear();
-        ui->listWidgetFamily->addItems(m_viewModel->families());
-
-        if(!m_viewModel->currentVendor().isEmpty())
-        {
-            auto items = ui->listWidgetManufacturer->findItems(m_viewModel->currentVendor(), Qt::MatchExactly);
-
-            if(!items.isEmpty())
-            {
-                ui->listWidgetManufacturer->setCurrentItem(items.first());
-            }
-        }
-    });
-
-    connect(m_viewModel, &MainViewModel::seriesChanged, [this]() {
-        ui->listWidgetSeries->clear();
-        ui->listWidgetSeries->addItems(m_viewModel->series());
-
-        if(!m_viewModel->currentFamily().isEmpty())
-        {
-            auto items = ui->listWidgetFamily->findItems(m_viewModel->currentFamily(), Qt::MatchExactly);
-
-            if(!items.isEmpty())
-            {
-                ui->listWidgetFamily->setCurrentItem(items.first());
-            }
-        }
-    });
-
-    connect(m_viewModel, &MainViewModel::mcusChanged, [this]()
-    {
-        ui->listWidgetMcu->clear();
-        ui->listWidgetMcu->addItems(m_viewModel->mcus());
-
-        if(!m_viewModel->currentSeries().isEmpty())
-        {
-            auto items = ui->listWidgetSeries->findItems(m_viewModel->currentSeries(), Qt::MatchExactly);
-
-            if(!items.isEmpty())
-            {
-                ui->listWidgetSeries->setCurrentItem(items.first());
-            }
-        }
-    });
-
-
-    // Обновление детальной информации
-    connect(m_viewModel, &MainViewModel::mcuChanged, [this]()
-    {
-        ui->lineEditFlashStart->setText(m_viewModel->flashStart());
-        ui->lineEditFlashSize->setText(m_viewModel->flashSize());
-        ui->lineEditRamStart->setText(m_viewModel->ramStart());
-        ui->lineEditRamSize->setText(m_viewModel->ramSize());
-        ui->plainTextEditFeatures->setPlainText(m_viewModel->features());
-        ui->plainTextEditDescription->setPlainText(m_viewModel->description());
-        ui->lineEditUrl->setText(m_viewModel->webPageUrl());
-        ui->lineEditDatasheetUrl->setText(m_viewModel->datasheetUrl());
-        ui->lineEditSVD->setText(m_viewModel->svdLocalPath());
-
-        // Заполнение списка алгоритмов отладки
-        ui->comboBoxDebugAlg->clear();
-
-        if(!m_viewModel->debugAlgorithm().isEmpty())
-        {
-            ui->comboBoxDebugAlg->addItem(m_viewModel->debugAlgorithm());
-            ui->comboBoxDebugAlg->setCurrentIndex(0);
-        }
-
-        // Заполнение списка алгоритмов программирования
-        ui->comboBoxFlashAlg->clear();
-
-        for(int i = 0; i < m_viewModel->flashAlgorithms().count(); i++)
-        {
-            QString algo = m_viewModel->flashAlgorithms().at(i);
-
-            ui->comboBoxFlashAlg->addItem(algo);
-
-            if(algo == m_viewModel->currentFlashAlgorithm())
-            {
-                ui->comboBoxFlashAlg->setCurrentIndex(i);
-            }
-        }
-
-        // Восстанавливаем выбор, если элемент еще существует
-        if (!m_viewModel->currentMcu().isEmpty())
-        {
-            auto items = ui->listWidgetMcu->findItems(m_viewModel->currentMcu(), Qt::MatchExactly);
-            if (!items.isEmpty())
-            {
-                ui->listWidgetMcu->setCurrentItem(items.first());
-            }
-        }
-    });
-#elif ASYNC_VIEW_MODEL
-    // Обновление дерева устройств
-    connect(m_deviceViewModel, &DeviceViewModel::deviceTreeChanged, this, &MainForm::updateDeviceTree);
-
-    // Обновление информации об устройстве
-    connect(m_deviceViewModel, &DeviceViewModel::mcuSelected, this, &MainForm::showMcuDetails);
-#endif
-
 
     //--------------------------------------------------------------------------
     // Пользовательский ввод
     //--------------------------------------------------------------------------
-#if 0
-    // Выбор производителя
-    connect(ui->listWidgetManufacturer, &QListWidget::currentRowChanged, [this]()
-    {
-        QListWidgetItem * currentItem = ui->listWidgetManufacturer->currentItem();
-
-        if(currentItem)
-        {
-            m_viewModel->selectVendor(currentItem->text());
-        }
-    });
-
-    connect(ui->listWidgetFamily, &QListWidget::currentRowChanged, [this]()
-    {
-        QListWidgetItem * currentItem = ui->listWidgetFamily->currentItem();
-
-        if(currentItem)
-        {
-            m_viewModel->selectFamily(currentItem->text());
-        }
-    });
-
-    connect(ui->listWidgetSeries, &QListWidget::currentRowChanged, [this]()
-    {
-        QListWidgetItem * currentItem = ui->listWidgetSeries->currentItem();
-
-        if(currentItem)
-        {
-            m_viewModel->selectSeries(currentItem->text());
-        }
-    });
-
-    connect(ui->listWidgetMcu, &QListWidget::currentRowChanged, [this]()
-    {
-        QListWidgetItem * currentItem = ui->listWidgetMcu->currentItem();
-
-        if(currentItem)
-        {
-            m_viewModel->selectMcu(currentItem->text());
-        }
-    });
-#endif
 
     // Подключаем выбор элемента дерева устройств
     connect(ui->treeWidgetDevices, &QTreeWidget::itemClicked, this, &MainForm::onDeviceTreeItemClicked);
@@ -415,6 +169,7 @@ MainForm::MainForm(QWidget *parent) :
     // Подключаем кнопку перезагрузки данных к команде ViewModel
     connect(actionReloadDfp, &QAction::triggered, [this]()
     {
+        m_mcuBrowserViewModel->saveSelection();
         loadDFP(true);
     });
 
@@ -439,7 +194,6 @@ MainForm::MainForm(QWidget *parent) :
 //------------------------------------------------------------------------------
 MainForm::~MainForm()
 {
-    //delete m_viewModel;
     delete m_mcuBrowserViewModel;
     delete ui;
 }
@@ -496,16 +250,7 @@ void MainForm::loadDFP(bool hideFileDialog)
 {
     if(hideFileDialog)
     {
-#if ASYNC_VIEW_MODEL
-        //m_viewModel->loadDeviceFamilyPack();
-        m_deviceViewModel->loadDeviceFamilyPack();
-#else
-        if(m_mcuBrowserViewModel->loadPack())
-        {
-            updateTreeFromModel();
-            expandDeviceTree();
-        }
-#endif
+        m_mcuBrowserViewModel->loadPackAsync();
         return;
     }
 
@@ -520,16 +265,7 @@ void MainForm::loadDFP(bool hideFileDialog)
         QString path = dialog.selectedFiles().first();
         Settings::instance()->saveLastLoadedPack(path);
 
-#if ASYNC_VIEW_MODEL
-        //m_viewModel->loadDeviceFamilyPack();
-        m_deviceViewModel->loadDeviceFamilyPack();
-#else
-        if(m_mcuBrowserViewModel->loadPack())
-        {
-            updateTreeFromModel();
-            expandDeviceTree();
-        }
-#endif
+        m_mcuBrowserViewModel->loadPackAsync();
     }
 }
 
@@ -542,63 +278,11 @@ void MainForm::printLogMessages(QString msg)
     ui->plainTextEdit->verticalScrollBar()->setValue(ui->plainTextEdit->verticalScrollBar()->maximum());
 }
 
-
-
-//------------------------------------------------------------------------------
-// Запросить данные о микроконтроллере
-//------------------------------------------------------------------------------
-void MainForm::requestMcuDetails(QTreeWidgetItem *item)
-{
-    if(item->data(0, Qt::UserRole).toInt() != MainForm::TypeMcu) return;
-
-    QString vendor = item->parent()->parent()->parent()->text(0);
-    QString armCore = item->parent()->parent()->text(0);
-    QString series = item->parent()->text(0);
-    QString mcu = item->text(0);
-
-    m_deviceViewModel->selectNodeByPath(vendor, armCore, series, mcu);
-}
-
 //------------------------------------------------------------------------------
 // Отображение подробной информации о выбранном микроконтроллере
 //------------------------------------------------------------------------------
 void MainForm::showMcuDetails()
 {
-#if ASYNC_VIEW_MODEL
-    ui->lineEditFlashStart->setText(m_deviceViewModel->mcuDetails()->flashStart());
-    ui->lineEditFlashSize->setText(m_deviceViewModel->mcuDetails()->flashSize());
-    ui->lineEditRamStart->setText(m_deviceViewModel->mcuDetails()->ramStart());
-    ui->lineEditRamSize->setText(m_deviceViewModel->mcuDetails()->ramSize());
-    ui->plainTextEditFeatures->setPlainText(m_deviceViewModel->mcuDetails()->features());
-    ui->plainTextEditDescription->setPlainText(m_deviceViewModel->mcuDetails()->description());
-    ui->lineEditUrl->setText(m_deviceViewModel->mcuDetails()->webPageUrl());
-    ui->lineEditDatasheetUrl->setText(m_deviceViewModel->mcuDetails()->datasheetUrl());
-    ui->lineEditSVD->setText(m_deviceViewModel->mcuDetails()->svdLocalPath());
-
-    // Заполнение списка алгоритмов отладки
-    ui->comboBoxDebugAlg->clear();
-
-    if(!m_deviceViewModel->mcuDetails()->debugAlgorithm().isEmpty())
-    {
-        ui->comboBoxDebugAlg->addItem(m_deviceViewModel->mcuDetails()->debugAlgorithm());
-        ui->comboBoxDebugAlg->setCurrentIndex(0);
-    }
-
-    // Заполнение списка алгоритмов программирования
-    ui->comboBoxFlashAlg->clear();
-
-    for(int i = 0; i < m_deviceViewModel->mcuDetails()->flashAlgorithms().count(); i++)
-    {
-        QString algo = m_deviceViewModel->mcuDetails()->flashAlgorithms().at(i);
-
-        ui->comboBoxFlashAlg->addItem(algo);
-
-        if(algo == m_deviceViewModel->mcuDetails()->currentFlashAlgorithm())
-        {
-            ui->comboBoxFlashAlg->setCurrentIndex(i);
-        }
-    }
-#else
     ui->lineEditRelease->setText(m_mcuBrowserViewModel->releaseVersion());
     ui->lineEditFlashStart->setText(m_mcuBrowserViewModel->flashStart());
     ui->lineEditFlashSize->setText(m_mcuBrowserViewModel->flashSize());
@@ -633,7 +317,6 @@ void MainForm::showMcuDetails()
             ui->comboBoxFlashAlg->setCurrentIndex(i);
         }
     }
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -653,42 +336,6 @@ void MainForm::clearForm()
     ui->lineEditSVD->clear();
     ui->lineEditDatasheetUrl->clear();
     ui->lineEditUrl->clear();
-}
-
-//------------------------------------------------------------------------------
-// Обновление дерева устройств
-//------------------------------------------------------------------------------
-void MainForm::updateDeviceTree()
-{
-    ui->treeWidgetDevices->clear();
-
-    for (auto& vNode : m_deviceViewModel->deviceTree())
-    {
-        QTreeWidgetItem* vItem = new QTreeWidgetItem(ui->treeWidgetDevices);
-        vItem->setText(0, vNode.name);
-        vItem->setData(0, Qt::UserRole, vNode.type);
-
-        for (auto& fNode : vNode.children)
-        {
-            QTreeWidgetItem* fItem = new QTreeWidgetItem(vItem);
-            fItem->setText(0, fNode.name);
-            fItem->setData(0, Qt::UserRole, fNode.type);
-
-            for (auto& sNode : fNode.children)
-            {
-                QTreeWidgetItem* sItem = new QTreeWidgetItem(fItem);
-                sItem->setText(0, sNode.name);
-                sItem->setData(0, Qt::UserRole, sNode.type);
-
-                for (auto& mNode : sNode.children)
-                {
-                    QTreeWidgetItem* mItem = new QTreeWidgetItem(sItem);
-                    mItem->setText(0, mNode.name);
-                    mItem->setData(0, Qt::UserRole, mNode.type);
-                }
-            }
-        }
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -733,30 +380,6 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 
     if (!item) return;
 
-#if ASYNC_VIEW_MODEL
-    int type = item->data(0, Qt::UserRole).toInt();
-
-    switch(type)
-    {
-        case TypeVendor:
-#if 0
-            ui->lineEditUrl->setText(pack.url());
-            ui->lineEditRelease->setText(pack.release());
-            ui->plainTextEditDescription->setPlainText(pack.description());
-#endif
-            break;
-
-        case TypeFamily:
-            break;
-
-        case TypeSeries:
-            break;
-
-        case TypeMcu:
-            requestMcuDetails(item);
-            break;
-    }
-#else
     DeviceNode node = item->data(0, Qt::UserRole).value<DeviceNode>();
 
     // 1. Обновляем модель
@@ -764,8 +387,6 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 
     // 2. Обновляем информацию об MCU
     showMcuDetails();
-
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -831,19 +452,12 @@ QTreeWidgetItem*MainForm::createTreeItem(const DeviceNode& node, QTreeWidgetItem
 //------------------------------------------------------------------------------
 void MainForm::expandDeviceTree()
 {
-#if ASYNC_VIEW_MODEL
-    QString vendor = m_deviceViewModel->currentVendor();
-    QString family = m_deviceViewModel->currentFamily();
-    QString series = m_deviceViewModel->currentSeries();
-    QString mcu = m_deviceViewModel->currentMcu();
-#else
     if(!m_mcuBrowserViewModel->selectedNode().isValid()) return;
 
     QString vendor = m_mcuBrowserViewModel->selectedVendor();
     QString family = m_mcuBrowserViewModel->selectedFamily();
     QString series = m_mcuBrowserViewModel->selectedSeries();
     QString mcu = m_mcuBrowserViewModel->selectedMcu();
-#endif
 
     // Поиск без полного разворачивания
     QTreeWidgetItem* vItem = findVendorItem(vendor);
@@ -870,34 +484,6 @@ void MainForm::expandDeviceTree()
     if(m_mcuBrowserViewModel->selectedNode().isMcu())
     {
         showMcuDetails();
-    }
-}
-
-//------------------------------------------------------------------------------
-// Обновление дерева компонентов
-//------------------------------------------------------------------------------
-void MainForm::updateComponentsTree(QTreeWidgetItem *parentItem, Component *component)
-{
-    if(!parentItem || !component) return;
-
-    foreach (Component * child, component->getChildren())
-    {
-        QTreeWidgetItem * item = new  QTreeWidgetItem(parentItem);
-        item->setText(0, child->getName());
-        item->setText(1, child->getDescription());
-
-        if(child->hasChildren())
-        {
-            updateComponentsTree(item, child);
-        }
-//        else
-//        {
-//            foreach(QString mcu, child->supportedMcuList())
-//            {
-//                QTreeWidgetItem * mcuItem = new QTreeWidgetItem(item);
-//                mcuItem->setText(0, mcu);
-//            }
-//        }
     }
 }
 
@@ -933,4 +519,32 @@ QTreeWidgetItem *MainForm::findChildItem(QTreeWidgetItem *parent, const QString 
         }
     }
     return nullptr;
+}
+
+//------------------------------------------------------------------------------
+// Обновление дерева компонентов
+//------------------------------------------------------------------------------
+void MainForm::updateComponentsTree(QTreeWidgetItem *parentItem, Component *component)
+{
+    if(!parentItem || !component) return;
+
+    foreach (Component * child, component->getChildren())
+    {
+        QTreeWidgetItem * item = new  QTreeWidgetItem(parentItem);
+        item->setText(0, child->getName());
+        item->setText(1, child->getDescription());
+
+        if(child->hasChildren())
+        {
+            updateComponentsTree(item, child);
+        }
+//        else
+//        {
+//            foreach(QString mcu, child->supportedMcuList())
+//            {
+//                QTreeWidgetItem * mcuItem = new QTreeWidgetItem(item);
+//                mcuItem->setText(0, mcu);
+//            }
+//        }
+    }
 }

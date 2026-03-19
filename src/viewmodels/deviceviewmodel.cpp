@@ -238,10 +238,10 @@ void DeviceViewModel::selectNodeByPath(const QString& vendor,
     m_currentMcu = mcu;
 
     // Сохраняем в настройках
-    Settings::instance()->saveSelectedVendor(vendor);
-    Settings::instance()->saveSelectedCore(family);
-    Settings::instance()->saveSelectedSeries(series);
-    Settings::instance()->saveSelectedMcu(mcu);
+//    Settings::instance()->saveSelectedVendor(vendor);
+//    Settings::instance()->saveSelectedCore(family);
+//    Settings::instance()->saveSelectedSeries(series);
+//    Settings::instance()->saveSelectedMcu(mcu);
 
     // Находим узел
     DeviceTreeNode* node = findNode(vendor, family, series, mcu);

@@ -30,14 +30,6 @@ class MainForm : public QMainWindow
 {
     Q_OBJECT
 
-    enum DeviceTreeItemType
-    {
-        TypeVendor,
-        TypeFamily,
-        TypeSeries,
-        TypeMcu
-    };
-
 private:
     QAction * actionLoadDfp;
     QAction * actionReloadDfp;
@@ -45,8 +37,6 @@ private:
     QAction * actionInstall;
     QAction * actionSettings;
 
-    //MainViewModel * m_viewModel;
-    DeviceViewModel * m_deviceViewModel;
     McuBrowserViewModel * m_mcuBrowserViewModel;
 
 public:
@@ -64,11 +54,8 @@ private slots:
     void changeCoIDEPath();
     void loadDFP(bool hideFileDialog = false);
 
-
-    void requestMcuDetails(QTreeWidgetItem * item);
     void showMcuDetails();
     void clearForm();
-    void updateDeviceTree();
     void updateComponentsTree();
     void onDeviceTreeItemClicked(QTreeWidgetItem *item, int column);
 
@@ -77,10 +64,10 @@ private:
     QTreeWidgetItem* createTreeItem(const DeviceNode& node, QTreeWidgetItem* parent = nullptr);
 
     void expandDeviceTree();
-    void updateComponentsTree(QTreeWidgetItem *parentItem, Component * component);
     QTreeWidgetItem* findVendorItem(const QString& vendor);
     QTreeWidgetItem* findChildItem(QTreeWidgetItem * parent, const QString& text);
 
+    void updateComponentsTree(QTreeWidgetItem *parentItem, Component * component);
 
     Ui::MainForm *ui;
 };
