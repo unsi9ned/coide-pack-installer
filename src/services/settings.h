@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QString>
 #include <QMutex>
+#include <QMutexLocker>
 #include <QRect>
 
 class Settings : public QObject
@@ -22,8 +23,6 @@ private:
     static constexpr const char* DEVICE_PARAMETER_CORE = "Core";
     static constexpr const char* DEVICE_PARAMETER_SERIES = "Series";
     static constexpr const char* DEVICE_PARAMETER_MCU = "Mcu";
-
-    static QMutex settingsAccessMutex;
 
     explicit Settings(QObject *parent = nullptr);
     ~Settings();
