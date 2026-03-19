@@ -57,7 +57,6 @@ private slots:
     void showMcuDetails();
     void clearForm();
     void lockUI(bool enabled);
-    void updateComponentsTree();
     void onDeviceTreeItemClicked(QTreeWidgetItem *item, int column);
 
 private:
@@ -68,7 +67,8 @@ private:
     QTreeWidgetItem* findVendorItem(const QString& vendor);
     QTreeWidgetItem* findChildItem(QTreeWidgetItem * parent, const QString& text);
 
-    void updateComponentsTree(QTreeWidgetItem *parentItem, Component * component);
+    void updateComponentsTree();
+    QTreeWidgetItem* createComponentTreeItem(const ComponentNode& node, QTreeWidgetItem* parent = nullptr);
 
     Ui::MainForm *ui;
 };

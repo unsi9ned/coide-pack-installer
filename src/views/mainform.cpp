@@ -10,8 +10,6 @@
 #include "services/settings.h"
 #include "utils/versionhelper.h"
 
-#define ASYNC_VIEW_MODEL 0
-
 //------------------------------------------------------------------------------
 // Конструктор окна
 //------------------------------------------------------------------------------
@@ -94,6 +92,7 @@ MainForm::MainForm(QWidget *parent) :
             ui->statusBar->showMessage("Готово", 3000);
 
             updateTreeFromModel();
+            updateComponentsTree();
             expandDeviceTree();
         }
         else
@@ -509,59 +508,50 @@ QTreeWidgetItem *MainForm::findChildItem(QTreeWidgetItem *parent, const QString 
 //------------------------------------------------------------------------------
 void MainForm::updateComponentsTree()
 {
-#if 0
-    if(pack.coComponentMap().isEmpty()) return;
-
     ui->treeWidgetComponents->clear();
 
-    for(auto& component : pack.coComponentMap())
-    {
-        if(!component.hasParents())
-        {
-            QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidgetComponents);
-            item->setText(0, component.getName());
-            item->setText(1, component.getDescription());
+    const auto& tree = m_mcuBrowserViewModel->componentTree();
 
-            if(component.hasChildren())
-            {
-                updateComponentsTree(item, &component);
-            }
-        }
+    for (const auto& node : tree)
+    {
+        createComponentTreeItem(node, nullptr);
     }
-#if 1
+
+    // Разворачиваем до первого уровня
+    for (int i = 0; i < ui->treeWidgetComponents->topLevelItemCount(); ++i)
+    {
+        ui->treeWidgetComponents->topLevelItem(i)->setExpanded(true);
+    }
+
     ui->treeWidgetComponents->resizeColumnToContents(0);
     ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->columnWidth(0) + 20);
-#else
-    ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->width()/2);
-#endif
-#endif
 }
 
-
 //------------------------------------------------------------------------------
-// Обновление дерева компонентов
+// Создание элемента дерева компонентов
 //------------------------------------------------------------------------------
-void MainForm::updateComponentsTree(QTreeWidgetItem *parentItem, Component *component)
+QTreeWidgetItem *MainForm::createComponentTreeItem(const ComponentNode &node,
+                                                   QTreeWidgetItem *parent)
 {
-    if(!parentItem || !component) return;
+    QTreeWidgetItem* item = parent ?
+                            new QTreeWidgetItem(parent) :
+                            new QTreeWidgetItem(ui->treeWidgetComponents);
 
-    foreach (Component * child, component->getChildren())
+    item->setText(0, node.name);
+    item->setData(0, Qt::UserRole, QVariant::fromValue(node));
+    item->setText(1, node.description);
+
+    // Иконки
+    if(node.hasChildren())
+        item->setIcon(0, style()->standardIcon(QStyle::SP_DirIcon));
+    else
+        item->setIcon(0, style()->standardIcon(QStyle::SP_FileIcon));
+
+    for (const auto& child : node.children)
     {
-        QTreeWidgetItem * item = new  QTreeWidgetItem(parentItem);
-        item->setText(0, child->getName());
-        item->setText(1, child->getDescription());
-
-        if(child->hasChildren())
-        {
-            updateComponentsTree(item, child);
-        }
-//        else
-//        {
-//            foreach(QString mcu, child->supportedMcuList())
-//            {
-//                QTreeWidgetItem * mcuItem = new QTreeWidgetItem(item);
-//                mcuItem->setText(0, mcu);
-//            }
-//        }
+        createComponentTreeItem(child, item);
     }
+
+    return item;
 }
+

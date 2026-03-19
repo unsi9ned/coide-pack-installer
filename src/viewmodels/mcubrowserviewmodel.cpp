@@ -105,6 +105,8 @@ bool McuBrowserViewModel::loadPack(const QString& path)
     buildDeviceTree();
     restoreSelection();
 
+    buildComponentTree();
+
     return true;
 }
 
@@ -378,6 +380,39 @@ DeviceNode* McuBrowserViewModel::findNode(const QString& vendor,
         }
     }
     return nullptr;
+}
+
+//------------------------------------------------------------------------------
+// Построение дерева компонентов
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::buildComponentTree()
+{
+    m_componentTree.clear();
+
+    for(auto& component : m_pack.coComponentMap())
+    {
+        if(!component.hasParents())
+        {
+            m_componentTree.append(buildComponentNode(component));
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+// Создание узла компонента
+//------------------------------------------------------------------------------
+ComponentNode McuBrowserViewModel::buildComponentNode(const Component &component)
+{
+    ComponentNode node;
+    node.name = component.getName();
+    node.description = component.getDescription();
+
+    foreach(auto child, component.getChildren())
+    {
+        node.children.append(buildComponentNode(*child));
+    }
+
+    return node;
 }
 
 //------------------------------------------------------------------------------

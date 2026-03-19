@@ -40,7 +40,20 @@ struct DeviceNode
     bool isValid() const { return type == InvalidType || !name.isEmpty(); }
 };
 
+//------------------------------------------------------------------------------
+// Структура для представления компонента в дереве
+//------------------------------------------------------------------------------
+struct ComponentNode
+{
+    QString name;
+    QString description;
+    QList<ComponentNode> children;
+
+    bool hasChildren() const { return !children.isEmpty(); }
+};
+
 Q_DECLARE_METATYPE(DeviceNode)
+Q_DECLARE_METATYPE(ComponentNode)
 
 //------------------------------------------------------------------------------
 // Контроллер устройств
@@ -59,6 +72,8 @@ private:
     // Для быстрого доступа
     QMap<QString, Mcu*> m_mcuCache;
 
+    QList<ComponentNode> m_componentTree;
+
 public:
     explicit McuBrowserViewModel(QObject *parent = 0);
     ~McuBrowserViewModel();
@@ -73,6 +88,7 @@ public:
 
     // Доступ к дереву
     const QList<DeviceNode>& deviceTree() const { return m_deviceTree; }
+    const QList<ComponentNode>& componentTree() const { return m_componentTree; }
 
     // Навигация (без сигналов!)
     void selectNode(const DeviceNode& node);
@@ -116,6 +132,9 @@ private:
                          const QString &family = QString(),
                          const QString &series = QString(),
                          const QString &mcu = QString());
+
+    void buildComponentTree();
+    ComponentNode buildComponentNode(const Component& component);
 signals:
     void loadStarted();
     void loadResult(bool success, QString errorString);
