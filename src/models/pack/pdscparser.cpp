@@ -167,7 +167,8 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
         {
             QDomNode componentNode = components.at(i);
 
-            if(componentNode.isComment())
+            //TODO bundle пока не умеем обрабатывать (см. Keil.SAMD20_DFP.pdsc)
+            if(componentNode.isComment() || componentNode.nodeName().toLower() != "component")
                 continue;
 
             PdscComponent component = parseComponent(componentNode, conditionList);
