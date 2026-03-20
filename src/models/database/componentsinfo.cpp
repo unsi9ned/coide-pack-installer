@@ -696,11 +696,11 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
             {
                 foreach (Component* child, children)
                 {
-                    bool hasLink = hasComponentsLink(component.getId(), child->getId(), &status, errorString);
+                    bool hasLink = hasComponentsLink(child->getId(), component.getId(), &status, errorString);
 
                     if(status && !hasLink)
                     {
-                        if(!createComponentsLink(component.getId(), child->getId(), errorString))
+                        if(!createComponentsLink(child->getId(), component.getId(), errorString))
                             return false;
                     }
                     else if(!status)
