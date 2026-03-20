@@ -160,6 +160,9 @@ MainForm::MainForm(QWidget *parent) :
     // Подключаем выбор элемента дерева устройств
     connect(ui->treeWidgetDevices, &QTreeWidget::itemClicked, this, &MainForm::onDeviceTreeItemClicked);
 
+    // Подключаем выбор элемента дерева устройств
+    connect(ui->treeWidgetComponents, &QTreeWidget::itemClicked, this, &MainForm::onComponentTreeItemClicked);
+
     // Подключаем кнопку оптимизации БД к команде ViewModel
     connect(actionDbOptimize, &QAction::triggered, m_mcuBrowserViewModel, &McuBrowserViewModel::optimizeDatabase);
 
@@ -349,6 +352,7 @@ void MainForm::clearForm()
     ui->lineEditFamilyId->clear();
     ui->lineEditSeriesId->clear();
     ui->lineEditMcuId->clear();
+    ui->lineEditComponentId->clear();
 }
 
 //------------------------------------------------------------------------------
@@ -385,6 +389,21 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 
     // 2. Обновляем информацию об MCU
     showMcuDetails();
+}
+
+//------------------------------------------------------------------------------
+// Реакция на выбор элемента в дереве компонентов
+//------------------------------------------------------------------------------
+void MainForm::onComponentTreeItemClicked(QTreeWidgetItem* item, int column)
+{
+    Q_UNUSED(column);
+
+    if (!item) return;
+
+    ComponentNode node = item->data(0, Qt::UserRole).value<ComponentNode>();
+
+    m_mcuBrowserViewModel->selectComponentNode(node);
+    ui->lineEditComponentId->setText(m_mcuBrowserViewModel->componentId());
 }
 
 //------------------------------------------------------------------------------

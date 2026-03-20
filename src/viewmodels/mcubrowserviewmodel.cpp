@@ -66,6 +66,15 @@ void McuBrowserViewModel::selectNode(const DeviceNode& node)
 }
 
 //------------------------------------------------------------------------------
+// Выбор узла компонента
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::selectComponentNode(const ComponentNode& node)
+{
+    if(node.isValid())
+        m_selectedComponentNode = node;
+}
+
+//------------------------------------------------------------------------------
 // Сохранение информации о выбранном устройстве
 //------------------------------------------------------------------------------
 void McuBrowserViewModel::saveSelection()
@@ -410,6 +419,7 @@ ComponentNode McuBrowserViewModel::buildComponentNode(const Component &component
     node.name = component.getName();
     node.description = component.getDescription();
     node.level = parent ? parent->level + 1 : 0;
+    node.hierarchyNode = &component;
 
     if(node.level < 5)
     {
@@ -690,4 +700,13 @@ QString McuBrowserViewModel::mcuId() const
 QString McuBrowserViewModel::devNodePath() const
 {
     return m_selectedNode.hierarchyNode->getPath();
+}
+
+//------------------------------------------------------------------------------
+// Уникальный ID компонента
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::componentId() const
+{
+    qint32 id = m_selectedComponentNode.hierarchyNode->getUniqueId();
+    return id == -1 ? QString() : QString::number(id);
 }

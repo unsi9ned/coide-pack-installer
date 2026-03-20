@@ -58,7 +58,9 @@ private slots:
     void showMcuDetails();
     void clearForm();
     void lockUI(bool enabled);
+
     void onDeviceTreeItemClicked(QTreeWidgetItem *item, int column);
+    void onComponentTreeItemClicked(QTreeWidgetItem *item, int column);
 
 private:
     void updateTreeFromModel();

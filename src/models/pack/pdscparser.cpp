@@ -909,6 +909,11 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             gccComponent.files().clear();
                             gccComponent.files().append(device.compileHeaders());
 
+                            gccComponent.setPdscVendor(pack.packVendor());
+                            gccComponent.setPdscClass("Device");
+                            gccComponent.setPdscGroup("Compile");
+                            gccComponent.setPdscVersion(pack.release());
+
                             if(coComponentMap.values().contains(gccComponent))
                             {
                                 for(auto it = coComponentMap.begin(); it != coComponentMap.end(); ++it)
@@ -980,6 +985,27 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                                                                         device,
                                                                         pComponent,
                                                                         componentList));
+
+                            //
+                            // Заполняем поля, которые помогут идентифицировать
+                            // компонент как уникальный объект
+                            //
+                            if(!pComponent.attributes().getCvendor().isEmpty())
+                                coComponent.setPdscVendor(pComponent.attributes().getCvendor());
+                            else
+                                coComponent.setPdscVendor(pack.packVendor());
+
+                            coComponent.setPdscClass(pComponent.attributes().getCclass());
+                            coComponent.setPdscGroup(pComponent.attributes().getCgroup());
+                            coComponent.setPdscSub(pComponent.attributes().getCsub());
+                            coComponent.setPdscVariant(pComponent.attributes().getCvariant());
+
+                            if(!pComponent.attributes().getCversion().isEmpty())
+                                coComponent.setPdscVersion(pComponent.attributes().getCversion());
+                            else
+                                coComponent.setPdscVersion(pack.release());
+
+                            coComponent.setPdscCondition(pComponent.condition().id());
 
                             //
                             // Добавляем текущий компонент в карту

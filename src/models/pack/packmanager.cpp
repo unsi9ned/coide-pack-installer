@@ -57,6 +57,11 @@ void PackManager::readPackDescription(PackDescription &pack)
         coComponent.setCategory(coCategory);
         coComponent.setDescription(it.value());
 
+        coComponent.setPdscVendor("ARM");
+        coComponent.setPdscClass("CMSIS");
+        coComponent.setPdscGroup("CORE");
+        coComponent.setPdscVersion(coComponent.getVersion());
+
         //
         // Чтение списка файлов в арвхиве и распаковка
         //

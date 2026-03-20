@@ -60,10 +60,16 @@ struct ComponentNode
     QString name;
     QString description;
     QList<ComponentNode> children;
+    const DeviceHierarchyNode* hierarchyNode;
 
-    ComponentNode() : level(0){}
+    ComponentNode() : level(0)
+    {
+        static DeviceHierarchyNode nullHierarchyNode;
+        hierarchyNode = &nullHierarchyNode;
+    }
 
     bool hasChildren() const { return !children.isEmpty(); }
+    bool isValid() const { return !name.isEmpty(); }
 };
 
 Q_DECLARE_METATYPE(DeviceNode)
@@ -87,6 +93,7 @@ private:
     QMap<QString, Mcu*> m_mcuCache;
 
     QList<ComponentNode> m_componentTree;
+    ComponentNode m_selectedComponentNode;
 
 public:
     explicit McuBrowserViewModel(QObject *parent = 0);
@@ -104,8 +111,9 @@ public:
     const QList<DeviceNode>& deviceTree() const { return m_deviceTree; }
     const QList<ComponentNode>& componentTree() const { return m_componentTree; }
 
-    // Навигация (без сигналов!)
+    // Навигация
     void selectNode(const DeviceNode& node);
+    void selectComponentNode(const ComponentNode& node);
 
     // Сохранение информации о выбранном устройстве
     void saveSelection();
@@ -140,6 +148,8 @@ public:
     QString mcuId() const;
 
     QString devNodePath() const;
+
+    QString componentId() const;
 
 private:
     void buildDeviceTree();

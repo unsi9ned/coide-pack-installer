@@ -57,7 +57,6 @@ private:
                                  const QList<PdscCondition>& conditionList);
     PdscFile parseFile(const QDomNode& fileNode,
                        const QList<PdscCondition>& conditionList);
-    void loadComponents(const QList<PdscComponent>& componentList, PackDescription& pack);
     void loadComponents(QMap<QString, Component>& coComponentMap,
                         QMap<QString, QList<ParentComponentInfo> >& parentComponentInfoMap,
                         const QList<PdscComponent>& componentList,

@@ -1,11 +1,17 @@
 #include <QUuid>
 #include <QDateTime>
+#include <QStringList>
 #include "component.h"
 #include "common/constants.h"
 
 int Component::getId() const
 {
     return id;
+}
+
+qint32 Component::getCoMaxId() const
+{
+    return ID_COMPONENT_LAST;
 }
 
 void Component::setId(int value)
@@ -580,6 +586,31 @@ Component::operator==(const Component &component)
     equal = equal && currFileList.isEmpty();
 
     return equal;
+}
+
+QString Component::getPath() const
+{
+    QString localCondition;
+
+    if(name.startsWith("Compile_") && !_supportsMcuList.isEmpty())
+    {
+        QStringList mcuList = _supportsMcuList;
+        std::sort(mcuList.begin(), mcuList.end());
+        localCondition = mcuList.join("+") + "/";
+    }
+
+    QString path = m_cvendor.isEmpty() ? "" : m_cvendor + "/";
+    path += m_cclass.isEmpty() ? "" : m_cclass + "/";
+    path += m_cgroup.isEmpty() ? "" : m_cgroup + "/";
+    path += m_csub.isEmpty() ? "" : m_csub + "/";
+    path += m_cvariant.isEmpty() ? "" : m_cvariant + "/";
+    path += m_cversion.isEmpty() ? "" : m_cversion + "/";
+    path += m_condition.isEmpty() ? localCondition : m_condition + "/";
+
+    if(path.endsWith('/'))
+        path.chop(1);
+
+    return path;
 }
 
 Category Component::getCategory() const
