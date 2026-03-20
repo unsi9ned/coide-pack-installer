@@ -120,6 +120,8 @@ Mcu &Series::addMcu(const Mcu &m)
 {
     Mcu& newMcu = mcu(m.getName());
     newMcu = m;
+    newMcu.setSeriesId(this->id);
+    newMcu.setParent(this);
     return newMcu;
 }
 

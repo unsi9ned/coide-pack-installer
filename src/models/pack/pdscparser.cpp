@@ -133,7 +133,6 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
     QDomElement componentsElem = root.firstChildElement("components");
     QDomElement devicesElem = root.firstChildElement("devices");
     QList<PdscCondition> conditionList;
-    QList<PdscComponent> componentList;
 
     QMap<QString, Component> coComponentMap;
     QMap<QString, QList<ParentComponentInfo> > parentComponentInfoMap;
@@ -172,11 +171,11 @@ void PdscParser::parseDomDocument(QDomDocument *doc, PackDescription &pack)
                 continue;
 
             PdscComponent component = parseComponent(componentNode, conditionList);
-            componentList.append(component);
+            pack.pdscComponentList().append(component);
         }
     }
 
-    loadComponents(coComponentMap, parentComponentInfoMap, componentList, pack);
+    loadComponents(coComponentMap, parentComponentInfoMap, pack.pdscComponentList(), pack);
     linkComponents(coComponentMap, parentComponentInfoMap, pack);
 
     return;
@@ -637,6 +636,7 @@ ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
 //------------------------------------------------------------------------------
 // Парсинг блока condition
 //------------------------------------------------------------------------------
+#define JOIN_REQUIRE_TYPES 1
 PdscCondition PdscParser::parseCondition(const QDomNode &conditionNode)
 {
     PdscCondition condition;
@@ -646,9 +646,23 @@ PdscCondition PdscParser::parseCondition(const QDomNode &conditionNode)
     condition.setId(condId);
     condition.setDescription(condDescription);
 
+#if JOIN_REQUIRE_TYPES
+    QStringList requireTypes = {
+        "require",
+        "accept",
+        "deny"
+    };
+#endif
+
+#if JOIN_REQUIRE_TYPES
+    foreach (QString requireType, requireTypes)
+    {
+        QDomNodeList requires = conditionNode.toElement().elementsByTagName(requireType);
+#else
     if(!conditionNode.firstChildElement("require").isNull())
     {
         QDomNodeList requires = conditionNode.toElement().elementsByTagName("require");
+#endif
 
         for (int i = 0; i < requires.count(); i++)
         {
@@ -682,6 +696,7 @@ PdscCondition PdscParser::parseCondition(const QDomNode &conditionNode)
         }
     }
 
+#if !JOIN_REQUIRE_TYPES
     if(!conditionNode.firstChildElement("accept").isNull())
     {
         QDomNodeList requires = conditionNode.toElement().elementsByTagName("accept");
@@ -705,9 +720,11 @@ PdscCondition PdscParser::parseCondition(const QDomNode &conditionNode)
             condition.addRequirement(requirement);
         }
     }
+#endif
 
     return condition;
 }
+#undef JOIN_REQUIRE_TYPES
 
 //------------------------------------------------------------------------------
 // Парсинг блоков require, accept, deny
@@ -957,18 +974,25 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             coComponent.setLayerId(Component::LAYER_MCU);
                             coComponent.setType(Component::COMPONENT);
 
-                            if(pComponent.attributes().getCversion().isEmpty())
-                            {
-                                coComponent.setVersion(pack.release());
-                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
-                                                    pack.release());
-                            }
-                            else
-                            {
-                                coComponent.setVersion(pComponent.attributes().getCversion());
-                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
-                                                    pComponent.attributes().getCversion());
-                            }
+//                            // Формируем имя компонента Cgroup_<version>
+//                            if(pComponent.attributes().getCversion().isEmpty())
+//                            {
+//                                coComponent.setVersion(pack.release());
+//                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
+//                                                    pack.release());
+//                            }
+//                            else
+//                            {
+//                                coComponent.setVersion(pComponent.attributes().getCversion());
+//                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
+//                                                    pComponent.attributes().getCversion());
+//                            }
+
+//                            // Дополняем имя компонента параметром Cvariant
+//                            if(!pComponent.attributes().getCvariant().isEmpty())
+//                                coComponent.setName(QString("%1_%2").
+//                                                    arg(coComponent.getName()).
+//                                                    arg(pComponent.attributes().getCvariant()));
 
                             coComponent.setCategory(coCategory);
 
@@ -1006,6 +1030,23 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                                 coComponent.setPdscVersion(pack.release());
 
                             coComponent.setPdscCondition(pComponent.condition().id());
+
+                            // Формируем имя компонента Cgroup_<version>
+                            coComponent.setVersion(coComponent.getPdscVersion());
+
+                            if(!coComponent.getPdscVariant().isEmpty())
+                            {
+                                QString name = coComponent.getPdscGroup() + "_" +
+                                               coComponent.getPdscVariant() + "_" +
+                                               coComponent.getPdscVersion();
+                                coComponent.setName(name);
+                            }
+                            else
+                            {
+                                QString name = coComponent.getPdscGroup() + "_" +
+                                               coComponent.getPdscVersion();
+                                coComponent.setName(name);
+                            }
 
                             //
                             // Добавляем текущий компонент в карту
@@ -1184,7 +1225,8 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
         if(!r.isValid())
             continue;
 
-        if(device.getName() != r.Dname() && !device.getName().contains(QRegExp(r.Dname())))
+        if(device.getName().toUpper() != r.Dname().toUpper() &&
+           !device.getName().contains(QRegExp(r.Dname(), Qt::CaseInsensitive)))
         {
             status = false;
             break;
@@ -1196,7 +1238,8 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
         if(!r.isValid())
             continue;
 
-        if(device.getName() == r.Dname() || device.getName().contains(QRegExp(r.Dname())))
+        if(device.getName().toUpper() == r.Dname().toUpper() ||
+           device.getName().contains(QRegExp(r.Dname(), Qt::CaseInsensitive)))
         {
             status = true;
             break;
@@ -1409,3 +1452,14 @@ QList<Component*> PdscParser::findParentsComponent(const QMap<QString, Component
     return foundComponents;
 }
 
+//------------------------------------------------------------------------------
+// Перезагрузка компонентов, используя частично загруженные данные
+//------------------------------------------------------------------------------
+void PdscParser::reloadComponents(PackDescription &pack)
+{
+    QMap<QString, Component> coComponentMap;
+    QMap<QString, QList<ParentComponentInfo> > parentComponentInfoMap;
+
+    loadComponents(coComponentMap, parentComponentInfoMap, pack.pdscComponentList(), pack);
+    linkComponents(coComponentMap, parentComponentInfoMap, pack);
+}

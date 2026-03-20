@@ -40,6 +40,7 @@ public:
     PdscParser();
 
     bool parse(PackDescription& pack);
+    void reloadComponents(PackDescription& pack);
 
 private:
     void parseDomDocument(QDomDocument * doc, PackDescription& pack);

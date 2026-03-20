@@ -27,6 +27,8 @@ public:
     void setCondition(const PdscCondition &condition);
     void setAttributes(const PdscComponentAttributes &attributes);
 
+    QStringList supportVendors();
+
 };
 
 #endif // PDSCCOMPONENT_H

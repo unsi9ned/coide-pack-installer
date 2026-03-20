@@ -35,6 +35,8 @@ public:
 
     static RequestManager* instance();
 
+    void loadDataFromDb(const QString& vendorName, Manufacturer& vendor);
+    void loadDataFromDb(const QStringList& vendors, QMap<QString, Manufacturer>& vendorMap);
     void loadDataFromDb(QMap<QString, Manufacturer>& vendorMap);
 
     bool createManufacturer(const Manufacturer& vendor);

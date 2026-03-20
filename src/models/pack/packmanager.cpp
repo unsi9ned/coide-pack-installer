@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QString>
+#include <QSet>
 #include "packmanager.h"
 #include "services/paths.h"
 #include "utils/ziparchive.h"
@@ -85,23 +86,6 @@ void PackManager::readPackDescription(PackDescription &pack)
             return;
         }
 
-#if 0
-        //
-        // Добавление mcu, которые зависят от CMSIS
-        // TODO добавляем для всех mcu
-        //
-        for(auto it = pack.coComponentMap().begin(); it != pack.coComponentMap().end(); ++it)
-        {
-            Component& component = pack.coComponentMap()[it.key()];
-
-            foreach(QString mcuName, component.supportedMcuList())
-            {
-                if(!coComponent.supportedMcuList().contains(mcuName, Qt::CaseInsensitive))
-                    coComponent.addSupportedMcu(mcuName);
-            }
-        }
-#endif
-
         pack.coComponentMap().insert(coComponent.getUuid(), coComponent);
         pack.cmsisComponents().insert(coComponent.getVersion(), &pack.coComponentMap()[coComponent.getUuid()]);
     }
@@ -111,6 +95,26 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     PdscParser parser;
     parser.parse(pack);
+
+    //
+    // PDSC не содержит описание устройств. Загружаем их из базы данных
+    //
+    if(!pack.hasDevices() && !pack.packVendor().isEmpty())
+    {
+        QStringList supportVendors;
+
+        for(auto& pComponent : pack.pdscComponentList())
+        {
+            QStringList currentVendorList = pComponent.supportVendors();
+
+            QSet<QString> set = QSet<QString>::fromList(supportVendors);
+            set.unite(QSet<QString>::fromList(currentVendorList));
+            supportVendors = set.toList();
+        }
+
+        RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
+        parser.reloadComponents(pack);
+    }
 }
 
 //------------------------------------------------------------------------------

@@ -27,6 +27,9 @@ private:
     // Карта компонентов CMSIS Core для быстрого доступа по версии
     QMap<QString, Component*>  _cmsisComponentMap;
 
+    // Сохранение промежуточных данных о компонентах
+    QList<PdscComponent> _pdscComponentList;
+
 public:
     PackDescription();
 
@@ -57,14 +60,18 @@ public:
 
     void printInfo();
     bool isValid() const;
+    bool hasDevices() const;
+    bool hasComponents() const;
 
     QMap<QString, Component>& coComponentMap();
     QMap<QString, QStringList>& componentFilesMap();
     QMap<QString, Component*>& cmsisComponents();
+    QList<PdscComponent>& pdscComponentList();
 
     void clear();
 
 private:
+    void appendVendors(const QMap<QString, Manufacturer>& vendorMap);
     Manufacturer& createNewVendor(const QString& vendorName);
 };
 

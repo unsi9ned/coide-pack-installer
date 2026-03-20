@@ -39,12 +39,68 @@ RequestManager *RequestManager::instance()
 }
 
 //------------------------------------------------------------------------------
+// Загрузка данных об MCU выбранного производителя
+//------------------------------------------------------------------------------
+void RequestManager::loadDataFromDb(const QString &vendorName, Manufacturer &vendor)
+{
+    Manufacturer requestedVendor;
+    QList<Manufacturer> manufacturers = requestManufacturerList();
+
+    for(auto m : manufacturers)
+    {
+        if(m.getName() == vendorName)
+        {
+            requestedVendor = m;
+            break;
+        }
+    }
+
+    if(!requestedVendor.isValid())
+        return;
+    else
+    {
+        vendor.setId(requestedVendor.getId());
+        vendor.setName(requestedVendor.getName());
+    }
+
+    QList<Family> families = requestFamilyList(requestedVendor.toKeilId());
+
+    for(int f = 0; f < families.length(); f++)
+    {
+        Family fam = families.at(f);
+        QList<Series> series = requestSeriesList(fam.getId());
+
+        for(int s = 0 ; s < series.length(); s++)
+        {
+            Series serie = series.at(s);
+            QList<Mcu> mcuList = requestMcuList(serie.getId());
+
+            for(int m = 0; m < mcuList.length(); m++)
+            {
+                Mcu mcu = mcuList.at(m);
+                vendor.family(fam.getName()).series(serie.getName()).addMcu(mcu);
+            }
+        }
+    }
+}
+
+void RequestManager::loadDataFromDb(const QStringList &vendors, QMap<QString, Manufacturer>& vendorMap)
+{
+    foreach (QString vendorName, vendors)
+    {
+        if(!vendorMap.contains(vendorName))
+            vendorMap.insert(vendorName, Manufacturer());
+
+        Manufacturer& vendor = vendorMap[vendorName];
+        loadDataFromDb(vendorName, vendor);
+    }
+}
+
+//------------------------------------------------------------------------------
 // Загрузка всех данных о MCU из базы данных
 //------------------------------------------------------------------------------
 void RequestManager::loadDataFromDb(QMap<QString, Manufacturer> &vendorMap)
 {
-    vendorMap.clear();
-
     QList<Manufacturer> manufacturers = requestManufacturerList();
 
     for(int i = 0; i < manufacturers.length(); i++)

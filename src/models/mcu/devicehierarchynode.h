@@ -25,6 +25,7 @@ public:
 
             while(mcuId <= offset && counter < INT32_MAX)
             {
+                qInfo() << path;
                 mcuId = (qChecksum(path.toUtf8(), path.toUtf8().length()) & 0x7FFFFFFF);
                 path = QString("%1/%2").arg(getPath()).arg(counter++);
             }

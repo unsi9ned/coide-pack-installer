@@ -121,6 +121,11 @@ QMap<QString, Manufacturer> &PackDescription::vendors()
     return this->_vendorMap;
 }
 
+void PackDescription::appendVendors(const QMap<QString, Manufacturer> &vendorMap)
+{
+    _vendorMap.unite(vendorMap);
+}
+
 //------------------------------------------------------------------------------
 // Гарантированно возвращает ссылку на объект вендора без создание новой единицы
 //------------------------------------------------------------------------------
@@ -193,6 +198,22 @@ bool PackDescription::isValid() const
     return true;
 }
 
+//------------------------------------------------------------------------------
+// Проверка содержит ли пакет описание устройств
+//------------------------------------------------------------------------------
+bool PackDescription::hasDevices() const
+{
+    return !_vendorMap.isEmpty();
+}
+
+//------------------------------------------------------------------------------
+// Проверка содержит ли пакет описание компонентов
+//------------------------------------------------------------------------------
+bool PackDescription::hasComponents() const
+{
+    return !_componentMap.isEmpty();
+}
+
 QMap<QString, Component> &PackDescription::coComponentMap()
 {
     return _componentMap;
@@ -206,6 +227,11 @@ QMap<QString, QStringList> &PackDescription::componentFilesMap()
 QMap<QString, Component *> &PackDescription::cmsisComponents()
 {
     return _cmsisComponentMap;
+}
+
+QList<PdscComponent> &PackDescription::pdscComponentList()
+{
+    return _pdscComponentList;
 }
 
 //------------------------------------------------------------------------------
@@ -225,6 +251,7 @@ void PackDescription::clear()
     _componentMap.clear();
     _coComponentFilesMap.clear();
     _cmsisComponentMap.clear();
+    _pdscComponentList.clear();
 }
 
 //------------------------------------------------------------------------------

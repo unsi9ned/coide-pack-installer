@@ -40,6 +40,39 @@ bool PdscComponent::hasCondition()
     return !m_condition.isNull();
 }
 
+//------------------------------------------------------------------------------
+// Возвращает список производителей, для которых создан компонент
+//------------------------------------------------------------------------------
+QStringList PdscComponent::supportVendors()
+{
+    QStringList vendors;
+
+    if(!hasCondition()) return QStringList();
+
+    auto requirementMap = condition().requirementsMap();
+    QList<PdscRequirement::RequirementType> requireTypes =
+    {
+        PdscRequirement::Require,
+        PdscRequirement::Accept
+    };
+
+    foreach(auto rType, requireTypes)
+    {
+        foreach(PdscRequirement r, requirementMap[rType].value(PdscRequirement::Device))
+        {
+            if(!r.isValid())
+                continue;
+
+            QString vendorName = (r.Dvendor().split(':') << "").first();
+
+            if(!vendors.contains(vendorName, Qt::CaseInsensitive))
+                vendors.append(vendorName);
+        }
+    }
+
+    return vendors;
+}
+
 PdscComponent::PdscComponent() : PdscElement()
 {
 
