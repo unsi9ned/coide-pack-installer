@@ -56,6 +56,186 @@
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
          <layout class="QGridLayout" name="gridLayout_2">
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="lineEditFlashStart">
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_13">
+            <property name="text">
+             <string>Start FLASH:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLineEdit" name="lineEditFlashSize">
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QLabel" name="label_8">
+            <property name="minimumSize">
+             <size>
+              <width>52</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Size FLASH:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="lineEditRelease">
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_33">
+            <property name="text">
+             <string>Версия пакета:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="1" colspan="3">
+           <widget class="QLineEdit" name="lineEditUrl">
+            <property name="maximumSize">
+             <size>
+              <width>311</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Веб-сайт:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="1" colspan="3">
+           <widget class="QLineEdit" name="lineEditDatasheetUrl">
+            <property name="maximumSize">
+             <size>
+              <width>311</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0">
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>Flash algorithm:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_15">
+            <property name="text">
+             <string>Debug algorithm:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="0">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>Документация:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1" colspan="3">
+           <widget class="QComboBox" name="comboBoxFlashAlg">
+            <property name="maximumSize">
+             <size>
+              <width>311</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1" colspan="3">
+           <widget class="QComboBox" name="comboBoxDebugAlg">
+            <property name="maximumSize">
+             <size>
+              <width>311</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_14">
+            <property name="text">
+             <string>Start RAM:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLineEdit" name="lineEditRamSize">
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2">
+           <widget class="QLabel" name="label_11">
+            <property name="minimumSize">
+             <size>
+              <width>52</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Size RAM:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="4">
+           <widget class="QTreeWidget" name="treeWidgetDevices">
+            <property name="maximumSize">
+             <size>
+              <width>400</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <column>
+             <property name="text">
+              <string notr="true">1</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="lineEditRamStart">
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
           <item row="9" column="4" rowspan="4">
            <widget class="QPlainTextEdit" name="plainTextEditFeatures">
             <property name="lineWrapMode">
@@ -115,133 +295,14 @@
             </property>
            </widget>
           </item>
-          <item row="12" column="0">
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>Документация:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="12" column="1" colspan="3">
-           <widget class="QLineEdit" name="lineEditDatasheetUrl">
-            <property name="maximumSize">
-             <size>
-              <width>311</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="11" column="0">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Веб-сайт:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="11" column="1" colspan="3">
-           <widget class="QLineEdit" name="lineEditUrl">
-            <property name="maximumSize">
-             <size>
-              <width>311</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="10" column="0">
-           <widget class="QLabel" name="label_16">
-            <property name="text">
-             <string>Flash algorithm:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="10" column="1" colspan="3">
-           <widget class="QComboBox" name="comboBoxFlashAlg">
-            <property name="maximumSize">
-             <size>
-              <width>311</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="9" column="0">
-           <widget class="QLabel" name="label_15">
-            <property name="text">
-             <string>Debug algorithm:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="9" column="1" colspan="3">
-           <widget class="QComboBox" name="comboBoxDebugAlg">
-            <property name="maximumSize">
-             <size>
-              <width>311</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="0">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>Component ID:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="1">
-           <widget class="QLineEdit" name="lineEditComponentId">
-            <property name="maximumSize">
-             <size>
-              <width>120</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="0">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>Series ID:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="1">
-           <widget class="QLineEdit" name="lineEditSeriesId">
-            <property name="maximumSize">
-             <size>
-              <width>120</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="2">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Mcu ID:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="3">
-           <widget class="QLineEdit" name="lineEditMcuId">
-            <property name="maximumSize">
-             <size>
-              <width>120</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="0">
+          <item row="3" column="2">
            <widget class="QLabel" name="label_12">
             <property name="text">
              <string>Vendor ID:</string>
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
+          <item row="3" column="3">
            <widget class="QLineEdit" name="lineEditVendorId">
             <property name="maximumSize">
              <size>
@@ -251,14 +312,14 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="2">
+          <item row="6" column="0">
            <widget class="QLabel" name="label_3">
             <property name="text">
              <string>Family ID:</string>
             </property>
            </widget>
           </item>
-          <item row="6" column="3">
+          <item row="6" column="1">
            <widget class="QLineEdit" name="lineEditFamilyId">
             <property name="maximumSize">
              <size>
@@ -268,15 +329,15 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="label_14">
+          <item row="6" column="2">
+           <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Start RAM:</string>
+             <string>Series ID:</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
-           <widget class="QLineEdit" name="lineEditRamStart">
+          <item row="6" column="3">
+           <widget class="QLineEdit" name="lineEditSeriesId">
             <property name="maximumSize">
              <size>
               <width>120</width>
@@ -285,21 +346,15 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="2">
-           <widget class="QLabel" name="label_11">
-            <property name="minimumSize">
-             <size>
-              <width>52</width>
-              <height>0</height>
-             </size>
-            </property>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label">
             <property name="text">
-             <string>Size RAM:</string>
+             <string>Mcu ID:</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="3">
-           <widget class="QLineEdit" name="lineEditRamSize">
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="lineEditMcuId">
             <property name="maximumSize">
              <size>
               <width>120</width>
@@ -308,15 +363,15 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_13">
+          <item row="7" column="2">
+           <widget class="QLabel" name="label_4">
             <property name="text">
-             <string>Start FLASH:</string>
+             <string>Comp. ID:</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
-           <widget class="QLineEdit" name="lineEditFlashStart">
+          <item row="7" column="3">
+           <widget class="QLineEdit" name="lineEditComponentId">
             <property name="maximumSize">
              <size>
               <width>120</width>
@@ -325,76 +380,21 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="2">
-           <widget class="QLabel" name="label_8">
-            <property name="minimumSize">
-             <size>
-              <width>52</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Size FLASH:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="3">
-           <widget class="QLineEdit" name="lineEditFlashSize">
-            <property name="maximumSize">
-             <size>
-              <width>120</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_33">
-            <property name="text">
-             <string>Версия пакета:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QLineEdit" name="lineEditRelease">
-            <property name="maximumSize">
-             <size>
-              <width>120</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
+          <item row="8" column="0">
            <widget class="QLabel" name="label_34">
             <property name="text">
              <string>SVD:</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="3">
+          <item row="8" column="1" colspan="3">
            <widget class="QLineEdit" name="lineEditSVD">
             <property name="maximumSize">
              <size>
-              <width>120</width>
+              <width>16777215</width>
               <height>16777215</height>
              </size>
             </property>
-           </widget>
-          </item>
-          <item row="1" column="0" colspan="4">
-           <widget class="QTreeWidget" name="treeWidgetDevices">
-            <property name="maximumSize">
-             <size>
-              <width>400</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <column>
-             <property name="text">
-              <string notr="true">1</string>
-             </property>
-            </column>
            </widget>
           </item>
          </layout>
