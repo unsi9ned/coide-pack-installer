@@ -16,62 +16,114 @@ const QMap<QString, int> Manufacturer::_coVendorMap = {
 };
 
 const QMap<QString, int> Manufacturer::_keilVendorMap = {
-    // Основные вендоры
+    // Основные вендоры (из CMSIS DeviceVendorEnum)
+    {"3PEAK", 177},
     {"ABOV Semiconductor", 126},
     {"Actel", 56},
     {"Active-Semi", 140},
+    {"Alif Semiconductor", 165},
     {"Altera", 85},
     {"Altium", 65},
     {"Ambiq Micro", 120},
+    {"Amiccom", 147},
     {"Analog Devices", 1},
+    {"APEXMIC", 153},
     {"ARM", 82},
     {"ARM CMSIS", 109},
+    {"ArmChina", 160},
+    {"ArteryTek", 143},
     {"Atmel", 3},
+    {"AutoChips", 150},
+    {"BOYAMICRO", 182},
+    {"BrainChip", 168},
+    {"Cmsemicon", 161},
     {"CSR", 118},
     {"Cypress", 19},
     {"Dialog Semiconductor", 113},
     {"Dolphin", 57},
     {"Domosys", 26},
+    {"ELAN", 162},
+    {"Elmos", 138},
     {"Ember", 98},
     {"Energy Micro", 97},
     {"EnOcean", 91},
+    {"e-peas", 167},
+    {"EtaCompute", 157},
     {"Evatronix", 64},
+    {"FMD", 169},
+    {"FMSH", 159},
     {"Freescale", 78},
+    {"Geehy", 163},
     {"Generic", 5},
+    {"Generalplus", 151},
     {"GigaDevice", 123},
+    {"Goodix", 155},
+    {"HDSC", 145},
+    {"Hilscher", 88},
+    {"Himax", 178},
     {"Holtek", 106},
     {"Hynix Semiconductor", 6},
     {"Hyundai", 35},
     {"Infineon", 7},
+    {"Jonzic", 174},
     {"Kionix", 127},
+    {"LAPIS Technology", 10},
     {"Lapis Semiconductor", 10},
+    {"Linear Technology", 136},
+    {"Linkedsemi", 175},
     {"Luminary Micro", 76},
     {"Maxim", 23},
+    {"MediaTek", 129},
     {"MegaChips", 128},
+    {"Megawin", 70},
     {"Mentor Graphics Co.", 24},
+    {"Microchip", 3},
     {"Micronas", 30},
     {"Microsemi", 112},
     {"Milandr", 99},
+    {"MindMotion", 132},
+    {"MinebeaMitsumi", 181},
     {"NetSilicon", 67},
     {"Nordic Semiconductor", 54},
     {"Nuvoton", 18},
     {"NXP", 11},
     {"OKI SEMICONDUCTOR CO.,LTD.", 108},
+    {"onsemi", 141},
+    {"Panasonic", 131},
+    {"Puya", 176},
     {"Realtek Semiconductor", 124},
     {"Redpine Signals", 125},
+    {"RelChip", 146},
     {"Renesas", 117},
     {"ROHM", 103},
+    {"RPi", 170},
     {"Samsung", 47},
+    {"SILAN", 164},
+    {"Silergy Corp", 139},
     {"Silicon Labs", 21},
+    {"Sinemicro", 179},
+    {"Sinowealth", 149},
+    {"SmartChip", 156},
     {"SONiX", 110},
+    {"Socionext", 171},
     {"Spansion", 100},
     {"STMicroelectronics", 13},
     {"Sunrise Micro Devices", 121},
+    {"Synwit", 144},
     {"TI", 16},
     {"Texas Instruments", 16},
+    {"ThinkTech", 172},
     {"Toshiba", 92},
     {"Triad Semiconductor", 104},
+    {"Unisoc", 152},
+    {"Vorago", 137},
+    {"Watech", 183},
+    {"Weltrend", 148},
     {"WIZnet", 122},
+    {"Xiamen PengPai Microelectronics Co. Ltd", 166},
+    {"XMC", 158},
+    {"YTMicro", 180},
+    {"Zilog", 89},
 
     // Deprecated - оставляем для обратной совместимости
     {"Freescale Semiconductor", 78},
@@ -152,37 +204,7 @@ QString Manufacturer::getName() const {return name;}
 //------------------------------------------------------------------------------
 QString Manufacturer::toKeilName() const
 {
-    QString keilName;
-
-    if (this->name == "ST") {
-        keilName = "STMicroelectronics";
-    } else if (this->name == "TI") {
-        keilName = "Texas Instruments";
-    } else if (this->name == "ARM") {
-        keilName = "ARM";
-    } else if (this->name == "Atmel") {
-        keilName = "Atmel";
-    } else if (this->name == "Energy Micro") {
-        keilName = "Energy Micro";
-    } else if (this->name == "Freescale") {
-        keilName = "Freescale";
-    } else if (this->name == "Holtek") {
-        keilName = "Holtek";
-    } else if (this->name == "NXP") {
-        keilName = "NXP";
-    } else if (this->name == "Nuvoton") {
-        keilName = "Nuvoton";
-    } else if (this->name == "Toshiba") {
-        keilName = "Toshiba";
-    } else if (this->name == "Spansion") {
-        keilName = "Spansion";
-    } else if (this->name == "Active-Semi") {
-        keilName = "Active-Semi";
-    } else {
-        keilName = this->name;  // оставляем как есть
-    }
-
-    return keilName;
+    return co2keilName(this->name);
 }
 
 //------------------------------------------------------------------------------
@@ -208,16 +230,35 @@ QString Manufacturer::co2keilName(const QString &coName)
 {
     QString keilName;
 
-    if (coName == "ST")
-    {
+    if (coName == "ST") {
         keilName = "STMicroelectronics";
-    }
-    else if (coName == "TI")
-    {
+    } else if (coName == "TI") {
         keilName = "Texas Instruments";
-    }
-    else
-    {
+    } else if (coName == "ARM") {
+        keilName = "ARM";
+    } else if (coName == "Atmel") {
+        keilName = "Microchip";
+    } else if (coName == "Energy Micro") {
+        keilName = "Energy Micro";
+    } else if (coName == "Freescale") {
+        keilName = "Freescale";
+    } else if(coName == "Freescale Semiconductor") {
+        keilName = "Freescale";
+    } else if (coName == "Holtek") {
+        keilName = "Holtek";
+    } else if (coName == "NXP") {
+        keilName = "NXP";
+    } else if (coName == "Philips") {
+        keilName = "NXP";
+    } else if (coName == "Nuvoton") {
+        keilName = "Nuvoton";
+    } else if (coName == "Toshiba") {
+        keilName = "Toshiba";
+    } else if (coName == "Spansion") {
+        keilName = "Spansion";
+    } else if (coName == "Active-Semi") {
+        keilName = "Active-Semi";
+    } else {
         keilName = coName;
     }
 
