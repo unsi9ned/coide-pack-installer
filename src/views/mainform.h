@@ -18,6 +18,7 @@
 #include <QPoint>
 #include <QTreeWidgetItem>
 
+#include "views/aboutdialog.h"
 #include "viewmodels/mcubrowserviewmodel.h"
 
 namespace Ui {
@@ -36,6 +37,8 @@ private:
     QAction * actionSettings;
 
     McuBrowserViewModel * m_mcuBrowserViewModel;
+
+    AboutDialog* aboutProgDialog;
 
 public:
     explicit MainForm(QWidget *parent = 0);

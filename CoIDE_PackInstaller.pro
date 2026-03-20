@@ -56,7 +56,8 @@ SOURCES += src/main.cpp\
     src/models/pdsc/pdscrequirement.cpp \
     src/utils/makelink.cpp \
     src/services/settings.cpp \
-    src/viewmodels/mcubrowserviewmodel.cpp
+    src/viewmodels/mcubrowserviewmodel.cpp \
+    src/views/aboutdialog.cpp
 
 HEADERS  += \
     src/models/pack/pdscparser.h \
@@ -95,14 +96,16 @@ HEADERS  += \
     src/utils/makelink.h \
     src/services/settings.h \
     src/viewmodels/mcubrowserviewmodel.h \
-    src/utils/versionhelper.h \
-    src/models/mcu/devicehierarchynode.h
+    src/models/mcu/devicehierarchynode.h \
+    src/views/aboutdialog.h \
+    src/common/version.h
 
 FORMS    += \
-    src/views/mainform.ui
+    src/views/mainform.ui \
+    src/views/aboutdialog.ui
 
 RESOURCES += \
-    resources/resources.qrc
+    resources/resources.qrc \
 
 INCLUDEPATH += \
     src \

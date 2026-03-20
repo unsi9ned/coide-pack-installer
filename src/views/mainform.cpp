@@ -8,7 +8,7 @@
 #include "models/pack/packmanager.h"
 #include "models/database/dbgarbagecollector.h"
 #include "services/settings.h"
-#include "utils/versionhelper.h"
+#include "common/version.h"
 
 //------------------------------------------------------------------------------
 // Конструктор окна
@@ -16,12 +16,14 @@
 MainForm::MainForm(QWidget *parent) :
     QMainWindow(parent),
     m_mcuBrowserViewModel(new McuBrowserViewModel(this)),
+    aboutProgDialog(new AboutDialog(this)),
     ui(new Ui::MainForm)
 {
     ui->setupUi(this);
 
     // Иконка
-    this->setWindowIcon(QIcon(":coide_project.ico"));
+    this->setWindowIcon(QIcon(":/img/hamlab.ico"));
+    this->setWindowTitle(QString("%1 (v%2)").arg(APP_NAME).arg(APP_VERSION));
 
     // Панель инструментов
     actionLoadDfp = ui->toolBar->addAction(QIcon(":/img/file_open.png"), "Load DFP");
@@ -40,7 +42,6 @@ MainForm::MainForm(QWidget *parent) :
     ui->treeWidgetComponents->setHeaderLabels(QStringList() << "Component" << "Description");
 
     // Версия программы
-    ui->labelAppVersion->setText(VersionHelper::compilationVersion());
     ui->lineEditIdePath->setText(Paths::instance()->coIdeDir());
     ui->plainTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -180,6 +181,9 @@ MainForm::MainForm(QWidget *parent) :
     // Выбор пакета DFP и загрузка
     connect(actionLoadDfp, &QAction::triggered, this, &MainForm::loadDFP);
     connect(ui->actionOpen_DFP, &QAction::triggered, this, &MainForm::loadDFP);
+
+    // Вызов окна "О программе"
+    connect(ui->actionAbout, &QAction::triggered, aboutProgDialog, &AboutDialog::show);
 
 #if 1
     QMetaObject::invokeMethod(this, "delayedInit", Qt::QueuedConnection);

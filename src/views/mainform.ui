@@ -26,7 +26,7 @@
    <string>CoIDE Pack Installer</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources/resources.qrc">
+   <iconset>
     <normaloff>:/img/HamLab_favicon.ico</normaloff>:/img/HamLab_favicon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
@@ -724,153 +724,6 @@
         </property>
        </widget>
       </widget>
-      <widget class="QWidget" name="tab">
-       <attribute name="title">
-        <string>О программе</string>
-       </attribute>
-       <widget class="QLabel" name="label_22">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>20</y>
-          <width>111</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Автор программы:</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_23">
-        <property name="geometry">
-         <rect>
-          <x>140</x>
-          <y>20</y>
-          <width>91</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Андрей Осипов</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_24">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>50</y>
-          <width>71</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Веб-сайт:</string>
-        </property>
-       </widget>
-       <widget class="QClickableLabel" name="labelWebSite">
-        <property name="geometry">
-         <rect>
-          <x>140</x>
-          <y>50</y>
-          <width>221</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <underline>true</underline>
-         </font>
-        </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">color: rgb(0, 0, 255);</string>
-        </property>
-        <property name="text">
-         <string>http://hamlab.net/</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_26">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>80</y>
-          <width>71</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Версия:</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="labelAppVersion">
-        <property name="geometry">
-         <rect>
-          <x>140</x>
-          <y>80</y>
-          <width>221</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>20190218.1418</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_28">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>110</y>
-          <width>81</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>О программе:</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_29">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>140</y>
-          <width>801</width>
-          <height>71</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Программа написана специально для фанатов среды разработки CooCox IDE 1.7 и позволяет добавлять микроконтроллеры других производителей, а также программные компоненты к ним. Распространяется совершенно бесплатно. Автор не несет ответственности за какие-либо ошибки в работе программы. Все изменения в базе данных среды CooCox IDE пользователь прозводит на свой страх и риск. Необходимо следить за корректностью вводимых данных, т.к. они не фильтруются и добавляются в базу в исходном виде.  Если есть желание поблагодарить автора, то можно закинуть пару рублей в Яндекс Кошелек 410012027125014 или поделиться ссылкой на мой сайт http://hamlab.net/</string>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </widget>
      </widget>
     </item>
    </layout>
@@ -892,7 +745,14 @@
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="minimumSize">
@@ -925,17 +785,13 @@
     <string>Preferences</string>
    </property>
   </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>QClickableLabel</class>
-   <extends>QLabel</extends>
-   <header>views/widgets/qclickablelabel.h</header>
-  </customwidget>
- </customwidgets>
- <resources>
-  <include location="../../resources/resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

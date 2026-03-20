@@ -1,10 +1,11 @@
 <RCC>
     <qresource prefix="/">
-        <file>img/HamLab_favicon.ico</file>
         <file>img/cleaning.png</file>
         <file>img/file_open.png</file>
         <file>img/file_reload.png</file>
         <file>img/install.png</file>
         <file>img/settings.png</file>
+        <file>img/hamlab_64x64.png</file>
+        <file>img/hamlab.ico</file>
     </qresource>
 </RCC>
