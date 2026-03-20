@@ -45,9 +45,12 @@ struct DeviceNode
 //------------------------------------------------------------------------------
 struct ComponentNode
 {
+    int level;
     QString name;
     QString description;
     QList<ComponentNode> children;
+
+    ComponentNode() : level(0){}
 
     bool hasChildren() const { return !children.isEmpty(); }
 };
@@ -134,7 +137,7 @@ private:
                          const QString &mcu = QString());
 
     void buildComponentTree();
-    ComponentNode buildComponentNode(const Component& component);
+    ComponentNode buildComponentNode(const Component& component, ComponentNode * parent = nullptr);
 signals:
     void loadStarted();
     void loadResult(bool success, QString errorString);

@@ -401,15 +401,28 @@ void McuBrowserViewModel::buildComponentTree()
 //------------------------------------------------------------------------------
 // Создание узла компонента
 //------------------------------------------------------------------------------
-ComponentNode McuBrowserViewModel::buildComponentNode(const Component &component)
+ComponentNode McuBrowserViewModel::buildComponentNode(const Component &component,
+                                                      ComponentNode* parent)
 {
     ComponentNode node;
     node.name = component.getName();
     node.description = component.getDescription();
+    node.level = parent ? parent->level + 1 : 0;
 
-    foreach(auto child, component.getChildren())
+    if(node.level < 5)
     {
-        node.children.append(buildComponentNode(*child));
+        foreach(auto child, component.getChildren())
+        {
+            node.children.append(buildComponentNode(*child, &node));
+        }
+    }
+    else
+    {
+        ComponentNode pseudoNode;
+        pseudoNode.name = "...";
+        pseudoNode.description = "...";
+        pseudoNode.level = node.level + 1;
+        node.children.append(pseudoNode);
     }
 
     return node;
