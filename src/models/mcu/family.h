@@ -8,8 +8,11 @@
 #include "series.h"
 #include "featurecontainer.h"
 #include "models/algorithms/algorithmcontainer.h"
+#include "devicehierarchynode.h"
 
-class Family
+class Manufacturer;
+
+class Family : public DeviceHierarchyNode
 {
 private:
 
@@ -18,6 +21,7 @@ private:
     int manufacturerId;
 
     QMap<QString, Series> _seriesMap;
+    Manufacturer * m_parent;
 
 public:
 
@@ -28,7 +32,7 @@ public:
 
     int getId() const;
     QString getName() const;
-    QString getCoName();
+    QString getCoName() const;
     int getManufacturerId() const;
 
     QMap<QString, Series>& seriesMap();
@@ -51,8 +55,17 @@ public:
 
     // Вернуть серию по имени
     Series& series(QString name);
+    const Series& constSeries(const QString& name) const;
 
     Series& addSeries(const QString& name);
+
+    void setParent(Manufacturer* parent);
+    Manufacturer * getParent();
+    bool hasParent() const;
+    const Manufacturer& constParent() const;
+    const Manufacturer& constVendor() const;
+
+    QString getPath() const;
 
     bool isValid(QString * errorString = nullptr) const;
     bool isNull() const;

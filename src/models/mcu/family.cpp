@@ -1,9 +1,11 @@
 #include "family.h"
+#include "manufacturer.h"
 
 Family::Family()
 {
     this->id = -1;
     this->manufacturerId = -1;
+    this->m_parent = nullptr;
 }
 
 Family::Family(int id, QString familyName, int manufacturerId)
@@ -11,6 +13,7 @@ Family::Family(int id, QString familyName, int manufacturerId)
     this->id = id;
     this->_name = familyName;
     this->manufacturerId = manufacturerId;
+    this->m_parent = nullptr;
 }
 
 Family::Family(Family *f)
@@ -21,6 +24,7 @@ Family::Family(Family *f)
     this->id = f->getId();
     this->_name = f->getName();
     this->manufacturerId = f->getManufacturerId();
+    this->m_parent = nullptr;
 
     for(auto it = f->seriesMap().begin(); it != seriesMap().end(); ++it)
     {
@@ -32,9 +36,9 @@ int Family::getId() const {return id;}
 
 QString Family::getName() const {return _name;}
 
-QString Family::getCoName()
+QString Family::getCoName() const
 {
-    return _name.replace('-', ' ');
+    return QString(_name).replace('-', ' ');
 }
 
 int Family::getManufacturerId() const {return manufacturerId;}
@@ -98,9 +102,50 @@ Series &Family::series(QString name)
         return createNewSeries(name);
 }
 
+//------------------------------------------------------------------------------
+// Гарантированно возвращает ссылку на объект серии, даже если ее нет в списке
+//------------------------------------------------------------------------------
+const Series&Family::constSeries(const QString& name) const
+{
+    static Series nullSeries;
+    auto it = _seriesMap.find(name);
+    return it != _seriesMap.end() ? *it : nullSeries;
+}
+
 Series &Family::addSeries(const QString &name)
 {
     return this->series(name).setName(name);
+}
+
+void Family::setParent(Manufacturer* parent)
+{
+    m_parent = parent;
+}
+
+Manufacturer*Family::getParent()
+{
+    return m_parent;
+}
+
+bool Family::hasParent() const
+{
+    return m_parent != nullptr;
+}
+
+const Manufacturer& Family::constParent() const
+{
+    static const Manufacturer nullManufacturer;
+    return m_parent ? *m_parent :nullManufacturer;
+}
+
+const Manufacturer&Family::constVendor() const
+{
+    return constParent();
+}
+
+QString Family::getPath() const
+{
+    return constVendor().getPath() + "/" + getCoName();
 }
 
 //------------------------------------------------------------------------------
@@ -145,5 +190,6 @@ Series &Family::createNewSeries(const QString &seriesName)
     Series& series = _seriesMap[seriesName];
     series.setName(seriesName);
     series.setFamilyId(this->getId());
+    series.setParent(this);
     return series;
 }

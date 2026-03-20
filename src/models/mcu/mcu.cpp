@@ -1,4 +1,5 @@
 #include "mcu.h"
+#include "series.h"
 
 Mcu::Mcu()
 {
@@ -8,6 +9,7 @@ Mcu::Mcu()
     this->userId = CoUser::USER_COOCOX;
     this->timeuuid = generateTimeUUID();
     this->hits = 0;
+    this->m_parent = nullptr;
 }
 
 Mcu::Mcu(int id, int seriesId, int debugAlgorithmId, int userId)
@@ -18,6 +20,7 @@ Mcu::Mcu(int id, int seriesId, int debugAlgorithmId, int userId)
     this->userId = userId;
     this->timeuuid = generateTimeUUID();
     this->hits = 0;
+    this->m_parent = nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -67,6 +70,37 @@ Mcu &Mcu::setCoreDebugAlgorithm(const QString &coreName)
 {
     debugAlgorithm.setProcessor(coreName);
     return *this;
+}
+
+void Mcu::setParent(Series* parent)
+{
+   m_parent = parent;
+}
+
+Series*Mcu::getParent()
+{
+    return m_parent;
+}
+
+bool Mcu::hasParent() const
+{
+    return m_parent != nullptr;
+}
+
+const Series&Mcu::constParent() const
+{
+    static Series nullSeries;
+    return m_parent ? *m_parent : nullSeries;
+}
+
+const Series&Mcu::constSeries() const
+{
+    return constParent();
+}
+
+QString Mcu::getPath() const
+{
+    return constSeries().getPath() + "/" + getCoName();
 }
 
 QMap<QString, Memory> &Mcu::memoryRegions()

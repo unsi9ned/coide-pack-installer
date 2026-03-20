@@ -309,6 +309,16 @@ Family &Manufacturer::family(const QString &name)
 }
 
 //------------------------------------------------------------------------------
+// Гарантированно возвращает ссылку на объект Family, даже если такого нет с списке
+//------------------------------------------------------------------------------
+const Family& Manufacturer::constFamily(const QString& name) const
+{
+    static Family nullFamily;
+    auto it = familyMap.find(name);
+    return it != familyMap.end() ? *it : nullFamily;
+}
+
+//------------------------------------------------------------------------------
 // Найти или создать новое семейство по имени
 //------------------------------------------------------------------------------
 Family &Manufacturer::addFamily(const QString &name)
@@ -370,6 +380,11 @@ bool Manufacturer::isNull()
     return this->id == -1 && this->name.isEmpty() && this->familyMap.isEmpty();
 }
 
+QString Manufacturer::getPath() const
+{
+    return toKeilName();
+}
+
 //------------------------------------------------------------------------------
 // Создание нового семейства
 //------------------------------------------------------------------------------
@@ -379,5 +394,6 @@ Family &Manufacturer::createNewFamily(const QString &name)
     Family& family = this->familyMap[name];
     family.setName(name);
     family.setManufacturerId(toKeilId());
+    family.setParent(this);
     return family;
 }

@@ -7,8 +7,11 @@
 #include <QMap>
 
 #include "mcu.h"
+#include "devicehierarchynode.h"
 
-class Series
+class Family;
+
+class Series : public DeviceHierarchyNode
 {
 
 private:
@@ -18,6 +21,7 @@ private:
     int familyId;
 
     QMap<QString, Mcu> _mcuMap;
+    Family * m_parent;
 
 public:
 
@@ -52,11 +56,20 @@ public:
 
     //Найти процессор по названию
     Mcu& mcu(QString name);
+    const Mcu& constMcu(const QString& name) const;
 
     //Добавить процессор в список
     Mcu& addMcu(const QString& name);
 
     Mcu& addMcu(const Mcu& m);
+
+    void setParent(Family* parent);
+    Family * getParent();
+    bool hasParent() const;
+    const Family& constParent() const;
+    const Family& constFamily() const;
+
+    QString getPath() const;
 
     bool isValid(QString * errorString = nullptr) const;
     bool isNull() const;

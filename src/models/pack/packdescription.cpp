@@ -121,6 +121,16 @@ QMap<QString, Manufacturer> &PackDescription::vendors()
     return this->_vendorMap;
 }
 
+//------------------------------------------------------------------------------
+// Гарантированно возвращает ссылку на объект вендора без создание новой единицы
+//------------------------------------------------------------------------------
+const Manufacturer&PackDescription::constVendor(const QString& vendorName) const
+{
+    static Manufacturer nullVendor;
+    auto it = _vendorMap.find(vendorName);
+    return it != _vendorMap.end() ? *it : nullVendor;
+}
+
 void PackDescription::printInfo()
 {
     // Устанавливаем выравнивание влево для всех
@@ -217,6 +227,9 @@ void PackDescription::clear()
     _cmsisComponentMap.clear();
 }
 
+//------------------------------------------------------------------------------
+// Создание нового производителя
+//------------------------------------------------------------------------------
 Manufacturer &PackDescription::createNewVendor(const QString &vendorName)
 {
     _vendorMap.insert(vendorName, Manufacturer());

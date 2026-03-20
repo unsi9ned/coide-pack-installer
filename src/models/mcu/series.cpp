@@ -1,9 +1,12 @@
 #include "series.h"
+#include "family.h"
+#include "manufacturer.h"
 
 Series::Series()
 {
     this->id = -1;
     this->familyId = -1;
+    this->m_parent = nullptr;
 }
 
 Series::Series(int id, QString serieName, int familyId)
@@ -11,6 +14,7 @@ Series::Series(int id, QString serieName, int familyId)
     this->id = id;
     this->_name = serieName;
     this->familyId = familyId;
+    this->m_parent = nullptr;
 }
 
 Series::Series(Series *s)
@@ -21,6 +25,7 @@ Series::Series(Series *s)
     this->id = s->getId();
     this->_name = s->getName();
     this->familyId = s->getFamilyId();
+    this->m_parent = nullptr;
 
     for(auto it = s->mcuMap().begin(); it != s->mcuMap().end(); ++it)
     {
@@ -96,6 +101,16 @@ Mcu &Series::mcu(QString name)
         return createNewMcu(name);
 }
 
+//------------------------------------------------------------------------------
+// Гарантированно возвращает ссылку на объект mcu, даже если такого нет в списке
+//------------------------------------------------------------------------------
+const Mcu&Series::constMcu(const QString& name) const
+{
+    static Mcu nullMcu;
+    auto it = _mcuMap.find(name);
+    return it != _mcuMap.end() ? *it : nullMcu;
+}
+
 Mcu &Series::addMcu(const QString &name)
 {
     return this->mcu(name).setName(name);
@@ -106,6 +121,37 @@ Mcu &Series::addMcu(const Mcu &m)
     Mcu& newMcu = mcu(m.getName());
     newMcu = m;
     return newMcu;
+}
+
+void Series::setParent(Family* parent)
+{
+    m_parent = parent;
+}
+
+Family*Series::getParent()
+{
+    return m_parent;
+}
+
+bool Series::hasParent() const
+{
+    return m_parent != nullptr;
+}
+
+const Family&Series::constParent() const
+{
+    static Family nullFamily;
+    return m_parent ? * m_parent : nullFamily;
+}
+
+const Family&Series::constFamily() const
+{
+    return constParent();
+}
+
+QString Series::getPath() const
+{
+    return constFamily().getPath() + "/" + getName();
 }
 
 //------------------------------------------------------------------------------
@@ -153,5 +199,6 @@ Mcu &Series::createNewMcu(const QString &mcuUniqueName)
     Mcu& newMcu = this->_mcuMap[mcuUniqueName];
     newMcu.setName(mcuUniqueName);
     newMcu.setSeriesId(getId());
+    newMcu.setParent(this);
     return newMcu;
 }

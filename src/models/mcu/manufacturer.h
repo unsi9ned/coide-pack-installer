@@ -6,8 +6,9 @@
 #include <QList>
 
 #include "family.h"
+#include "devicehierarchynode.h"
 
-class Manufacturer
+class Manufacturer : public DeviceHierarchyNode
 {
 public:
 
@@ -76,6 +77,7 @@ public:
     Family getFamilyById(int i);
 
     Family& family(const QString& name);
+    const Family& constFamily(const QString& name) const;
 
     //Добавить семейство
     Family& addFamily(const QString& name);
@@ -88,6 +90,7 @@ public:
 
     bool isValid(QString * errorString = nullptr) const;
     bool isNull();
+    QString getPath() const;
 
 private:
 

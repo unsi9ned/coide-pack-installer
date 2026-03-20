@@ -53,6 +53,8 @@ public:
     Manufacturer& vendorByDvendor(const QString& Dvendor);
     QMap<QString, Manufacturer>& vendors();
 
+    const Manufacturer& constVendor(const QString& vendorName) const;
+
     void printInfo();
     bool isValid() const;
 

@@ -5,6 +5,7 @@
 #include <QObject>
 #include "models/pack/packdescription.h"
 #include "models/pack/packmanager.h"
+#include "models/mcu/devicehierarchynode.h"
 
 //------------------------------------------------------------------------------
 // Структура для представления узла дерева
@@ -24,13 +25,23 @@ struct DeviceNode
     QString name;
     QString displayName;
     QList<DeviceNode> children;
+    const DeviceHierarchyNode* hierarchyNode;
 
     // Для навигации
     QString vendorName;
     QString familyName;
     QString seriesName;
 
-    DeviceNode() : type(InvalidType){}
+    DeviceNode() : type(InvalidType)
+    {
+        static DeviceHierarchyNode nullHierarchyNode;
+        hierarchyNode = &nullHierarchyNode;
+    }
+
+    QString getVendorName() const { return type == VendorType ? name : vendorName; }
+    QString getFamilyName() const { return type == FamilyType ? name : familyName; }
+    QString getSeriesName() const { return type == SeriesType ? name : seriesName; }
+    QString getMcuName()    const { return type == McuType ? name : QString(); }
 
     // Вспомогательные методы
     bool isVendor() const { return type == VendorType; }
@@ -122,6 +133,10 @@ public:
     QString defaultFlashAlgorithm() const;
 
     QString releaseVersion() const;
+
+    QString vendorId() const;
+
+    QString devNodePath() const;
 
 private:
     void buildDeviceTree();

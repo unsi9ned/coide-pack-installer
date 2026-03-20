@@ -80,6 +80,7 @@ MainForm::MainForm(QWidget *parent) :
     connect(m_mcuBrowserViewModel, &McuBrowserViewModel::loadStarted, [this]()
     {
         ui->statusBar->showMessage("Загрузка...");
+        clearForm();
         lockUI(true);
     });
 
@@ -89,6 +90,7 @@ MainForm::MainForm(QWidget *parent) :
 
         if(success)
         {
+            ui->lineEditRelease->setText(m_mcuBrowserViewModel->releaseVersion());
             ui->statusBar->showMessage("Готово", 3000);
 
             updateTreeFromModel();
@@ -314,6 +316,9 @@ void MainForm::showMcuDetails()
             ui->comboBoxFlashAlg->setCurrentIndex(i);
         }
     }
+
+    // Уникальные идентификаторы
+    ui->lineEditVendorId->setText(m_mcuBrowserViewModel->vendorId());
 }
 
 //------------------------------------------------------------------------------
@@ -333,6 +338,7 @@ void MainForm::clearForm()
     ui->lineEditSVD->clear();
     ui->lineEditDatasheetUrl->clear();
     ui->lineEditUrl->clear();
+    ui->lineEditVendorId->clear();
 }
 
 //------------------------------------------------------------------------------
@@ -369,6 +375,8 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 
     // 2. Обновляем информацию об MCU
     showMcuDetails();
+
+    qInfo() << node.hierarchyNode->getPath();
 }
 
 //------------------------------------------------------------------------------

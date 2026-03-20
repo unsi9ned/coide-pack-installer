@@ -30,9 +30,7 @@ McuBrowserViewModel::~McuBrowserViewModel()
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::selectedVendor() const
 {
-    return m_selectedNode.type == DeviceNode::VendorType ?
-                                  m_selectedNode.name :
-                                  m_selectedNode.vendorName;
+    return m_selectedNode.getVendorName();
 }
 
 //------------------------------------------------------------------------------
@@ -40,9 +38,7 @@ QString McuBrowserViewModel::selectedVendor() const
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::selectedFamily() const
 {
-    return m_selectedNode.type == DeviceNode::FamilyType ?
-                                  m_selectedNode.name :
-                                  m_selectedNode.familyName;
+    return m_selectedNode.getFamilyName();
 }
 
 //------------------------------------------------------------------------------
@@ -50,9 +46,7 @@ QString McuBrowserViewModel::selectedFamily() const
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::selectedSeries() const
 {
-    return m_selectedNode.type == DeviceNode::SeriesType ?
-                                  m_selectedNode.name :
-                                  m_selectedNode.seriesName;
+    return m_selectedNode.getSeriesName();
 }
 
 //------------------------------------------------------------------------------
@@ -60,7 +54,7 @@ QString McuBrowserViewModel::selectedSeries() const
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::selectedMcu() const
 {
-    return m_selectedNode.type == DeviceNode::McuType ? m_selectedNode.name : QString();
+    return m_selectedNode.getMcuName();
 }
 
 //------------------------------------------------------------------------------
@@ -79,10 +73,10 @@ void McuBrowserViewModel::saveSelection()
     if(!m_selectedNode.isValid()) return;
 
     // Сохраняем в настройках
-    Settings::instance()->saveSelectedVendor(m_selectedNode.vendorName);
-    Settings::instance()->saveSelectedCore(m_selectedNode.familyName);
-    Settings::instance()->saveSelectedSeries(m_selectedNode.seriesName);
-    Settings::instance()->saveSelectedMcu(m_selectedNode.isMcu() ? m_selectedNode.name : QString());
+    Settings::instance()->saveSelectedVendor(m_selectedNode.getVendorName());
+    Settings::instance()->saveSelectedCore(m_selectedNode.getFamilyName());
+    Settings::instance()->saveSelectedSeries(m_selectedNode.getSeriesName());
+    Settings::instance()->saveSelectedMcu(m_selectedNode.getMcuName());
 }
 
 //------------------------------------------------------------------------------
@@ -241,6 +235,7 @@ DeviceNode McuBrowserViewModel::buildVendorNode(const QString& vendor)
     node.type = DeviceNode::VendorType;
     node.name = vendor;
     node.displayName = vendor;
+    node.hierarchyNode = &m_pack.constVendor(vendor);
 
     QStringList families = m_pack.vendor(vendor).families().keys();
 
@@ -263,6 +258,7 @@ DeviceNode McuBrowserViewModel::buildFamilyNode(const QString& vendor,
     node.name = family;
     node.displayName = family;
     node.vendorName = vendor;
+    node.hierarchyNode = &m_pack.constVendor(vendor).constFamily(family);
 
     QStringList series = m_pack.vendor(vendor).family(family).seriesMap().keys();
 
@@ -287,6 +283,7 @@ DeviceNode McuBrowserViewModel::buildSeriesNode(const QString& vendor,
     node.displayName = series;
     node.vendorName = vendor;
     node.familyName = family;
+    node.hierarchyNode = &m_pack.constVendor(vendor).constFamily(family).constSeries(series);
 
     QStringList mcus = m_pack.vendor(vendor).family(family).series(series).mcuMap().keys();
 
@@ -313,6 +310,11 @@ DeviceNode McuBrowserViewModel::buildMcuNode(const QString& vendor,
     node.vendorName = vendor;
     node.familyName = family;
     node.seriesName = series;
+    node.hierarchyNode = &m_pack.
+                         constVendor(vendor).
+                         constFamily(family).
+                         constSeries(series).
+                         constMcu(mcu);
 
     // Кэшируем объект MCU для быстрого доступа
     Mcu* mcuObj = &m_pack.vendor(vendor).family(family).series(series).mcu(mcu);
@@ -617,4 +619,20 @@ QString McuBrowserViewModel::defaultFlashAlgorithm() const
 QString McuBrowserViewModel::releaseVersion() const
 {
     return m_pack.release();
+}
+
+//------------------------------------------------------------------------------
+// Уникальный идентификатор производителя
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::vendorId() const
+{
+    return QString::number(m_pack.constVendor(m_selectedNode.getVendorName()).getId());
+}
+
+//------------------------------------------------------------------------------
+// Возвращает путь узла в формате vendor/family/series/mcu
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::devNodePath() const
+{
+
 }

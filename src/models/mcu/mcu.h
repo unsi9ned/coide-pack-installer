@@ -15,8 +15,11 @@
 #include "memory.h"
 #include "devicefeature.h"
 #include "featurecontainer.h"
+#include "devicehierarchynode.h"
 
-class Mcu : public FeatureContainer, public AlgorithmContainer
+class Series;
+
+class Mcu : public FeatureContainer, public AlgorithmContainer, public DeviceHierarchyNode
 {
 
 private:
@@ -45,6 +48,7 @@ private:
     QStringList _definedSymbols;
     QStringList _compileHeaders;
 
+    Series * m_parent;
 public:
     Mcu();
     Mcu(int id,
@@ -57,7 +61,7 @@ public:
     int getUserId() const {return userId;}
     int getDebugAlgorithmId() const {return debugAlgorithmId;}
     QString getName() const {return name;}
-    QString getCoName() {return name.toUpper();}
+    QString getCoName() const {return QString(name).toUpper();}
     QString getDescription() const {return description;}
     QString getKeyParameter() const {return keyParameter;}
     QString getWebPageURL() const {return webPageURL;}
@@ -94,6 +98,14 @@ public:
     void setFlashAlgorithm(ProgAlgorithm da){this->flashAlgorithm = da;}
 
     Mcu& setCoreDebugAlgorithm(const QString& coreName);
+
+    void setParent(Series* parent);
+    Series * getParent();
+    bool hasParent() const;
+    const Series& constParent() const;
+    const Series& constSeries() const;
+
+    QString getPath() const;
 
     bool isValid(QString* errorString = nullptr);
     bool isNull();

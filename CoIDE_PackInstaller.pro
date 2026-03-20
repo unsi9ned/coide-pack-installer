@@ -95,7 +95,8 @@ HEADERS  += \
     src/utils/makelink.h \
     src/services/settings.h \
     src/viewmodels/mcubrowserviewmodel.h \
-    src/utils/versionhelper.h
+    src/utils/versionhelper.h \
+    src/models/mcu/devicehierarchynode.h
 
 FORMS    += \
     src/views/mainform.ui
