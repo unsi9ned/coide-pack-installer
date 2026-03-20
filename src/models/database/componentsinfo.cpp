@@ -2,6 +2,8 @@
 #include "database.h"
 #include "models/mcu/manufacturer.h"
 
+#define USE_UNIQUE_ID 1
+
 QMap<int, Component> *ComponentsInfo::components()
 {
     return &this->componentsMap;
@@ -548,8 +550,9 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
     if(foundComponent.isNull())
     {
         //Поиск последнего айди
-        int lastId = -1;
         bool status = false;
+#if !USE_UNIQUE_ID
+        int lastId = -1;
         QString queryStr = QString("SELECT MAX(id) FROM component");
         QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
@@ -563,7 +566,12 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
         {
             lastId = result.value(0).toInt();
             component.setId(lastId + 1);
+#else
+        QString queryStr;
+        QSqlQuery result;
 
+        {
+#endif
             // Создаем положительный статус компонента
             Component::ComponentStatus costatus = component.getStatus();
 
@@ -579,7 +587,11 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                                "hits, create_date, update_date, tags) "
                                "VALUES ('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12',"
                                "'%13','%14','%15','%16','%17','%18','%19','%20','%21','%22')").
+#if USE_UNIQUE_ID
+                               arg(component.getUniqueId()).
+#else
                                arg(component.getId()).
+#endif
                                arg(component.getAuthorId()).
                                arg(component.getLayerId()).
                                arg(component.getComponentStatusId()).
@@ -610,6 +622,12 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                     *errorString = result.lastError().text();
                 return false;
             }
+#if USE_UNIQUE_ID
+            else
+            {
+                component.setId(component.getUniqueId());
+            }
+#endif
 
             // Создаем категорию или находим ее, если она создана
             Category newCategory = findCategory(component.getCategory(), errorString);

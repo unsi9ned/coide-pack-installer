@@ -2,6 +2,8 @@
 #include "componentsinfo.h"
 #include "services/logger.h"
 
+#define USE_UNIQUE_ID 1
+
 RequestManager* RequestManager::_m_instance = nullptr;
 
 RequestManager::RequestManager() : ComponentsInfo()
@@ -511,6 +513,22 @@ bool RequestManager::createFamily(Family& family)
 
         if(!isset)
         {
+#if USE_UNIQUE_ID
+            QString queryStr = QString("INSERT INTO mcufamily "
+                                       "VALUES ('%1','%2','%3')").
+                                       arg(family.getUniqueId()).
+                                       arg(family.getCoName()).
+                                       arg(family.getManufacturerId());
+
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+            if(!status)
+            {
+                errorStr = result.lastError().text();
+            }
+            else
+                family.setId(family.getUniqueId());
+#else
             int lastId = -1;
 
             //Поиск последнего айди
@@ -539,6 +557,7 @@ bool RequestManager::createFamily(Family& family)
                     errorStr = result.lastError().text();
                 }
             }
+#endif
         }
     }
 
@@ -564,6 +583,48 @@ bool RequestManager::createSeries(Series& series)
     }
     else
     {
+#if USE_UNIQUE_ID
+        bool isset = false;
+        //
+        // Сначала загружаем список существующих серий и проверяем нет ли уже такой
+        //
+        QList<Series> seriesList = requestSeriesList(series.getFamilyId());
+
+        for(int s = 0; s < seriesList.length(); s++)
+        {
+            Series currSeries = seriesList.at(s);
+
+            if(currSeries.getName().trimmed().toLower() ==
+               series.getName().trimmed().toLower())
+            {
+                series.setId(currSeries.getId());
+                isset = true;
+                break;
+            }
+        }
+
+        //
+        // Создание новой серии
+        //
+        if(!isset)
+        {
+            QString queryStr = QString("INSERT INTO mcuseries "
+                                       "VALUES ('%1','%2','%3')").
+                                arg(series.getUniqueId()).
+                                arg(series.getName()).
+                                arg(series.getFamilyId());
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+            if(!status)
+            {
+                errorStr = result.lastError().text();
+            }
+            else
+            {
+                series.setId(series.getUniqueId());
+            }
+        }
+#else
         bool isset = false;
         int lastId = -1;
 
@@ -611,6 +672,7 @@ bool RequestManager::createSeries(Series& series)
                 }
             }
         }
+#endif
     }
 
     if(!status)
@@ -635,6 +697,63 @@ bool RequestManager::createMcu(Mcu &device)
     }
     else
     {
+#if USE_UNIQUE_ID
+        bool isset = false;
+
+        //
+        // Сначала проверяем нет ли устройства в базе
+        //
+        QList<Mcu> mcuList = requestMcuList(device.getSeriesId());
+
+        for(int m = 0; m < mcuList.length(); m++)
+        {
+            Mcu currMcu = mcuList.at(m);
+
+            if(currMcu.getName().trimmed().toLower() ==
+               device.getName().trimmed().toLower())
+            {
+                isset = true;
+                device.setId(currMcu.getId());
+                device.setTimeuuid(currMcu.getTimeuuid());
+                break;
+            }
+        }
+
+        //
+        // Создаем новое устройство
+        //
+        if(!isset)
+        {
+            QString queryStr = QString("INSERT INTO mcu "
+                                       "VALUES ('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12','%13','%14','%15')").
+                                arg(device.getUniqueId()).
+                                arg(device.getSeriesId()).
+                                arg(device.getUserId()).
+                                arg(device.getDebugAlgorithm().coId()).
+                                arg(device.getCoName()).
+                                arg(device.coDescription()).
+                                arg(device.coFeaturesSummary()).
+                                arg(device.coWebPageUrl()).
+                                arg(device.coDatasheetURL()).
+                                arg(device.coMemInfo()).
+                                arg(device.defSym2coMicro()).
+                                arg(device.getAdvertising()).
+                                arg(device.getPrice()).
+                                arg(device.getTimeuuid()).
+                                arg(device.getHits());
+
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+            if(!status)
+            {
+                errorStr = result.lastError().text();
+            }
+            else
+            {
+                device.setId(device.getUniqueId());
+            }
+        }
+#else
         bool isset = false;
         int lastId = -1;
 
@@ -704,6 +823,7 @@ bool RequestManager::createMcu(Mcu &device)
                 }
             }
         }
+#endif
     }
 
     if(!status)
