@@ -31,6 +31,7 @@ public:
 
 
     int getId() const;
+    qint32 getCoMaxId() const {return ID_FAMILY_LAST; }
     QString getName() const;
     QString getCoName() const;
     int getManufacturerId() const;

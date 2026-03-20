@@ -626,7 +626,62 @@ QString McuBrowserViewModel::releaseVersion() const
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::vendorId() const
 {
-    return QString::number(m_pack.constVendor(m_selectedNode.getVendorName()).getId());
+    qint32 id = m_pack.constVendor(m_selectedNode.getVendorName()).getUniqueId();
+    return id == -1 ? QString() : QString::number(id);
+}
+
+//------------------------------------------------------------------------------
+// Уникальный идентификатор семейства
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::familyId() const
+{
+    if(m_selectedNode.isValid() && !m_selectedNode.isVendor())
+    {
+        qint32 id = m_pack.
+                    constVendor(m_selectedNode.getVendorName()).
+                    constFamily(m_selectedNode.getFamilyName()).
+                    getUniqueId();
+        return id == -1 ? QString() : QString::number(id);
+    }
+
+    return QString();
+}
+
+//------------------------------------------------------------------------------
+// Уникальный ID серии
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::seriesId() const
+{
+    if(m_selectedNode.isSeries() || m_selectedNode.isMcu())
+    {
+        qint32 id = m_pack.
+                    constVendor(m_selectedNode.getVendorName()).
+                    constFamily(m_selectedNode.getFamilyName()).
+                    constSeries(m_selectedNode.getSeriesName()).
+                    getUniqueId();
+        return id == -1 ? QString() : QString::number(id);
+    }
+
+    return QString();
+}
+
+//------------------------------------------------------------------------------
+// Уникальный ID устройства
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::mcuId() const
+{
+    if(m_selectedNode.isMcu())
+    {
+        qint32 id = m_pack.
+                    constVendor(m_selectedNode.getVendorName()).
+                    constFamily(m_selectedNode.getFamilyName()).
+                    constSeries(m_selectedNode.getSeriesName()).
+                    constMcu(m_selectedNode.getMcuName()).
+                    getUniqueId();
+        return id == -1 ? QString() : QString::number(id);
+    }
+
+    return QString();
 }
 
 //------------------------------------------------------------------------------
@@ -634,5 +689,5 @@ QString McuBrowserViewModel::vendorId() const
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::devNodePath() const
 {
-
+    return m_selectedNode.hierarchyNode->getPath();
 }

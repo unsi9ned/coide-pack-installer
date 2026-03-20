@@ -58,6 +58,7 @@ public:
 
     void setId(int id);
     int getId() const;
+    qint32 getUniqueId() const;
 
     Manufacturer& setName(QString name);
     QString getName() const;

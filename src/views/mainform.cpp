@@ -319,6 +319,9 @@ void MainForm::showMcuDetails()
 
     // Уникальные идентификаторы
     ui->lineEditVendorId->setText(m_mcuBrowserViewModel->vendorId());
+    ui->lineEditFamilyId->setText(m_mcuBrowserViewModel->familyId());
+    ui->lineEditSeriesId->setText(m_mcuBrowserViewModel->seriesId());
+    ui->lineEditMcuId->setText(m_mcuBrowserViewModel->mcuId());
 }
 
 //------------------------------------------------------------------------------
@@ -339,6 +342,9 @@ void MainForm::clearForm()
     ui->lineEditDatasheetUrl->clear();
     ui->lineEditUrl->clear();
     ui->lineEditVendorId->clear();
+    ui->lineEditFamilyId->clear();
+    ui->lineEditSeriesId->clear();
+    ui->lineEditMcuId->clear();
 }
 
 //------------------------------------------------------------------------------
@@ -375,8 +381,6 @@ void MainForm::onDeviceTreeItemClicked(QTreeWidgetItem *item, int column)
 
     // 2. Обновляем информацию об MCU
     showMcuDetails();
-
-    qInfo() << node.hierarchyNode->getPath();
 }
 
 //------------------------------------------------------------------------------

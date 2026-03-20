@@ -1,5 +1,6 @@
 #include "mcu.h"
 #include "series.h"
+#include "common/constants.h"
 
 Mcu::Mcu()
 {

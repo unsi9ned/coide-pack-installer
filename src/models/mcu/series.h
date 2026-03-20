@@ -32,6 +32,7 @@ public:
     Series(Series * s);
 
     int getId() const;
+    qint32 getCoMaxId() const {return ID_SERIES_LAST; }
     QString getName() const;
     int getFamilyId() const;
 

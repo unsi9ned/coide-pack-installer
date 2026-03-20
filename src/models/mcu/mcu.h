@@ -57,6 +57,7 @@ public:
         int userId = CoUser::USER_COOCOX);
 
     int getId() const {return id;}
+    qint32 getCoMaxId() const {return ID_MCU_LAST; }
     int getSeriesId() const {return seriesId;}
     int getUserId() const {return userId;}
     int getDebugAlgorithmId() const {return debugAlgorithmId;}

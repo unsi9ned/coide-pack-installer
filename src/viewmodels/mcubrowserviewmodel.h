@@ -48,7 +48,7 @@ struct DeviceNode
     bool isFamily() const { return type == FamilyType; }
     bool isSeries() const { return type == SeriesType; }
     bool isMcu() const { return type == McuType; }
-    bool isValid() const { return type == InvalidType || !name.isEmpty(); }
+    bool isValid() const { return type != InvalidType && !name.isEmpty(); }
 };
 
 //------------------------------------------------------------------------------
@@ -135,6 +135,9 @@ public:
     QString releaseVersion() const;
 
     QString vendorId() const;
+    QString familyId() const;
+    QString seriesId() const;
+    QString mcuId() const;
 
     QString devNodePath() const;
 
