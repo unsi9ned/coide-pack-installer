@@ -736,8 +736,27 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
 #else
     else
     {
+        bool status = false;
+
+        // Обновляем ID существующего в БД компонента
         if(component.isNull())
             component.setId(foundComponent.getId());
+
+        // Создаем связи между существующими и новыми компонентами
+        foreach (Component* child, children)
+        {
+            bool hasLink = hasComponentsLink(child->getId(), component.getId(), &status, errorString);
+
+            if(status && !hasLink)
+            {
+                if(!createComponentsLink(child->getId(), component.getId(), errorString))
+                    return false;
+            }
+            else if(!status)
+                return false;
+        }
+
+        // Помечаем, что компонент не требует установки
         component.setPersisted(true);
     }
 #endif
