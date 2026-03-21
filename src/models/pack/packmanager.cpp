@@ -776,7 +776,7 @@ void PackManager::loadCoComponents(PackDescription &pack)
 
             foreach(ZipArchive::ArchiveEntry f, files)
             {
-                if(!f.isDir && !list.contains(f.fullPath))
+                if(!f.isDir && !list.contains(f.fullPath) && f.extension.toLower() == "h")
                 {
                     list.append(f.fullPath.replace('/', '\\'));
                 }
