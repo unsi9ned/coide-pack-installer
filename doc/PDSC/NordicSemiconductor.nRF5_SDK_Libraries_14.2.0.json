@@ -66,6 +66,10 @@
 					"name": "nrf_error",
 					"version": "14.2.0"
 				}
+			],
+			"conditions": [
+				"nRF51",
+				"nRF52"
 			]
 		},
 		{
@@ -87,6 +91,10 @@
 					"name": "app_error",
 					"version": "14.2.0"
 				}
+			],
+			"conditions": [
+				"nRF51",
+				"nRF52"
 			]
 		}
 	]

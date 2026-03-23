@@ -109,6 +109,8 @@ private:
     QString m_cversion;     // optional
     QString m_condition;    // optional
 
+    QString m_jdscPath;
+
 public:
     Component();
 
@@ -228,6 +230,7 @@ public:
     void setPdscVariant(const QString& variant) { m_cvariant = variant; }
     void setPdscVersion(const QString& version) { m_cversion = version; }
     void setPdscCondition(const QString& condition) { m_condition = condition; }
+    void setJdscPath(const QString& path) { m_jdscPath = path; }
 
     const QString getPdscVendor() { return m_cvendor; }
     const QString getPdscClass() { return m_cclass; }
@@ -236,6 +239,7 @@ public:
     const QString getPdscVariant() { return m_cvariant; }
     const QString getPdscVersion() { return m_cversion; }
     const QString getPdscCondition() { return m_condition; }
+    const QString getJdscPath() { return m_jdscPath; }
 };
 
 #endif // COMPONENT_H

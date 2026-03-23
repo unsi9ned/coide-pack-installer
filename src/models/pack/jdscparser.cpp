@@ -122,6 +122,7 @@ QList<JdscComponent> JdscParser::loadComponents(const QJsonArray& components,
         QString group = obj["group"].toString();
         QString version = obj["version"].toString();
         bool external = obj["external"].toBool();
+        QString path = obj["path"].toString();
         QStringList files;
 
         for (const auto& file : obj["files"].toArray())
@@ -156,6 +157,7 @@ QList<JdscComponent> JdscParser::loadComponents(const QJsonArray& components,
         newComponent.setVersion(version);
         newComponent.setExternal(external);
         newComponent.addFiles(files);
+        newComponent.setPath(path);
 
         jdscComponents.append(newComponent);
     }
@@ -258,7 +260,7 @@ void JdscParser::loadComponents(QMap<QString, Component>& coComponentMap,
                             coComponent.setPdscClass(jComponent.cclass());
                             coComponent.setPdscGroup(jComponent.group());
                             coComponent.setPdscSub(jComponent.name());
-                            //coComponent.setPdscVariant(jComponent.attributes().getCvariant());
+                            coComponent.setJdscPath(jComponent.path());
 
                             if(!jComponent.version().isEmpty())
                                 coComponent.setPdscVersion(jComponent.version());

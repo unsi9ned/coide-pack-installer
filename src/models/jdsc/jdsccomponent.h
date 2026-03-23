@@ -20,6 +20,7 @@ private:
     QMap<QString, JdscCondition> m_conditions;
     QStringList m_defines;
     bool m_external;
+    QString m_path;
 public:
     JdscComponent() = default;
     JdscComponent(const QString& name, const QString& version = QString());
@@ -33,6 +34,7 @@ public:
     QMap<QString, JdscCondition> conditions() const;
     QStringList defines() const;
     bool isExternal() const;
+    QString path() const;
 
     void setName(const QString& name);
     void setDescription(const QString& description);
@@ -45,6 +47,7 @@ public:
     void addCondition(JdscCondition condition);
     void addDefine(const QString& define);
     void setExternal(bool external);
+    void setPath(const QString& path);
 
     bool supportDevice(const QString& devName);
 };

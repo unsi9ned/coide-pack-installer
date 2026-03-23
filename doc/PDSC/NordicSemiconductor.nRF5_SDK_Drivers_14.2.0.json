@@ -48,6 +48,16 @@
 			"external": true
 		},
 		{
+			"name": "nrf_error",
+			"description": "Definitions of error codes",
+			"class": "nRF_Drivers",
+			"group": "Peripheral",
+			"version": "14.2.0",
+			"files": [
+				"components/drivers_nrf/nrf_soc_nosd/nrf_error.h"
+			]
+		},
+		{
 			"name": "HAL",
 			"description": "Hardware abstraction layer",
 			"class": "nRF_Drivers",
@@ -100,26 +110,6 @@
 			],
 			"defines": [
 				"HAL_DRIVERS_ENABLED"
-			]
-		},
-		{
-			"name": "nrf_error",
-			"description": "Definitions of error codes",
-			"class": "nRF_Drivers",
-			"group": "Peripheral",
-			"version": "14.2.0",
-			"files": [
-				"components/drivers_nrf/nrf_soc_nosd/nrf_error.h"
-			],
-			"requires": [
-				{
-					"name": "HAL",
-					"version": "14.2.0"
-				}
-			],
-			"conditions": [
-				"nRF51",
-				"nRF52"
 			]
 		}
 	]

@@ -590,6 +590,8 @@ Component::operator==(const Component &component)
 
 QString Component::getPath() const
 {
+    if(!m_jdscPath.isEmpty()) return m_jdscPath;
+
     QString localCondition;
 
     if(name.startsWith("Compile_") && !_supportsMcuList.isEmpty())

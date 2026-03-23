@@ -56,9 +56,17 @@ void JdscComponent::setExternal(bool external)
     m_external = external;
 }
 
+void JdscComponent::setPath(const QString& path)
+{
+    m_path = path;
+}
+
 bool JdscComponent::supportDevice(const QString& devName)
 {
     bool status = false;
+
+    if(m_conditions.isEmpty())
+        return true;
 
     for(const auto& cond : m_conditions)
     {
@@ -135,6 +143,11 @@ QStringList JdscComponent::defines() const
 bool JdscComponent::isExternal() const
 {
     return m_external;
+}
+
+QString JdscComponent::path() const
+{
+    return m_path;
 }
 
 
