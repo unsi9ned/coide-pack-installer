@@ -57,7 +57,11 @@ SOURCES += src/main.cpp\
     src/utils/makelink.cpp \
     src/services/settings.cpp \
     src/viewmodels/mcubrowserviewmodel.cpp \
-    src/views/aboutdialog.cpp
+    src/views/aboutdialog.cpp \
+    src/models/pack/jdscparser.cpp \
+    src/models/pack/packdescriptionparser.cpp \
+    src/models/jdsc/jdsccondition.cpp \
+    src/models/jdsc/jdsccomponent.cpp
 
 HEADERS  += \
     src/models/pack/pdscparser.h \
@@ -98,7 +102,11 @@ HEADERS  += \
     src/viewmodels/mcubrowserviewmodel.h \
     src/models/mcu/devicehierarchynode.h \
     src/views/aboutdialog.h \
-    src/common/version.h
+    src/common/version.h \
+    src/models/pack/jdscparser.h \
+    src/models/pack/packdescriptionparser.h \
+    src/models/jdsc/jdsccondition.h \
+    src/models/jdsc/jdsccomponent.h
 
 FORMS    += \
     src/views/mainform.ui \

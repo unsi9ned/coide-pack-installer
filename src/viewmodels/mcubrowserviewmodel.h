@@ -170,6 +170,7 @@ signals:
     void loadStarted();
     void loadResult(bool success, QString errorString);
     void packLoaded(bool success);
+    void loadLogMessage(const QString& message);
 
     void installStarted();
     void installResult(bool success, QString errorString);

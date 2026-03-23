@@ -21,6 +21,7 @@ PdscParser::PdscParser()
 //------------------------------------------------------------------------------
 bool PdscParser::parse(PackDescription &pack)
 {
+    bool status = false;
     QFile pdscFile(pack.pathToPdsc());
 
     if(!pdscFile.exists())
@@ -42,6 +43,7 @@ bool PdscParser::parse(PackDescription &pack)
         {
             parseDomDocument(&domDocument, pack);
             _lastErrorStr = "";
+            status = true;
         }
         else
         {
@@ -54,7 +56,7 @@ bool PdscParser::parse(PackDescription &pack)
         pdscFile.close();
     }
 
-    return false;
+    return status;
 }
 
 //------------------------------------------------------------------------------
@@ -973,27 +975,6 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
 
                             coComponent.setLayerId(Component::LAYER_MCU);
                             coComponent.setType(Component::COMPONENT);
-
-//                            // Формируем имя компонента Cgroup_<version>
-//                            if(pComponent.attributes().getCversion().isEmpty())
-//                            {
-//                                coComponent.setVersion(pack.release());
-//                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
-//                                                    pack.release());
-//                            }
-//                            else
-//                            {
-//                                coComponent.setVersion(pComponent.attributes().getCversion());
-//                                coComponent.setName(pComponent.attributes().getCgroup() + "_" +
-//                                                    pComponent.attributes().getCversion());
-//                            }
-
-//                            // Дополняем имя компонента параметром Cvariant
-//                            if(!pComponent.attributes().getCvariant().isEmpty())
-//                                coComponent.setName(QString("%1_%2").
-//                                                    arg(coComponent.getName()).
-//                                                    arg(pComponent.attributes().getCvariant()));
-
                             coComponent.setCategory(coCategory);
 
                             if(!pComponent.description().isEmpty())
@@ -1135,69 +1116,6 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
             }
         }
     }
-}
-
-//------------------------------------------------------------------------------
-// Установить связь между компонентами и сформировать окончательную карту
-//------------------------------------------------------------------------------
-void PdscParser::linkComponents(const QMap<QString, Component> &coComponentMap,
-                                const QMap<QString, QList<PdscParser::ParentComponentInfo> > &parentComponentInfoMap,
-                                PackDescription &pack)
-{
-    QMap<QString, Component>& componentMap = pack.coComponentMap();
-    componentMap.unite(coComponentMap);
-
-    for(auto it = componentMap.begin(); it != componentMap.end(); ++it)
-    {
-        QString uuid = it.key();
-        Component& component = it.value();
-        QList<PdscParser::ParentComponentInfo> parents = parentComponentInfoMap.value(uuid);
-
-#if 0
-        if(parents.count() > 0)
-            qInfo() << "Component" << component.getName() << "has parents:";
-
-        foreach(auto parentInfo, parents)
-        {
-            QList<Component*> parentComponents = findParentsComponent(componentMap, parentInfo);
-
-            foreach(auto c, parentComponents)
-            {
-                qInfo() << "   " << c->getName();
-            }
-        }
-#else
-        foreach(auto parentInfo, parents)
-        {
-            QList<Component*> parentComponents = findParentsComponent(componentMap, parentInfo);
-
-            foreach(auto parent, parentComponents)
-            {
-                component.addParent(parent);
-                parent->addChild(&component);
-            }
-        }
-#endif
-    }
-
-    // Связывание компонентов CMSIS со всеми Mcu
-    for(auto it = pack.cmsisComponents().begin(); it != pack.cmsisComponents().end(); ++it)
-    {
-        if(it.value() == nullptr)
-            continue;
-
-        Component * cmsisComponent = it.value();
-        QString cmsisUuid = cmsisComponent->getUuid();
-
-        for(auto cIt = componentMap.begin(); cIt != componentMap.end(); ++cIt)
-        {
-            if(cIt.key() == cmsisUuid)
-                continue;
-
-            cmsisComponent->addSupportedMcuList(cIt.value().supportedMcuList());
-        }
-    }
-    return;
 }
 
 //------------------------------------------------------------------------------
@@ -1399,33 +1317,11 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
 }
 
 //------------------------------------------------------------------------------
-// Добавляет в карту новую информацию о связи между компонентами
-//------------------------------------------------------------------------------
-void PdscParser::updateParentComponentMap(QMap<QString, QList<PdscParser::ParentComponentInfo> > &parentComponentInfoMap,
-                                          QString componentUuid,
-                                          PdscParser::ParentComponentInfo newParent)
-{
-    QList<ParentComponentInfo> * parentList = nullptr;
-
-    if(parentComponentInfoMap.contains(componentUuid))
-    {
-        parentList = &parentComponentInfoMap[componentUuid];
-    }
-    else
-    {
-        parentComponentInfoMap.insert(componentUuid, QList<ParentComponentInfo>());
-        parentList = &parentComponentInfoMap[componentUuid];
-    }
-
-    if(!parentList->contains(newParent))
-        parentList->append(newParent);
-}
-
-//------------------------------------------------------------------------------
 // Ищет компонент в карте по косвенным признакам
 //------------------------------------------------------------------------------
-QList<Component*> PdscParser::findParentsComponent(const QMap<QString, Component> &coComponentMap,
-                                                   const PdscParser::ParentComponentInfo &parent)
+QList<Component*> PdscParser::findParentsComponent(
+        const QMap<QString, Component>& coComponentMap,
+        const PackDescriptionParser::ParentComponentInfo& parent)
 {
     QList<Component*> foundComponents;
 

@@ -33,7 +33,7 @@
 	],
 	"components": [
 		{
-			"name": "CMSIS CORE 5.6.0",
+			"name": "CMSIS_Core",
 			"class": "CMSIS",
 			"group": "CORE",
 			"version": "5.6.0",
@@ -41,6 +41,7 @@
 		},
 		{
 			"name": "nrf_assert",
+			"description": "Utilities for verifying program logic",
 			"class": "nRF_Libraries",
 			"group": "Peripheral",
 			"version": "14.2.0",
@@ -48,6 +49,7 @@
 		},
 		{
 			"name": "HAL",
+			"description": "Hardware abstraction layer",
 			"class": "nRF_Drivers",
 			"group": "Peripheral",
 			"version": "14.2.0",
@@ -83,8 +85,14 @@
 				"components/drivers_nrf/hal/nrf_wdt.h"
 			],
 			"requires": [
-				"CMSIS CORE 5.6.0",
-				"nrf_assert"
+				{
+					"name": "CMSIS_Core",
+					"version": "5.6.0"
+				},
+				{
+					"name": "nrf_assert",
+					"version": "14.2.0"
+				}
 			],
 			"conditions": [
 				"nRF51",
@@ -96,6 +104,7 @@
 		},
 		{
 			"name": "nrf_error",
+			"description": "Definitions of error codes",
 			"class": "nRF_Drivers",
 			"group": "Peripheral",
 			"version": "14.2.0",
@@ -103,12 +112,15 @@
 				"components/drivers_nrf/nrf_soc_nosd/nrf_error.h"
 			],
 			"requires": [
-				"CMSIS CORE 5.6.0"
+				{
+					"name": "HAL",
+					"version": "14.2.0"
+				}
 			],
 			"conditions": [
 				"nRF51",
 				"nRF52"
-			],
+			]
 		}
 	]
 }

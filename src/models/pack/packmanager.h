@@ -16,8 +16,8 @@ public:
     bool packInstall(PackDescription& pack, QString &errorString);
 
 private:
-    QString findPDSC(const PackDescription& pack);
-    bool extractPDSC(PackDescription& pack, QString& errorString);
+    QString findPackDescriptionFile(const PackDescription& pack, const QString& extension);
+    bool extractPackDescriptionFile(PackDescription& pack, QString& errorString);
     bool extractSVD(PackDescription& pack, QString& errorString);
     bool makeSvdDatabase(PackDescription& pack, QString& errorString);
     void loadCoComponents(PackDescription& pack);

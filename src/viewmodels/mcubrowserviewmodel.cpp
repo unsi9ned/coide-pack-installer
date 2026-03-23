@@ -15,6 +15,16 @@ McuBrowserViewModel::McuBrowserViewModel(QObject *parent) : QObject(parent)
     connect(this, &McuBrowserViewModel::installResult,
             this, &McuBrowserViewModel::onInstallResult,
             Qt::QueuedConnection);
+
+    connect(&m_packManager,
+            &PackManager::eventOccured,
+            this,
+            &McuBrowserViewModel::loadLogMessage);
+
+    connect(&m_packManager,
+            &PackManager::errorOccured,
+            this,
+            &McuBrowserViewModel::loadLogMessage);
 }
 
 //------------------------------------------------------------------------------

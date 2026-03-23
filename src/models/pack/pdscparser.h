@@ -4,35 +4,11 @@
 #include <QString>
 #include <QDomDocument>
 #include "packdescription.h"
+#include "packdescriptionparser.h"
 #include "models/pdsc/pdsccomponent.h"
 
-class PdscParser
+class PdscParser : public PackDescriptionParser
 {
-private:
-    struct ParentComponentInfo
-    {
-        QString Cclass;
-        QString Cgroup;
-        QString Cversion;
-
-        ParentComponentInfo() = default;
-
-        ParentComponentInfo(const QString& Cclass,
-                            const QString& Cgroup,
-                            const QString& Cversion = QString())
-        {
-            this->Cclass = Cclass;
-            this->Cgroup = Cgroup;
-            this->Cversion = Cversion;
-        }
-
-        operator==(const ParentComponentInfo& parent)
-        {
-            return this->Cclass == parent.Cclass &&
-                   this->Cgroup == parent.Cgroup &&
-                   this->Cversion == parent.Cversion;
-        }
-    };
 private:
     QString _lastErrorStr;
 
@@ -40,7 +16,6 @@ public:
     PdscParser();
 
     bool parse(PackDescription& pack);
-    void reloadComponents(PackDescription& pack);
 
 private:
     void parseDomDocument(QDomDocument * doc, PackDescription& pack);
@@ -62,10 +37,7 @@ private:
                         QMap<QString, QList<ParentComponentInfo> >& parentComponentInfoMap,
                         const QList<PdscComponent>& componentList,
                         PackDescription& pack);
-
-    void linkComponents(const QMap<QString, Component>& coComponentMap,
-                        const QMap<QString, QList<ParentComponentInfo> >& parentComponentInfoMap,
-                        PackDescription& pack);
+    void reloadComponents(PackDescription &pack);
 
     bool checkRequirements(const PackDescription& pack,
                            const Manufacturer& vendor,
@@ -87,11 +59,8 @@ private:
                                  PdscComponent& component,
                                  const QList<PdscComponent> &componentList);
 
-    void updateParentComponentMap(QMap<QString, QList<ParentComponentInfo> >& parentComponentInfoMap,
-                                  QString componentUuid,
-                                  ParentComponentInfo parentInfo);
     QList<Component*> findParentsComponent(const QMap<QString, Component>& coComponentMap,
-                                           const ParentComponentInfo& parent);
+                                           const PackDescriptionParser::ParentComponentInfo& parent);
 };
 
 #endif // PDSCPARSER_H

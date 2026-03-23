@@ -35,7 +35,12 @@ QString PackDescription::release() const
 
 QString PackDescription::pathToArchive() const
 {
-    return _pathToArchive;
+    return _archive.path();
+}
+
+PackArchiveInfo PackDescription::archiveInfo() const
+{
+    return _archive;
 }
 
 QString PackDescription::installDir() const
@@ -90,7 +95,7 @@ void PackDescription::setPathToPdsc(const QString &path)
 
 void PackDescription::setPathToArchive(const QString& path)
 {
-    this->_pathToArchive = path;
+    this->_archive.setPath(path);
 }
 
 Manufacturer &PackDescription::vendor(const QString &vendorName)
@@ -234,6 +239,11 @@ QList<PdscComponent> &PackDescription::pdscComponentList()
     return _pdscComponentList;
 }
 
+QList<JdscComponent>&PackDescription::jdscComponentList()
+{
+    return _jdscComponentList;
+}
+
 //------------------------------------------------------------------------------
 // Очистка содержимого пакета, всех полей и списков
 //------------------------------------------------------------------------------
@@ -244,7 +254,7 @@ void PackDescription::clear()
     _url.clear();
     _description.clear();
     _release.clear();
-    _pathToArchive.clear();
+    _archive.clear();
     _installDir.clear();
     _pathToPdsc.clear();
     _vendorMap.clear();

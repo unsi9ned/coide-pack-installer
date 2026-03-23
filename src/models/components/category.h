@@ -31,12 +31,14 @@ private:
 public:
 
     Category();
+    Category(PeripheralCaletory type);
     Category(int id, QString name, int parentId = -1);
 
     static Category categoryCommon();
     static Category categoryBoot();
     static Category categoryRtos();
     static Category categoryPeripheral();
+    static PeripheralCaletory categoryType(const QString& name);
 
     int getId() const;
     QString getName() const;
