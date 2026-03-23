@@ -520,6 +520,8 @@ bool PackManager::extractSVD(PackDescription &pack, QString &errorString)
                 Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
                 QString svd = mcu.svdLocalPath();
 
+                if(svd.isEmpty()) continue;
+
                 if(!vendor.svdList().contains(Manufacturer::SvdInfo(svd)))
                 {
                     Manufacturer::SvdInfo newSvd(svd);
