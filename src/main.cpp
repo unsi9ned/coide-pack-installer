@@ -208,6 +208,59 @@ int runConsole(int argc, char *argv[])
         LOG_INFO("Main", "Database optimization completed");
     }
 
+    //--------------------------------------------------------------------------
+    // Запуск процесса установки пакета
+    //--------------------------------------------------------------------------
+    if(install)
+    {
+        LOG_INFO("Main", "Starting pack installation");
+
+        McuBrowserViewModel viewModel;
+
+        if (!viewModel.loadPack())
+        {
+            LOG_ERROR("Main", "Failed to load pack: " + pathToArchive);
+            return 1;
+        }
+
+        LOG_INFO("Main", "Pack loaded successfully");
+
+        // Сигнал завершения
+        QEventLoop loop;
+        bool success = false;
+        QString resultMessage;
+
+        // Подключаем сигналы
+        QObject::connect(&viewModel, &McuBrowserViewModel::installStarted,[]()
+        {
+            LOG_INFO("Main", "Installation started");
+        });
+
+        // Подключаемся к сигналу packInstalled
+        QObject::connect(&viewModel, &McuBrowserViewModel::packInstalled,
+                        [&success, &resultMessage, &loop](bool ok, const QString& message)
+        {
+            success = ok;
+            resultMessage = message;
+            loop.quit();
+        });
+
+        viewModel.installCurrentPack();
+
+        loop.exec();
+
+        if (success)
+        {
+            LOG_INFO("Main", "Pack installation completed successfully");
+            return 0;
+        }
+        else
+        {
+            LOG_ERROR("Main", "Pack installation failed: " + resultMessage);
+            return 1;
+        }
+    }
+
     return 0;
 }
 
