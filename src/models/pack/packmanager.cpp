@@ -302,19 +302,19 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     // Установка компонентов
     //
     QMap<QString, Component>& componentMap = pack.coComponentMap();
-    QMap<QString, QStringList>& componentFileMap = pack.componentFilesMap();
 
-    foreach(QString uuid, componentMap.keys())
+    // Сортировка компоннетов в алфавитном порядке
+    QMultiMap<QString, QString> sortedComponentMap;
+
+    for(const auto& component : componentMap)
     {
-        Component& component = componentMap[uuid];
-        QStringList& files = componentFileMap[uuid];
+        sortedComponentMap.insert(component.getName(), component.getUuid());
+    }
 
-#if 0
-        if(component.getDescription() == "nRF5340 Device network core and CMSIS")
-        {
-            qInfo() << component.getName() << component.getDescription();
-        }
-#endif
+    for(auto it = sortedComponentMap.begin(); it != sortedComponentMap.end(); ++it)
+    {
+        QString uuid = it.value();
+        Component& component = componentMap[uuid];
 
         emit eventOccured(QString("Creating component '%1/%2'").
                           arg(component.getName()).
@@ -326,6 +326,14 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                               arg(component.getName()).
                               arg(component.getDescription()));
         }
+#if 0
+        else if(component.isExternal())
+        {
+            emit eventOccured(QString("The \"%1/%2\" component is EXTERNAL and requires the installation of another package.").
+                              arg(component.getName()).
+                              arg(component.getDescription()));
+        }
+#endif
         else
         {
             if(!reqManager->createComponent(component, &errorString))
@@ -1040,11 +1048,6 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
         QStringList coList = it.value();
         Component& component = componentMap[it.key()];
         QDir rootDir;
-
-        // Не создаем компонент повторно
-        // TODO Возможно, здесь будет лучше сделать пересоздание компонента
-//        if(component.isPersisted())
-//            continue;
 
         if(component.getType() == Component::DRIVER)
             rootDir.setPath(Paths::instance()->coIdeDriversDir() +

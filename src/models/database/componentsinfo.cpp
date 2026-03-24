@@ -535,7 +535,10 @@ bool ComponentsInfo::removeStatusPhantomRelations(QString *errorString)
 //------------------------------------------------------------------------------
 bool ComponentsInfo::createComponent(Component &component, QString *errorString)
 {
-    // Сначала создаем компаненты, от которых зависим
+#define RECURSIVE_CREATION 0
+
+#if RECURSIVE_CREATION
+    // Сначала создаем компоненты, от которых зависим
     QList<Component *> children = component.getChildren();
 
     foreach (Component* child, children)
@@ -543,6 +546,7 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
         if(child && !createComponent(*child, errorString))
             return false;
     }
+#endif
 
     Component foundComponent = findComponent(component);
 
@@ -712,13 +716,18 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
             // Создаем связь между компонентами
             if(component.hasChildren())
             {
-                foreach (Component* child, children)
+                foreach (Component* child, component.getChildren())
                 {
-                    bool hasLink = hasComponentsLink(child->getId(), component.getId(), &status, errorString);
+#if RECURSIVE_CREATION
+                    int childId = child->getId();
+#else
+                    int childId = child->getUniqueId();
+#endif
+                    bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
 
                     if(status && !hasLink)
                     {
-                        if(!createComponentsLink(child->getId(), component.getId(), errorString))
+                        if(!createComponentsLink(childId, component.getId(), errorString))
                             return false;
                     }
                     else if(!status)
@@ -743,13 +752,18 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
             component.setId(foundComponent.getId());
 
         // Создаем связи между существующими и новыми компонентами
-        foreach (Component* child, children)
+        foreach (Component* child, component.getChildren())
         {
-            bool hasLink = hasComponentsLink(child->getId(), component.getId(), &status, errorString);
+#if RECURSIVE_CREATION
+            int childId = child->getId();
+#else
+            int childId = child->getUniqueId();
+#endif
+            bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
 
             if(status && !hasLink)
             {
-                if(!createComponentsLink(child->getId(), component.getId(), errorString))
+                if(!createComponentsLink(childId, component.getId(), errorString))
                     return false;
             }
             else if(!status)
@@ -762,6 +776,8 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
 #endif
 
     return true;
+
+#undef RECURSIVE_CREATION
 }
 
 //------------------------------------------------------------------------------

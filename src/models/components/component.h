@@ -110,6 +110,7 @@ private:
     QString m_condition;    // optional
 
     QString m_jdscPath;
+    bool m_external;
 
 public:
     Component();
@@ -216,6 +217,9 @@ public:
     bool isNull();
     bool isPersisted() const;
     void setPersisted(bool state);
+
+    bool isExternal() const;
+    void setExternal(bool external);
 
     static QString generateTimeUUID();
 

@@ -538,6 +538,16 @@ void Component::setPersisted(bool state)
     _isPersisted = state;
 }
 
+bool Component::isExternal() const
+{
+    return m_external;
+}
+
+void Component::setExternal(bool external)
+{
+    m_external = external;
+}
+
 QString Component::generateTimeUUID()
 {
     QString str = QUuid::createUuid().toString();
@@ -643,7 +653,8 @@ Component::Component() :
     createDate(QDateTime::currentDateTime()),
     updateDate(QDateTime::currentDateTime()),
     _status(ComponentStatus::ok()),
-    _isPersisted(false)
+    _isPersisted(false),
+    m_external(false)
 {
 
 }

@@ -273,6 +273,10 @@ void JdscParser::loadComponents(QMap<QString, Component>& coComponentMap,
                                                 arg(jComponent.name()).
                                                 arg(coComponent.getVersion()));
 
+                            // Внешний компонент (подсказка PackManager о принятии
+                            // решения по установке компонента)
+                            coComponent.setExternal(jComponent.isExternal());
+
                             //
                             // Добавляем текущий компонент в карту
                             //
