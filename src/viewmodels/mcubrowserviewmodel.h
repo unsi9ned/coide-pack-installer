@@ -22,6 +22,7 @@ struct DeviceNode
         McuType
     };
 
+    int level;
     Type type;
     QString name;
     QString displayName;
@@ -33,7 +34,7 @@ struct DeviceNode
     QString familyName;
     QString seriesName;
 
-    DeviceNode() : type(InvalidType)
+    DeviceNode() : level(0), type(InvalidType)
     {
         static DeviceHierarchyNode nullHierarchyNode;
         hierarchyNode = &nullHierarchyNode;
@@ -111,6 +112,9 @@ public:
     void installCurrentPack();
     void optimizeDatabase();
 
+    void printDeviceTree() const;
+    void printComponentTree() const;
+
     // Доступ к дереву
     const QList<DeviceNode>& deviceTree() const { return m_deviceTree; }
     const QList<ComponentNode>& componentTree() const { return m_componentTree; }
@@ -157,6 +161,8 @@ public:
     QString componentId() const;
 
 private:
+    void printDeviceTree(const DeviceNode& childNode) const;
+    void printComponentTree(const ComponentNode& childNode) const;
     void buildDeviceTree();
     DeviceNode buildVendorNode(const QString& vendor);
     DeviceNode buildFamilyNode(const QString& vendor, const QString& family);
