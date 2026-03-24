@@ -731,6 +731,11 @@ QString McuBrowserViewModel::devNodePath() const
     return m_selectedNode.hierarchyNode->getPath();
 }
 
+QString McuBrowserViewModel::componentNodePath() const
+{
+    return m_selectedComponentNode.hierarchyNode->getPath();
+}
+
 //------------------------------------------------------------------------------
 // Уникальный ID компонента
 //------------------------------------------------------------------------------

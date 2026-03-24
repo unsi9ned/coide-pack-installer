@@ -331,6 +331,10 @@ void MainForm::showMcuDetails()
     ui->lineEditFamilyId->setText(m_mcuBrowserViewModel->familyId());
     ui->lineEditSeriesId->setText(m_mcuBrowserViewModel->seriesId());
     ui->lineEditMcuId->setText(m_mcuBrowserViewModel->mcuId());
+
+    // Уникальный путь
+    ui->lineEditUniquePath->setText(m_mcuBrowserViewModel->devNodePath());
+    ui->lineEditUniquePath->setCursorPosition(0);
 }
 
 //------------------------------------------------------------------------------
@@ -355,6 +359,7 @@ void MainForm::clearForm()
     ui->lineEditSeriesId->clear();
     ui->lineEditMcuId->clear();
     ui->lineEditComponentId->clear();
+    ui->lineEditUniquePath->clear();
 }
 
 //------------------------------------------------------------------------------
@@ -406,6 +411,8 @@ void MainForm::onComponentTreeItemClicked(QTreeWidgetItem* item, int column)
 
     m_mcuBrowserViewModel->selectComponentNode(node);
     ui->lineEditComponentId->setText(m_mcuBrowserViewModel->componentId());
+    ui->lineEditUniquePath->setText(m_mcuBrowserViewModel->componentNodePath());
+    ui->lineEditUniquePath->setCursorPosition(0);
 }
 
 //------------------------------------------------------------------------------

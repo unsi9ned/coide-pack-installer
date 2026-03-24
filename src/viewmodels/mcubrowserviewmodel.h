@@ -148,6 +148,7 @@ public:
     QString mcuId() const;
 
     QString devNodePath() const;
+    QString componentNodePath() const;
 
     QString componentId() const;
 
