@@ -6,6 +6,7 @@
 #include "models/pack/packdescription.h"
 #include "models/pack/packmanager.h"
 #include "models/mcu/devicehierarchynode.h"
+#include "common/loggable.h"
 
 //------------------------------------------------------------------------------
 // Структура для представления узла дерева
@@ -78,7 +79,7 @@ Q_DECLARE_METATYPE(ComponentNode)
 //------------------------------------------------------------------------------
 // Контроллер устройств
 //------------------------------------------------------------------------------
-class McuBrowserViewModel : public QObject
+class McuBrowserViewModel : public QObject, public Loggable
 {
     Q_OBJECT
 
@@ -94,6 +95,9 @@ private:
 
     QList<ComponentNode> m_componentTree;
     ComponentNode m_selectedComponentNode;
+
+protected:
+    QString logSource() const override { return "McuBrowserViewModel"; }
 
 public:
     explicit McuBrowserViewModel(QObject *parent = 0);
@@ -175,13 +179,10 @@ signals:
 
     void installStarted();
     void installResult(bool success, QString errorString);
-    void installLogMessage(const QString& message);
     void packInstalled(bool success, QString errorString);
 
     void dbOptimizeStarted();
     void dbOptimizeFinished();
-    void dbOptimizeError(const QString& error);
-    void dbLogMessage(const QString& message);
 
 private slots:
     void onLoadResult(bool success, QString errorString);

@@ -2,13 +2,17 @@
 #define DBGARBAGECOLLECTOR_H
 
 #include <QObject>
+#include "common/loggable.h"
 
-class DBGarbageCollector : public QObject
+class DBGarbageCollector : public QObject, public Loggable
 {
     Q_OBJECT
 
 private:
     QString _errorString;
+
+protected:
+    QString logSource() const override { return "DBGarbageCollector"; }
 
 public:
     explicit DBGarbageCollector();
@@ -24,13 +28,11 @@ private:
     bool cleanComponents();
     bool cleanExamples();
     bool removeDirectory(const QString &dirPath);
+    void logError(const QString& e);
 
 signals:
-    void eventOccured(const QString& e);
-    void errorOccured(const QString& e);
 
 private slots:
-    void printEvents(QString e);
 
 public slots:
 };

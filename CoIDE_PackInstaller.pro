@@ -106,7 +106,9 @@ HEADERS  += \
     src/models/pack/jdscparser.h \
     src/models/pack/packdescriptionparser.h \
     src/models/jdsc/jdsccondition.h \
-    src/models/jdsc/jdsccomponent.h
+    src/models/jdsc/jdsccomponent.h \
+    src/common/loglevels.h \
+    src/common/loggable.h
 
 FORMS    += \
     src/views/mainform.ui \

@@ -31,6 +31,9 @@ private:
     RequestManager(const RequestManager&) = delete;
     RequestManager& operator=(const RequestManager&) = delete;
 
+protected:
+    QString logSource() const override { return "RequestManager"; }
+
 public:
 
     static RequestManager* instance();
@@ -58,6 +61,8 @@ public:
 
     bool fixVendorIDs(QString& errorString);
 
+    QString lastError() const { return ComponentsInfo::lastError(); }
+
 private:
 
     bool fixManufacturerTable(QString& errorString);
@@ -83,8 +88,6 @@ private:
     ProgAlgorithm getMcuFlashAlgorithm(int mcuId);
 
 signals:
-
-    void errorOccured(QString e);
 
 public slots:
 

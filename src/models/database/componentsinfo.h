@@ -11,8 +11,9 @@
 #include "models/components/category.h"
 #include "models/components/example.h"
 #include "database.h"
+#include "common/loggable.h"
 
-class ComponentsInfo : public QObject
+class ComponentsInfo : public QObject, public Loggable
 {
     Q_OBJECT
 
@@ -27,6 +28,18 @@ protected:
     // Запрещаем копирование
     ComponentsInfo(const ComponentsInfo&) = delete;
     ComponentsInfo& operator=(const ComponentsInfo&) = delete;
+
+    QString m_lastError;
+
+protected:
+    QString logSource() const override { return "ComponentsInfo"; }
+    QString lastError() const { return m_lastError; }
+
+    void logError(const QString& e)
+    {
+        m_lastError = e;
+        Loggable::logError(m_lastError);
+    }
 
 public:
 

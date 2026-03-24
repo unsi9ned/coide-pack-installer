@@ -3,6 +3,8 @@
 #include "services/paths.h"
 
 DataBase* DataBase::_m_instance = nullptr;
+QString DataBase::m_errorString;
+QMutex DataBase::m_mutex;
 
 //------------------------------------------------------------------------------
 // Открыть соединение
@@ -20,6 +22,7 @@ DataBase::~DataBase()
 {
     if(db.isOpen())
     {
+        logInfo("Closing the database connection");
         db.close();
     }
 
@@ -31,6 +34,8 @@ DataBase::~DataBase()
 //------------------------------------------------------------------------------
 DataBase *DataBase::instance()
 {
+    QMutexLocker locker(&m_mutex);
+
     if(!_m_instance)
         _m_instance = new DataBase();
 
@@ -44,7 +49,7 @@ bool DataBase::tryOpen()
 {
     bool status = true;
 
-    Logger::instance()->addEvent("Attempting to connect to the database");
+    logInfo("Attempting to connect to the database");
 
     if(!db.isOpen())
     {
@@ -57,24 +62,25 @@ bool DataBase::tryOpen()
 
             if(status)
             {
-                Logger::instance()->addEvent("The database is open");
+                logInfo("The database is open");
                 emit dbConnected();
             }
             else
             {
-                Logger::instance()->addEvent(QString("Database opening error: %1").arg(db.lastError().databaseText()));
-                Logger::instance()->addEvent(QString("Database driver error: %1").arg(db.lastError().driverText()));
+                m_errorString = db.lastError().databaseText();
+                logError(QString("Database opening error: %1").arg(db.lastError().databaseText()));
+                logError(QString("Database driver error: %1").arg(db.lastError().driverText()));
             }
         }
         else
         {
-            Logger::instance()->addEvent("The database was not found");
-            emit errorOccured(tr("The database was not found"));
+            m_errorString = "The database was not found";
+            logError(m_errorString);
             status = false;
         }
     }
     else
-        Logger::instance()->addEvent("The database is already open");
+        logInfo("The database is already open");
 
     return status;
 }
@@ -85,6 +91,8 @@ bool DataBase::tryOpen()
 QSqlQuery DataBase::sendQuery(QString queryString, bool * result)
 {
     QSqlQuery query;
+
+    QMutexLocker locker(&m_mutex);
 
     if(db.isOpen() || this->tryOpen())
     {

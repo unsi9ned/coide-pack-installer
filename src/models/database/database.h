@@ -8,17 +8,25 @@
 #include <QSqlError>
 #include <QFile>
 #include <QDebug>
+#include <QMutex>
 
-class DataBase : public QObject
+#include "common/loggable.h"
+
+class DataBase : public QObject, public Loggable
 {
     Q_OBJECT
 
 private:
     QSqlDatabase db;
     static DataBase* _m_instance;
+    static QString m_errorString;
+    static QMutex m_mutex;
 
     explicit DataBase();
     ~DataBase();
+
+protected:
+    QString logSource() const override { return "DataBase"; }
 
 public:
     DataBase(const DataBase&) = delete;
@@ -26,13 +34,15 @@ public:
 
     static DataBase* instance();
 
+    QSqlQuery sendQuery(QString queryString, bool * result = nullptr);
+    QString lastError() const { return DataBase::m_errorString; }
+
+private:
     bool isOpen();
     bool tryOpen();
-    QSqlQuery sendQuery(QString queryString, bool * result = nullptr);
 
 signals:
 
-    void errorOccured(QString e);
     void dbConnected();
 
 public slots:

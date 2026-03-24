@@ -21,9 +21,6 @@ DBGarbageCollector::DBGarbageCollector() : QObject()
         QFile::copy(dbFile.fileName(), dbBackup.fileName());
     }
 #endif
-
-    connect(this, SIGNAL(eventOccured(QString)), SLOT(printEvents(QString)));
-    connect(this, SIGNAL(errorOccured(QString)), SLOT(printEvents(QString)));
 }
 
 //------------------------------------------------------------------------------
@@ -34,7 +31,7 @@ bool DBGarbageCollector::deleteObsoleteData()
     if(cleanComponents())
         if(cleanExamples())
         {
-            emit eventOccured("Remove phantom relations in `status`");
+            logInfo("Remove phantom relations in `status`");
 
             if(RequestManager::instance()->removeStatusPhantomRelations(&_errorString))
                 if(cleanUsers())
@@ -67,17 +64,21 @@ bool DBGarbageCollector::deleteUnnecessaryTables()
         QString sql = QString("DROP TABLE IF EXISTS `%1`;").arg(table);
         QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
 
-        emit eventOccured(QString("Delete table %1: %2").arg(table).arg(sql));
+#ifdef VERBOSE_DEBUG
+        logInfo(QString("Delete table %1: %2").arg(table).arg(sql));
+#else
+        logInfo(QString("Delete table %1").arg(table));
+#endif
 
         if(!status)
         {
             _errorString = result.lastError().text();
-            emit errorOccured(QString("Error: %1").arg(_errorString));
+            logError(QString("Error: %1").arg(_errorString));
             return false;
         }
     }
 
-    emit eventOccured(QString("Delete Unnecessary Tables DONE"));
+    logInfo(QString("Delete Unnecessary Tables DONE"));
 
     return false;
 }
@@ -173,23 +174,23 @@ bool DBGarbageCollector::cleanUsers()
             sql = QString("DELETE FROM `user` WHERE id = '%1';").arg(u.id);
             result = DataBase::instance()->sendQuery(sql, &status);
 
-            emit eventOccured(QString("Remove User %1 with %2 components, %3 examples, %4 MCUs: %5").
-                              arg(u.name).
-                              arg(u.componentsCount).
-                              arg(u.examplesCount).
-                              arg(u.mcuCount).
-                              arg(sql));
+            logInfo(QString("Remove User %1 with %2 components, %3 examples, %4 MCUs: %5").
+                            arg(u.name).
+                            arg(u.componentsCount).
+                            arg(u.examplesCount).
+                            arg(u.mcuCount).
+                            arg(sql));
 
             if(!status)
             {
                 _errorString = result.lastError().text();
-                emit errorOccured(QString("Error: %1").arg(_errorString));
+                logError(QString("Error: %1").arg(_errorString));
                 return false;
             }
         }
     }
 
-    emit eventOccured(QString("Clean `user` table DONE"));
+    logInfo(QString("Clean `user` table DONE"));
 
     return true;
 }
@@ -201,7 +202,7 @@ bool DBGarbageCollector::cleanComponents()
 {
     RequestManager * reqManager = RequestManager::instance();
 
-    emit eventOccured("Remove phantom relations in `component_depends_component`");
+    logInfo("Remove phantom relations in `component_depends_component`");
 
     if(!reqManager->removeComponentPhantomRelations(&_errorString))
         return false;
@@ -235,12 +236,12 @@ bool DBGarbageCollector::cleanComponents()
         // Статус компонента прочитан неверно либо отсутствует в базе данных
         if(c.getStatus().isNull())
         {
-            emit eventOccured(QString("Component %1 is NULL").arg(it.key()));
+            logInfo(QString("Component %1 is NULL").arg(it.key()));
         }
         // Каталог существует, но в базе помечен как не скачанный
         else if(componentExists && !c.isDownloaded())
         {
-            emit eventOccured(QString("Fixed the component status %1").arg(c.getId()));
+            logInfo(QString("Fixed the component status %1").arg(c.getId()));
 
             if(!reqManager->setComponentStatusOK(c.getComponentStatusId(), &_errorString))
                 return false;
@@ -248,7 +249,7 @@ bool DBGarbageCollector::cleanComponents()
         // Каталог не существует, но в базе помечен как скачанный
         else if(!componentExists && c.isDownloaded())
         {
-            emit eventOccured(QString("Deleting a phantom component '%1_%2'").
+            logInfo(QString("Deleting a phantom component '%1_%2'").
                               arg(c.getId()).
                               arg(c.getName()));
 
@@ -258,7 +259,7 @@ bool DBGarbageCollector::cleanComponents()
         // И каталог не существует на диске, и в базе помечен как не скачанный
         else if(!componentExists && !c.isDownloaded())
         {
-            emit eventOccured(QString("Deleting a non-existent component '%1_%2'").
+            logInfo(QString("Deleting a non-existent component '%1_%2'").
                               arg(c.getId()).
                               arg(c.getName()));
 
@@ -272,7 +273,7 @@ bool DBGarbageCollector::cleanComponents()
         }
     }
 
-    emit eventOccured("Remove phantom relations in `component_depends_component`");
+    logInfo("Remove phantom relations in `component_depends_component`");
 
     if(!reqManager->removeComponentPhantomRelations(&_errorString))
         return false;
@@ -288,7 +289,7 @@ bool DBGarbageCollector::cleanExamples()
 {
     RequestManager * reqManager = RequestManager::instance();
 
-    emit eventOccured("Remove phantom relations in `example_depends_component`");
+    logInfo("Remove phantom relations in `example_depends_component`");
 
     if(!reqManager->removeExamplePhantomRelations(&_errorString))
         return false;
@@ -310,12 +311,12 @@ bool DBGarbageCollector::cleanExamples()
         // Статус компонента прочитан неверно либо отсутствует в базе данных
         if(ex.getStatus().isNull())
         {
-            emit eventOccured(QString("Example %1 is NULL").arg(it.key()));
+            logInfo(QString("Example %1 is NULL").arg(it.key()));
         }
         // Каталог существует, но в базе помечен как не скачанный
         else if(exampleExists && !ex.isDownloaded())
         {
-            emit eventOccured(QString("Fixed the example status %1").arg(ex.getId()));
+            logInfo(QString("Fixed the example status %1").arg(ex.getId()));
 
             if(!reqManager->setComponentStatusOK(ex.getStatusId(), &_errorString))
                 return false;
@@ -323,9 +324,9 @@ bool DBGarbageCollector::cleanExamples()
         // Каталог не существует, но в базе помечен как скачанный
         else if(!exampleExists && ex.isDownloaded())
         {
-            emit eventOccured(QString("Deleting a phantom example '%1_%2'").
-                              arg(ex.getId()).
-                              arg(ex.getName()));
+            logInfo(QString("Deleting a phantom example '%1_%2'").
+                             arg(ex.getId()).
+                             arg(ex.getName()));
 
             if(!reqManager->removeExample(ex, &_errorString))
                 return false;
@@ -333,9 +334,9 @@ bool DBGarbageCollector::cleanExamples()
         // И каталог не существует на диске, и в базе помечен как не скачанный
         else if(!exampleExists && !ex.isDownloaded())
         {
-            emit eventOccured(QString("Deleting a non-existent example '%1_%2'").
-                              arg(ex.getId()).
-                              arg(ex.getName()));
+            logInfo(QString("Deleting a non-existent example '%1_%2'").
+                             arg(ex.getId()).
+                             arg(ex.getName()));
 
             if(!reqManager->removeExample(ex, &_errorString))
                 return false;
@@ -347,7 +348,7 @@ bool DBGarbageCollector::cleanExamples()
         }
     }
 
-    emit eventOccured("Remove phantom relations in `example_depends_component`");
+    logInfo("Remove phantom relations in `example_depends_component`");
 
     if(!reqManager->removeExamplePhantomRelations(&_errorString))
         return false;
@@ -398,10 +399,12 @@ bool DBGarbageCollector::removeDirectory(const QString &dirPath)
 }
 
 //------------------------------------------------------------------------------
-// Вывод сообщений об ошибках
+// Вывод ошибок
 //------------------------------------------------------------------------------
-void DBGarbageCollector::printEvents(QString e)
+void DBGarbageCollector::logError(const QString& e)
 {
-    qInfo() << e;
+    _errorString = e;
+    Loggable::logError(e);
 }
+
 

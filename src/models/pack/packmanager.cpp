@@ -14,10 +14,7 @@
 
 PackManager::PackManager(QObject *parent) : QObject(parent)
 {
-    connect(this, SIGNAL(errorOccured(QString)), SLOT(debugPrintMessage(QString)));
-    connect(this, SIGNAL(eventOccured(QString)), SLOT(debugPrintMessage(QString)));
 
-    connect(RequestManager::instance(), SIGNAL(errorOccured(QString)), SLOT(debugPrintMessage(QString)));
 }
 
 //------------------------------------------------------------------------------
@@ -30,12 +27,18 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     // Распаковываем файл описания в каталог установки
     //
+    logInfo("Extract Package Description File");
+
     if(!extractPackDescriptionFile(pack, errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("Couldn't extract Package Description File");
+        {
+            logError("Couldn't extract Package Description File");
+        }
         else
-            emit errorOccured(QString("Couldn't extract Package Description File: %1").arg(errorString));
+        {
+            logError(QString("Couldn't extract Package Description File: %1").arg(errorString));
+        }
 
         return;
     }
@@ -43,6 +46,8 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     // Искусственно добавляем в описание компоненты CMSIS CORE
     //
+    logInfo("Creating \"CMSIS CORE\" components");
+
     QMap<QString, QString> cmsisCores = Paths::instance()->cmsisCores();
 
     for(auto it = cmsisCores.begin(); it != cmsisCores.end(); ++it)
@@ -83,7 +88,7 @@ void PackManager::readPackDescription(PackDescription &pack)
         }
         else
         {
-            emit errorOccured(QString("The %1 file was not found").arg(cmsisZip.fileName()));
+            logError(QString("The %1 file was not found").arg(cmsisZip.fileName()));
             return;
         }
 
@@ -94,6 +99,8 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     // Разбор файла описания
     //
+    logInfo("Starts parsing the package description file");
+
     PackDescriptionParser * parser;
 
     if(pack.archiveInfo().isPdsc())
@@ -102,7 +109,7 @@ void PackManager::readPackDescription(PackDescription &pack)
         parser = new JdscParser();
     else
     {
-        emit errorOccured("The selected package type is not valid");
+        logError("The selected package type is not valid");
         return;
     }
 
@@ -112,6 +119,8 @@ void PackManager::readPackDescription(PackDescription &pack)
         if(!pack.hasDevices() && !pack.packVendor().isEmpty())
         {
             QStringList supportVendors;
+
+            logInfo("Loading device data from the database");
 
             if(pack.archiveInfo().isPdsc())
             {
@@ -132,10 +141,12 @@ void PackManager::readPackDescription(PackDescription &pack)
             RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
             parser->reloadComponents(pack);
         }
+
+        logInfo("The package description file has been parsed");
     }
     else
     {
-        emit errorOccured("Packet parsing error");
+        logError("Packet parsing error");
     }
 
     delete parser;
@@ -151,11 +162,11 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     if(!pack.isValid())
     {
-        emit errorOccured(QString("The '%1' package is not valid").arg(pack.name()));
+        logError(QString("The '%1' package is not valid").arg(pack.name()));
         return false;
     }
 
-    emit eventOccured(QString("The '%1' package is being installed").arg(pack.name()));
+    logInfo(QString("The '%1' package is being installed").arg(pack.name()));
 
     //
     // Подготовка каталога пакета
@@ -170,25 +181,25 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     // Создание каталога установки
     //
-    emit eventOccured(QString("Creating an installation directory"));
+    logInfo(QString("Creating an installation directory"));
 
     if(!packInstallDir.exists() && !packInstallDir.mkpath(packInstallDir.path()))
     {
-        emit errorOccured("The package directory cannot be created");
+        logError("The package directory cannot be created");
         return false;
     }
 
     //
     // Распаковка файла описание аппаратуры в каталог установки
     //
-    emit eventOccured(QString("Extracting a pdsc file"));
+    logInfo(QString("Extracting a pdsc file"));
 
     if(!extractPackDescriptionFile(pack, errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("Couldn't extract pdsc file");
+            logError("Couldn't extract pdsc file");
         else
-            emit errorOccured(QString("Couldn't extract pdsc file: %1").arg(errorString));
+            logError(QString("Couldn't extract pdsc file: %1").arg(errorString));
 
         return false;
     }
@@ -196,12 +207,14 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     // Распаковка SVD-файлов и добавление в TXT-базу
     //
+    logInfo(QString("Extracting SVD files"));
+
     if(!extractSVD(pack, errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("Couldn't extract SVD files");
+            logError("Couldn't extract SVD files");
         else
-            emit errorOccured(QString("Couldn't extract SVD files: %1").arg(errorString));
+            logError(QString("Couldn't extract SVD files: %1").arg(errorString));
 
         return false;
     }
@@ -209,12 +222,14 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     // Формирование базы данных SVD
     //
+    logInfo(QString("Creating an SVD database"));
+
     if(!makeSvdDatabase(pack, errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("An error occurred when creating the SVD database");
+            logError("An error occurred when creating the SVD database");
         else
-            emit errorOccured(QString("An error occurred when creating the SVD database: %1").arg(errorString));
+            logError(QString("An error occurred when creating the SVD database: %1").arg(errorString));
 
         return false;
     }
@@ -222,12 +237,14 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     // Распаковка исходников
     //
+    logInfo("Unpacking sources");
+
     if(!extractSources(pack, errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("Couldn't extract sources files");
+            logError("Couldn't extract sources files");
         else
-            emit errorOccured(QString("Couldn't extract sources files: %1").arg(errorString));
+            logError(QString("Couldn't extract sources files: %1").arg(errorString));
 
         return false;
     }
@@ -237,12 +254,14 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     RequestManager * reqManager = RequestManager::instance();
 
+    logInfo("Correction of manufacturer IDs");
+
     if(!reqManager->fixVendorIDs(errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("An error occurred during the fix of the manufacturer's ID");
+            logError("An error occurred during the fix of the manufacturer's ID");
         else
-            emit errorOccured(QString("An error occurred during the fix of the manufacturer's ID: %1").arg(errorString));
+            logError(QString("An error occurred during the fix of the manufacturer's ID: %1").arg(errorString));
 
         return false;
     }
@@ -254,7 +273,7 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     {
         Manufacturer& m = it.value();
 
-        emit eventOccured(QString("Adding the manufacturer %1").arg(m.getName()));
+        logInfo(QString("Adding the manufacturer %1").arg(m.getName()));
 
         if(!reqManager->createManufacturer(m))
             break;
@@ -263,7 +282,7 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
         {
             Family& fam = f.value();
 
-            emit eventOccured(QString("Adding the family %1").arg(fam.getName()));
+            logInfo(QString("Adding the family %1").arg(fam.getName()));
 
             if(!reqManager->createFamily(fam))
                 break;
@@ -272,7 +291,7 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
             {
                 Series& series = s.value();
 
-                emit eventOccured(QString("Adding the series %1").arg(series.getName()));
+                logInfo(QString("Adding the series %1").arg(series.getName()));
 
                 if(!reqManager->createSeries(series))
                     break;
@@ -282,14 +301,14 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                     Mcu& mcu = dev.value();
                     DebugAlgorithm& algorithm = mcu.getDebugAlgorithm();
 
-                    emit eventOccured(QString("Adding the Debug algorithm '%1'").arg(mcu.getDebugAlgorithm().name()));
+                    logInfo(QString("Adding the Debug algorithm '%1'").arg(mcu.getDebugAlgorithm().name()));
 
                     if(!reqManager->createDebugAlgorithm(algorithm))
                         break;
                     else
                         mcu.setDebugAlgorithmId(algorithm.coId());
 
-                    emit eventOccured(QString("Adding the MCU = %1").arg(mcu.getName()));
+                    logInfo(QString("Adding the MCU = %1").arg(mcu.getName()));
 
                     if(!reqManager->createMcu(mcu))
                         break;
@@ -311,40 +330,34 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
         sortedComponentMap.insert(component.getName(), component.getUuid());
     }
 
+    logInfo("Adding components to the database");
+
     for(auto it = sortedComponentMap.begin(); it != sortedComponentMap.end(); ++it)
     {
         QString uuid = it.value();
         Component& component = componentMap[uuid];
 
-        emit eventOccured(QString("Creating component '%1/%2'").
-                          arg(component.getName()).
-                          arg(component.getDescription()));
+        logInfo(QString("Creating component '%1/%2'").
+                arg(component.getName()).
+                arg(component.getDescription()));
 
         if(component.isPersisted())
         {
-            emit eventOccured(QString("The '%1/%2' component was created earlier").
-                              arg(component.getName()).
-                              arg(component.getDescription()));
+            logInfo(QString("The '%1/%2' component was created earlier").
+                    arg(component.getName()).
+                    arg(component.getDescription()));
         }
-#if 0
-        else if(component.isExternal())
-        {
-            emit eventOccured(QString("The \"%1/%2\" component is EXTERNAL and requires the installation of another package.").
-                              arg(component.getName()).
-                              arg(component.getDescription()));
-        }
-#endif
         else
         {
             if(!reqManager->createComponent(component, &errorString))
             {
                 if(errorString.isEmpty())
-                    emit errorOccured(QString("An error occurred while adding the '%1' component").
-                                      arg(component.getName()));
+                    logError(QString("An error occurred while adding the '%1' component").
+                             arg(component.getName()));
                 else
-                    emit errorOccured(QString("An error occurred while adding the '%1' component: %2").
-                                      arg(component.getName()).
-                                      arg(errorString));
+                    logError(QString("An error occurred while adding the '%1' component: %2").
+                             arg(component.getName()).
+                             arg(errorString));
 
                 return false;
             }
@@ -354,38 +367,30 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     // Создание компонентов в файловой структуре CoIDE
     //
+    logInfo("Creating mirrors of components");
+
     if(!createComponentMirrors(pack, errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("Couldn't create component mirror");
+            logError("Couldn't create component mirror");
         else
-            emit errorOccured(QString("Couldn't create component mirror: %1").arg(errorString));
+            logError(QString("Couldn't create component mirror: %1").arg(errorString));
 
         return false;
     }
 
-#if 0
-    {
-#if 0
-        QMap<QString, Manufacturer> vendors;
-        reqManager->loadDataFromDb(vendors);
-
-        qInfo() << "Manufacturers:" << vendors.count();
-#endif
-//        for (int i = 0; i < reqManager->getManufacturerCount(); i++)
-//        {
-//            Manufacturer m = reqManager->getManufacturer(i);
-//            qInfo() << QString("%2:%1").arg(m.getName()).arg(m.getId());
-//        }
-    }
-#endif
-
     //
     // Завершение установки
     //
-    emit eventOccured(QString("Package installation '%1' completed").arg(pack.name()));
+    logInfo(QString("Package installation '%1' completed").arg(pack.name()));
 
     return true;
+}
+
+void PackManager::logError(const QString& error)
+{
+    m_lastError = error;
+    Loggable::logError(m_lastError);
 }
 
 //------------------------------------------------------------------------------
@@ -1097,10 +1102,3 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
     return true;
 }
 
-//------------------------------------------------------------------------------
-// Временная функция для печати ошибок и сообщений
-//------------------------------------------------------------------------------
-void PackManager::debugPrintMessage(QString e)
-{
-    qInfo() << e;
-}

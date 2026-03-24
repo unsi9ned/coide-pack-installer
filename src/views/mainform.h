@@ -20,6 +20,7 @@
 
 #include "views/aboutdialog.h"
 #include "viewmodels/mcubrowserviewmodel.h"
+#include "common/loglevels.h"
 
 namespace Ui {
 class MainForm;
@@ -48,10 +49,12 @@ private:
 
 private slots:
 
+    void setupLogging();
     void delayedInit();
     void showErrorMessage(QString e);
     void showInfoMessage(QString i);
     void printLogMessages(QString msg);
+    void onLogMessage(const LogMessage& msg);
     void changeCoIDEPath();
     void loadDFP(bool hideFileDialog = false);
 
