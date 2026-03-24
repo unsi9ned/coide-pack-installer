@@ -33,14 +33,23 @@
 	],
 	"components": [
 		{
-			"name": "CMSIS CORE 5.6.0",
+			"name": "CMSIS_Core",
 			"class": "CMSIS",
 			"group": "CORE",
 			"version": "5.6.0",
 			"external": true
 		},
 		{
+			"name": "sdk_config",
+			"description": "SDK configuration",
+			"class": "nRF_Drivers",
+			"group": "Peripheral",
+			"version": "14.2.0",
+			"external": true
+		},
+		{
 			"name": "nrf_error",
+			"description": "Definitions of error codes",
 			"class": "nRF_Drivers",
 			"group": "Peripheral",
 			"version": "14.2.0",
@@ -48,20 +57,39 @@
 		},
 		{
 			"name": "app_error",
+			"description": "Various types and definitions available to all applications",
 			"class": "nRF_Libraries",
 			"group": "Peripheral",
 			"version": "14.2.0",
 			"files": [
 				"components/libraries/util/app_error.c",
-				"components/libraries/util/app_error.h"
+				"components/libraries/util/app_error.h",
+				"components/libraries/util/sdk_errors.h",
+				"components/libraries/util/app_error_weak.h",
+				"components/libraries/util/nordic_common.h"
 			],
 			"requires": [
-				"CMSIS CORE 5.6.0",
-				"nrf_error"
+				{
+					"name": "CMSIS_Core",
+					"version": "5.6.0"
+				},
+				{
+					"name": "sdk_config",
+					"version": "14.2.0"
+				},
+				{
+					"name": "nrf_error",
+					"version": "14.2.0"
+				}
+			],
+			"conditions": [
+				"nRF51",
+				"nRF52"
 			]
 		},
 		{
 			"name": "nrf_assert",
+			"description": "Utilities for verifying program logic",
 			"class": "nRF_Libraries",
 			"group": "Peripheral",
 			"version": "14.2.0",
@@ -70,8 +98,41 @@
 				"components/libraries/util/nrf_assert.h"
 			],
 			"requires": [
-				"CMSIS CORE 5.6.0",
-				"app_error"
+				{
+					"name": "CMSIS_Core",
+					"version": "5.6.0"
+				},
+				{
+					"name": "app_error",
+					"version": "14.2.0"
+				}
+			],
+			"conditions": [
+				"nRF51",
+				"nRF52"
+			]
+		},
+		{
+			"name": "app_util",
+			"description": "Utilities for verifying program logic",
+			"class": "nRF_Libraries",
+			"group": "Peripheral",
+			"version": "14.2.0",
+			"files": [
+				"components/libraries/util/app_util_platform.c",
+				"components/libraries/util/app_util_platform.h",
+				"components/libraries/util/app_util_bds.h",
+				"components/libraries/util/app_util.h"
+			],
+			"requires": [
+				{
+					"name": "CMSIS_Core",
+					"version": "5.6.0"
+				}
+			],
+			"conditions": [
+				"nRF51",
+				"nRF52"
 			]
 		}
 	]

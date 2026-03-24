@@ -104,6 +104,8 @@ MainForm::MainForm(QWidget *parent) :
         }
     });
 
+    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::loadLogMessage, this, &MainForm::printLogMessages);
+
     //--------------------------------------------------------------------------
     // Сигналы установки
     //--------------------------------------------------------------------------
@@ -261,7 +263,7 @@ void MainForm::loadDFP(bool hideFileDialog)
     }
 
     QFileInfo packFileInfo(Settings::instance()->lastLoadedPack());
-    QFileDialog dialog(this, tr("Device Family Pack"), packFileInfo.path(), "*.pack");
+    QFileDialog dialog(this, tr("Device Family Pack"), packFileInfo.path(), "*.jpack *.pack");
 
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setOption(QFileDialog::DontUseNativeDialog);

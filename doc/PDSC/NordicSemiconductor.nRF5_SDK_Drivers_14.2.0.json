@@ -33,21 +33,51 @@
 	],
 	"components": [
 		{
-			"name": "CMSIS CORE 5.6.0",
+			"name": "CMSIS_Core",
 			"class": "CMSIS",
 			"group": "CORE",
 			"version": "5.6.0",
 			"external": true
 		},
 		{
+			"name": "sdk_config",
+			"description": "SDK configuration",
+			"class": "nRF_Drivers",
+			"group": "Peripheral",
+			"version": "14.2.0",
+			"files": [
+				"config/sdk_config.h"
+			]
+		},
+		{
 			"name": "nrf_assert",
+			"description": "Utilities for verifying program logic",
 			"class": "nRF_Libraries",
 			"group": "Peripheral",
 			"version": "14.2.0",
 			"external": true
 		},
 		{
+			"name": "app_util",
+			"description": "Utilities for verifying program logic",
+			"class": "nRF_Libraries",
+			"group": "Peripheral",
+			"version": "14.2.0",
+			"external": true
+		},
+		{
+			"name": "nrf_error",
+			"description": "Definitions of error codes",
+			"class": "nRF_Drivers",
+			"group": "Peripheral",
+			"version": "14.2.0",
+			"files": [
+				"components/drivers_nrf/nrf_soc_nosd/nrf_error.h"
+			]
+		},
+		{
 			"name": "HAL",
+			"description": "Hardware abstraction layer",
 			"class": "nRF_Drivers",
 			"group": "Peripheral",
 			"version": "14.2.0",
@@ -83,8 +113,14 @@
 				"components/drivers_nrf/hal/nrf_wdt.h"
 			],
 			"requires": [
-				"CMSIS CORE 5.6.0",
-				"nrf_assert"
+				{
+					"name": "CMSIS_Core",
+					"version": "5.6.0"
+				},
+				{
+					"name": "nrf_assert",
+					"version": "14.2.0"
+				}
 			],
 			"conditions": [
 				"nRF51",
@@ -95,20 +131,61 @@
 			]
 		},
 		{
-			"name": "nrf_error",
+			"name": "nrf_drv_common",
+			"description": "Common nrf driver files",
 			"class": "nRF_Drivers",
 			"group": "Peripheral",
 			"version": "14.2.0",
 			"files": [
-				"components/drivers_nrf/nrf_soc_nosd/nrf_error.h"
+				"components/drivers_nrf/common/nrf_drv_common.c",
+				"components/drivers_nrf/common/nrf_drv_common.h",
+				"components/libraries/util/sdk_common.h",
+				"components/libraries/util/sdk_os.h",
+				"components/libraries/util/sdk_macros.h"
 			],
 			"requires": [
-				"CMSIS CORE 5.6.0"
+				{
+					"name": "CMSIS_Core",
+					"version": "5.6.0"
+				},
+				{
+					"name": "nrf_assert",
+					"version": "14.2.0"
+				},
+				{
+					"name": "nrf_error",
+					"version": "14.2.0"
+				},
+				{
+					"name": "app_util",
+					"version": "14.2.0"
+				}
+			]
+		},
+		{
+			"name": "nrf_clock",
+			"description": "Clock peripheral driver",
+			"class": "nRF_Drivers",
+			"group": "Peripheral",
+			"version": "14.2.0",
+			"files": [
+				"components/drivers_nrf/clock/nrf_drv_clock.c",
+				"components/drivers_nrf/clock/nrf_drv_clock.h"
 			],
-			"conditions": [
-				"nRF51",
-				"nRF52"
-			],
+			"requires": [
+				{
+					"name": "CMSIS_Core",
+					"version": "5.6.0"
+				},
+				{
+					"name": "nrf_error",
+					"version": "14.2.0"
+				},
+				{
+					"name": "nrf_drv_common",
+					"version": "14.2.0"
+				}
+			]
 		}
 	]
 }

@@ -97,6 +97,32 @@ Category::Category()
     this->subCategoryName = "";
 }
 
+Category::Category(Category::PeripheralCaletory type)
+{
+    switch(type)
+    {
+        case Category::CATEGORY_COMMON:
+            *this = categoryCommon();
+        break;
+
+        case Category::CATEGORY_BOOT:
+            *this = categoryBoot();
+        break;
+
+        case Category::CATEGORY_RTOS:
+            *this = categoryRtos();
+        break;
+
+        case Category::CATEGORY_PERIPHERAL:
+            *this = categoryPeripheral();
+        break;
+
+        default:
+            *this = categoryCommon();
+        break;
+    }
+}
+
 Category::Category(int id, QString name, int parentId)
 {
     this->id = id;
@@ -128,6 +154,20 @@ Category Category::categoryPeripheral()
 {
     return Category(Category::CATEGORY_PERIPHERAL,
                     Category::periphCategoryMap.value(Category::CATEGORY_PERIPHERAL));
+}
+
+Category::PeripheralCaletory Category::categoryType(const QString& name)
+{
+    if(name.toLower() == "common")
+        return Category::CATEGORY_COMMON;
+    else if(name.toLower() == "boot")
+        return Category::CATEGORY_BOOT;
+    else if(name.toLower() == "rtos")
+        return Category::CATEGORY_RTOS;
+    else if(name.toLower() == "peripheral")
+        return Category::CATEGORY_PERIPHERAL;
+    else
+        return Category::CATEGORY_COMMON;
 }
 
 

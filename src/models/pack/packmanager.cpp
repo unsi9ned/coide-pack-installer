@@ -7,6 +7,7 @@
 #include "services/paths.h"
 #include "utils/ziparchive.h"
 #include "pdscparser.h"
+#include "jdscparser.h"
 #include "models/mcu/manufacturer.h"
 #include "models/database/requestmanager.h"
 #include "utils/makelink.h"
@@ -29,12 +30,12 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     // Распаковываем файл описания в каталог установки
     //
-    if(!extractPDSC(pack, errorString))
+    if(!extractPackDescriptionFile(pack, errorString))
     {
         if(errorString.isEmpty())
-            emit errorOccured("Couldn't extract pdsc file");
+            emit errorOccured("Couldn't extract Package Description File");
         else
-            emit errorOccured(QString("Couldn't extract pdsc file: %1").arg(errorString));
+            emit errorOccured(QString("Couldn't extract Package Description File: %1").arg(errorString));
 
         return;
     }
@@ -93,28 +94,51 @@ void PackManager::readPackDescription(PackDescription &pack)
     //
     // Разбор файла описания
     //
-    PdscParser parser;
-    parser.parse(pack);
+    PackDescriptionParser * parser;
 
-    //
-    // PDSC не содержит описание устройств. Загружаем их из базы данных
-    //
-    if(!pack.hasDevices() && !pack.packVendor().isEmpty())
+    if(pack.archiveInfo().isPdsc())
+        parser = new PdscParser();
+    else if(pack.archiveInfo().isJdsc())
+        parser = new JdscParser();
+    else
     {
-        QStringList supportVendors;
-
-        for(auto& pComponent : pack.pdscComponentList())
-        {
-            QStringList currentVendorList = pComponent.supportVendors();
-
-            QSet<QString> set = QSet<QString>::fromList(supportVendors);
-            set.unite(QSet<QString>::fromList(currentVendorList));
-            supportVendors = set.toList();
-        }
-
-        RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
-        parser.reloadComponents(pack);
+        emit errorOccured("The selected package type is not valid");
+        return;
     }
+
+    if(parser->parse(pack))
+    {
+        // PDSC не содержит описание устройств. Загружаем их из базы данных
+        if(!pack.hasDevices() && !pack.packVendor().isEmpty())
+        {
+            QStringList supportVendors;
+
+            if(pack.archiveInfo().isPdsc())
+            {
+                for(auto& pComponent : pack.pdscComponentList())
+                {
+                    QStringList currentVendorList = pComponent.supportVendors();
+
+                    QSet<QString> set = QSet<QString>::fromList(supportVendors);
+                    set.unite(QSet<QString>::fromList(currentVendorList));
+                    supportVendors = set.toList();
+                }
+            }
+            else if(pack.archiveInfo().isJdsc())
+            {
+                supportVendors.append(pack.packVendor());
+            }
+
+            RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
+            parser->reloadComponents(pack);
+        }
+    }
+    else
+    {
+        emit errorOccured("Packet parsing error");
+    }
+
+    delete parser;
 }
 
 //------------------------------------------------------------------------------
@@ -159,7 +183,7 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     //
     emit eventOccured(QString("Extracting a pdsc file"));
 
-    if(!extractPDSC(pack, errorString))
+    if(!extractPackDescriptionFile(pack, errorString))
     {
         if(errorString.isEmpty())
             emit errorOccured("Couldn't extract pdsc file");
@@ -359,7 +383,8 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
 //------------------------------------------------------------------------------
 // Поиск в архиве файла описания *.pdsc
 //------------------------------------------------------------------------------
-QString PackManager::findPDSC(const PackDescription& pack)
+QString PackManager::findPackDescriptionFile(const PackDescription& pack,
+                                             const QString& extension)
 {
     QString pdsc;
     ZipArchive packet;
@@ -368,7 +393,7 @@ QString PackManager::findPDSC(const PackDescription& pack)
 
     foreach(ZipArchive::ArchiveEntry f, files)
     {
-        if(f.extension.toLower() == "pdsc")
+        if(f.extension.toLower() == extension)
         {
             pdsc = f.fullPath;
             break;
@@ -381,7 +406,8 @@ QString PackManager::findPDSC(const PackDescription& pack)
 //------------------------------------------------------------------------------
 // Извлечение файла описание во временный каталог
 //------------------------------------------------------------------------------
-bool PackManager::extractPDSC(PackDescription &pack, QString &errorString)
+bool PackManager::extractPackDescriptionFile(PackDescription &pack,
+                                             QString &errorString)
 {
     //
     // Данные не валидны
@@ -395,7 +421,7 @@ bool PackManager::extractPDSC(PackDescription &pack, QString &errorString)
     //
     // Находим pdsc-файл в архиве
     //
-    QString pdscFilePath = findPDSC(pack);
+    QString pdscFilePath = findPackDescriptionFile(pack, pack.archiveInfo().isPdsc() ? "pdsc" : "json");
 
     if(pdscFilePath.isEmpty())
     {
@@ -493,6 +519,8 @@ bool PackManager::extractSVD(PackDescription &pack, QString &errorString)
             {
                 Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
                 QString svd = mcu.svdLocalPath();
+
+                if(svd.isEmpty()) continue;
 
                 if(!vendor.svdList().contains(Manufacturer::SvdInfo(svd)))
                 {

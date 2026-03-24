@@ -3,6 +3,9 @@
 #include "services/settings.h"
 #include "models/database/dbgarbagecollector.h"
 
+#define COMPONENT_BOTTOM_UP_HIERACHY  1
+#define HIDE_UNRELATED_COMPONENTS     0
+
 //------------------------------------------------------------------------------
 // Конструктор
 //------------------------------------------------------------------------------
@@ -15,6 +18,16 @@ McuBrowserViewModel::McuBrowserViewModel(QObject *parent) : QObject(parent)
     connect(this, &McuBrowserViewModel::installResult,
             this, &McuBrowserViewModel::onInstallResult,
             Qt::QueuedConnection);
+
+    connect(&m_packManager,
+            &PackManager::eventOccured,
+            this,
+            &McuBrowserViewModel::loadLogMessage);
+
+    connect(&m_packManager,
+            &PackManager::errorOccured,
+            this,
+            &McuBrowserViewModel::loadLogMessage);
 }
 
 //------------------------------------------------------------------------------
@@ -402,7 +415,16 @@ void McuBrowserViewModel::buildComponentTree()
 
     for(auto& component : m_pack.coComponentMap())
     {
+#if HIDE_UNRELATED_COMPONENTS
+        if(!component.hasChildren() && !component.hasParents())
+            continue;
+#endif
+
+#if COMPONENT_BOTTOM_UP_HIERACHY
+        if(!component.hasChildren())
+#else
         if(!component.hasParents())
+#endif
         {
             m_componentTree.append(buildComponentNode(component));
         }
@@ -423,10 +445,17 @@ ComponentNode McuBrowserViewModel::buildComponentNode(const Component &component
 
     if(node.level < 5)
     {
+#if COMPONENT_BOTTOM_UP_HIERACHY
+        foreach(auto parentComponent, component.getParents())
+        {
+            node.children.append(buildComponentNode(*parentComponent, &node));
+        }
+#else
         foreach(auto child, component.getChildren())
         {
             node.children.append(buildComponentNode(*child, &node));
         }
+#endif
     }
     else
     {
