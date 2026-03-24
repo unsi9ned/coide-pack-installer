@@ -202,6 +202,70 @@ void McuBrowserViewModel::optimizeDatabase()
 }
 
 //------------------------------------------------------------------------------
+// Вывод дерева устройств в консоль
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::printDeviceTree() const
+{
+    fprintf(stderr, "\n========================================\n");
+    fprintf(stderr, "  Device Tree\n");
+    fprintf(stderr, "========================================\n\n");
+
+    for(const auto& child : m_deviceTree)
+    {
+        printDeviceTree(child);
+    }
+
+    fprintf(stderr, "\n");
+}
+
+void McuBrowserViewModel::printDeviceTree(const DeviceNode& childNode) const
+{
+    for(int i = 0; i < childNode.level; i++)
+    {
+        fprintf(stderr, "|  ");
+    }
+
+    fprintf(stderr, "+-- %s\n", childNode.name.toLocal8Bit().constData());
+
+    for(const auto& child : childNode.children)
+    {
+        printDeviceTree(child);
+    }
+}
+
+//------------------------------------------------------------------------------
+// Вывод дерева компонентов в консоль
+//------------------------------------------------------------------------------
+void McuBrowserViewModel::printComponentTree() const
+{
+    fprintf(stderr, "\n========================================\n");
+    fprintf(stderr, "  Components Tree\n");
+    fprintf(stderr, "========================================\n\n");
+
+    for(const auto& child : m_componentTree)
+    {
+        printComponentTree(child);
+    }
+
+    fprintf(stderr, "\n");
+}
+
+void McuBrowserViewModel::printComponentTree(const ComponentNode& childNode) const
+{
+    for(int i = 0; i < childNode.level; i++)
+    {
+        fprintf(stderr, "|  ");
+    }
+
+    fprintf(stderr, "+-- %s\n", childNode.name.toLocal8Bit().constData());
+
+    for(const auto& child : childNode.children)
+    {
+        printComponentTree(child);
+    }
+}
+
+//------------------------------------------------------------------------------
 // Построение дерева устройств
 //------------------------------------------------------------------------------
 void McuBrowserViewModel::buildDeviceTree()
@@ -223,6 +287,7 @@ void McuBrowserViewModel::buildDeviceTree()
 DeviceNode McuBrowserViewModel::buildVendorNode(const QString& vendor)
 {
     DeviceNode node;
+    node.level = 0;
     node.type = DeviceNode::VendorType;
     node.name = vendor;
     node.displayName = vendor;
@@ -245,6 +310,7 @@ DeviceNode McuBrowserViewModel::buildFamilyNode(const QString& vendor,
                                                 const QString& family)
 {
     DeviceNode node;
+    node.level = 1;
     node.type = DeviceNode::FamilyType;
     node.name = family;
     node.displayName = family;
@@ -269,6 +335,7 @@ DeviceNode McuBrowserViewModel::buildSeriesNode(const QString& vendor,
                                                 const QString& series)
 {
     DeviceNode node;
+    node.level = 2;
     node.type = DeviceNode::SeriesType;
     node.name = series;
     node.displayName = series;
@@ -295,6 +362,7 @@ DeviceNode McuBrowserViewModel::buildMcuNode(const QString& vendor,
                                              const QString& mcu)
 {
     DeviceNode node;
+    node.level = 3;
     node.type = DeviceNode::McuType;
     node.name = mcu;
     node.displayName = mcu;
@@ -713,3 +781,5 @@ QString McuBrowserViewModel::componentId() const
     qint32 id = m_selectedComponentNode.hierarchyNode->getUniqueId();
     return id == -1 ? QString() : QString::number(id);
 }
+
+
