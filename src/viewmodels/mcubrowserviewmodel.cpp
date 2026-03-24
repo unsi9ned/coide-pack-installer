@@ -18,16 +18,6 @@ McuBrowserViewModel::McuBrowserViewModel(QObject *parent) : QObject(parent)
     connect(this, &McuBrowserViewModel::installResult,
             this, &McuBrowserViewModel::onInstallResult,
             Qt::QueuedConnection);
-
-    connect(&m_packManager,
-            &PackManager::eventOccured,
-            this,
-            &McuBrowserViewModel::loadLogMessage);
-
-    connect(&m_packManager,
-            &PackManager::errorOccured,
-            this,
-            &McuBrowserViewModel::loadLogMessage);
 }
 
 //------------------------------------------------------------------------------
@@ -163,7 +153,7 @@ void McuBrowserViewModel::installCurrentPack()
 {
     if (m_pack.pathToArchive().isEmpty())
     {
-        emit installLogMessage("Нет загруженного пакета");
+        logError("Нет загруженного пакета");
         return;
     }
 
@@ -175,16 +165,6 @@ void McuBrowserViewModel::installCurrentPack()
         QString errorString;
         PackDescription localPack = m_pack;
         PackManager localManager;
-
-        QObject::connect(&localManager, &PackManager::errorOccured,[this](const QString& e)
-        {
-            emit installLogMessage(e);
-        });
-
-        QObject::connect(&localManager, &PackManager::eventOccured,[this](const QString& e)
-        {
-            emit installLogMessage(e);
-        });
 
         bool success = localManager.packInstall(localPack, errorString);
         emit installResult(success, errorString);
@@ -213,17 +193,6 @@ void McuBrowserViewModel::optimizeDatabase()
     QtConcurrent::run([this]()
     {
         DBGarbageCollector collector;
-
-        // Соединяем сигналы (Qt::DirectConnection, т.к. мы в одном потоке)
-        QObject::connect(&collector, &DBGarbageCollector::errorOccured,
-                        [this](const QString& e) {
-            emit dbOptimizeError(e);
-        });
-
-        QObject::connect(&collector, &DBGarbageCollector::eventOccured,
-                        [this](const QString& e) {
-            emit dbLogMessage(e);
-        });
 
         collector.deleteUnnecessaryTables();
         collector.deleteObsoleteData();

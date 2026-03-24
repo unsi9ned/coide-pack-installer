@@ -9,6 +9,7 @@
 #include "models/database/dbgarbagecollector.h"
 #include "services/settings.h"
 #include "common/version.h"
+#include "services/logger.h"
 
 //------------------------------------------------------------------------------
 // Конструктор окна
@@ -20,6 +21,7 @@ MainForm::MainForm(QWidget *parent) :
     ui(new Ui::MainForm)
 {
     ui->setupUi(this);
+    setupLogging();
 
     // Иконка
     this->setWindowIcon(QIcon(":/img/hamlab.ico"));
@@ -43,14 +45,14 @@ MainForm::MainForm(QWidget *parent) :
 
     // Версия программы
     ui->lineEditIdePath->setText(Paths::instance()->coIdeDir());
-    ui->plainTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->plainTextEditLog->setContextMenuPolicy(Qt::CustomContextMenu);
 
     //--------------------------------------------------------------------------
     // Добавление кнопки очистки в контекстное меню окна логирования
     //--------------------------------------------------------------------------
-    connect(ui->plainTextEdit, &QPlainTextEdit::customContextMenuRequested, [this](const QPoint &pos)
+    connect(ui->plainTextEditLog, &QPlainTextEdit::customContextMenuRequested, [this](const QPoint &pos)
     {
-        QMenu *menu = ui->plainTextEdit->createStandardContextMenu();
+        QMenu *menu = ui->plainTextEditLog->createStandardContextMenu();
 
         menu->addSeparator();
 
@@ -58,22 +60,11 @@ MainForm::MainForm(QWidget *parent) :
         clearAction->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
 
         connect(clearAction, &QAction::triggered,
-                ui->plainTextEdit, &QPlainTextEdit::clear);
+                ui->plainTextEditLog, &QPlainTextEdit::clear);
 
-        menu->exec(ui->plainTextEdit->mapToGlobal(pos));
+        menu->exec(ui->plainTextEditLog->mapToGlobal(pos));
         delete menu;
     });
-
-    // Вывод сообщений
-#if 0
-    connect(&packMgr,
-            SIGNAL(errorOccured(QString)),
-            SLOT(printLogMessages(QString)));
-
-    connect(&packMgr,
-            SIGNAL(eventOccured(QString)),
-            SLOT(printLogMessages(QString)));
-#endif
 
     //--------------------------------------------------------------------------
     // Сигналы загрузки
@@ -104,8 +95,6 @@ MainForm::MainForm(QWidget *parent) :
         }
     });
 
-    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::loadLogMessage, this, &MainForm::printLogMessages);
-
     //--------------------------------------------------------------------------
     // Сигналы установки
     //--------------------------------------------------------------------------
@@ -131,8 +120,6 @@ MainForm::MainForm(QWidget *parent) :
         }
     });
 
-    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::installLogMessage, this, &MainForm::printLogMessages);
-
     //--------------------------------------------------------------------------
     // Отслеживаем процесс оптимизации
     //--------------------------------------------------------------------------
@@ -146,14 +133,6 @@ MainForm::MainForm(QWidget *parent) :
         lockUI(false);
         ui->statusBar->showMessage("Оптимизация завершена", 3000);
     });
-
-    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::dbOptimizeError, [this](const QString& error) {
-        lockUI(false);
-        ui->statusBar->showMessage("Ошибка: " + error, 5000);
-        QMessageBox::warning(this, "Ошибка", error);
-    });
-
-    connect(m_mcuBrowserViewModel, &McuBrowserViewModel::dbLogMessage, this, &MainForm::printLogMessages);
 
     //--------------------------------------------------------------------------
     // Пользовательский ввод
@@ -204,6 +183,14 @@ MainForm::~MainForm()
 {
     delete m_mcuBrowserViewModel;
     delete ui;
+}
+
+//------------------------------------------------------------------------------
+// Настройка логирования
+//------------------------------------------------------------------------------
+void MainForm::setupLogging()
+{
+    connect(Logger::instance(), &Logger::messageLogged, this, &MainForm::onLogMessage);
 }
 
 //------------------------------------------------------------------------------
@@ -282,8 +269,24 @@ void MainForm::loadDFP(bool hideFileDialog)
 //------------------------------------------------------------------------------
 void MainForm::printLogMessages(QString msg)
 {
-    ui->plainTextEdit->appendPlainText(msg);
-    ui->plainTextEdit->verticalScrollBar()->setValue(ui->plainTextEdit->verticalScrollBar()->maximum());
+    ui->plainTextEditLog->appendPlainText(msg);
+    ui->plainTextEditLog->verticalScrollBar()->setValue(ui->plainTextEditLog->verticalScrollBar()->maximum());
+}
+
+void MainForm::onLogMessage(const LogMessage& msg)
+{
+    // Вывод в текстовое поле
+    ui->plainTextEditLog->appendHtml(msg.toHtml());
+
+    // Автопрокрутка вниз
+    QTextCursor cursor = ui->plainTextEditLog->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    ui->plainTextEditLog->setTextCursor(cursor);
+
+    // Критические ошибки в статусбар
+    if (msg.level == LogLevel::Error || msg.level == LogLevel::Critical) {
+        statusBar()->showMessage(msg.message, 5000);
+    }
 }
 
 //------------------------------------------------------------------------------

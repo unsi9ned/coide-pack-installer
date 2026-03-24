@@ -18,11 +18,6 @@ RequestManager::RequestManager() : ComponentsInfo()
         QFile::copy(dbFile.fileName(), dbBackup.fileName());
     }
 #endif
-
-    connect(DataBase::instance(),
-            SIGNAL(errorOccured(QString)),
-            SIGNAL(errorOccured(QString)));
-
 }
 
 RequestManager::~RequestManager()
@@ -527,7 +522,7 @@ bool RequestManager::createManufacturer(const Manufacturer &vendor)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -619,7 +614,7 @@ bool RequestManager::createFamily(Family& family)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -733,7 +728,7 @@ bool RequestManager::createSeries(Series& series)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -884,7 +879,7 @@ bool RequestManager::createMcu(Mcu &device)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -952,7 +947,7 @@ bool RequestManager::createDebugAlgorithm(DebugAlgorithm &algo)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1023,7 +1018,7 @@ bool RequestManager::createFlashAlgorithm(QString nameAlg)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1056,7 +1051,7 @@ bool RequestManager::removeMcu(Mcu mcu)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1110,7 +1105,7 @@ bool RequestManager::removeSerie(Series serie)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1164,7 +1159,7 @@ bool RequestManager::removeFamily(Family family)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1218,7 +1213,7 @@ bool RequestManager::removeManufacturer(Manufacturer manufacturer)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1251,7 +1246,7 @@ bool RequestManager::removeDebugAlgorithm(DebugAlgorithm da)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1284,7 +1279,7 @@ bool RequestManager::removeFlashAlgorithm(ProgAlgorithm fa)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
@@ -1369,7 +1364,7 @@ bool RequestManager::updateMcuInfo(Mcu mcu)
 
     if(!status)
     {
-        emit errorOccured(errorStr);
+        logError(errorStr);
     }
 
     return status;
