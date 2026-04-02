@@ -118,7 +118,7 @@ public:
     Memory* getCodeMemory();
     Memory* getDataMemory();
 
-    static QString generateTimeUUID();
+    QString generateTimeUUID();
 
     void addDefSymbol(const QString& symbol) {this->_definedSymbols.append(symbol);}
     QStringList definedSymbols() {return this->_definedSymbols;}

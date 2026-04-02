@@ -157,8 +157,10 @@ public:
 
     QString devNodePath() const;
     QString componentNodePath() const;
+    QString flashAlgorithmPath(const QString& name) const;
 
     QString componentId() const;
+    QString flashAlgorithmId(const QString& name) const;
 
 private:
     void printDeviceTree(const DeviceNode& childNode) const;

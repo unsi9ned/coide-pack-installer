@@ -265,29 +265,6 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="4" rowspan="4">
-           <widget class="QPlainTextEdit" name="plainTextEditDescription">
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="4">
-           <widget class="QLabel" name="label_6">
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>14</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Характеристики</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0" colspan="2">
            <widget class="QLabel" name="label_10">
             <property name="text">
@@ -400,10 +377,67 @@
           <item row="14" column="1" colspan="4">
            <widget class="QLineEdit" name="lineEditUniquePath"/>
           </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_23">
+            <property name="text">
+             <string>Flash.algo ID:</string>
+            </property>
+           </widget>
+          </item>
           <item row="10" column="4" rowspan="4">
            <widget class="QPlainTextEdit" name="plainTextEditFeatures">
             <property name="lineWrapMode">
              <enum>QPlainTextEdit::NoWrap</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLabel" name="label_6">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>14</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Характеристики</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QLineEdit" name="lineEditFlashAlgoId">
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="2">
+           <widget class="QLabel" name="label_24">
+            <property name="text">
+             <string>Debug ID:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="3">
+           <widget class="QLineEdit" name="lineEditDebugAlgoId">
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4" rowspan="5">
+           <widget class="QPlainTextEdit" name="plainTextEditDescription">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>200</height>
+             </size>
             </property>
            </widget>
           </item>

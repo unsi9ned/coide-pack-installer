@@ -157,6 +157,15 @@ MainForm::MainForm(QWidget *parent) :
         loadDFP(true);
     });
 
+    // Выбор элемента в списке алгоритмов программирования
+    connect(ui->comboBoxFlashAlg, QOverload<int>::of(&QComboBox::activated), [this]()
+    {
+        QString path = m_mcuBrowserViewModel->flashAlgorithmPath(ui->comboBoxFlashAlg->currentText());
+        QString uid = m_mcuBrowserViewModel->flashAlgorithmId(ui->comboBoxFlashAlg->currentText());
+        ui->lineEditUniquePath->setText(path);
+        ui->lineEditFlashAlgoId->setText(uid);
+    });
+
     // Изменение пути к каталогу CoIDE
     connect(ui->pushButtonSetIdePath, &QPushButton::clicked, this, &MainForm::changeCoIDEPath);
     connect(ui->actionPreferences, SIGNAL(triggered(bool)), SLOT(changeCoIDEPath()));
@@ -363,6 +372,7 @@ void MainForm::clearForm()
     ui->lineEditMcuId->clear();
     ui->lineEditComponentId->clear();
     ui->lineEditUniquePath->clear();
+    ui->lineEditFlashAlgoId->clear();
 }
 
 //------------------------------------------------------------------------------

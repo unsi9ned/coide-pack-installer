@@ -774,12 +774,48 @@ QString McuBrowserViewModel::componentNodePath() const
 }
 
 //------------------------------------------------------------------------------
+// Уникальный путь к алгоритму
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::flashAlgorithmPath(const QString &name) const
+{
+    if (!m_selectedNode.isMcu()) return QString();
+
+    Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
+    if (!mcu) return QString();
+
+    for(auto algo : mcu->algorithms())
+    {
+        if(algo.name() == name) return algo.getPath();
+    }
+
+    return QString();
+}
+
+//------------------------------------------------------------------------------
 // Уникальный ID компонента
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::componentId() const
 {
     qint32 id = m_selectedComponentNode.hierarchyNode->getUniqueId();
     return id == -1 ? QString() : QString::number(id);
+}
+
+//------------------------------------------------------------------------------
+// Уникальный ID алгоритма программирования
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::flashAlgorithmId(const QString& name) const
+{
+    if (!m_selectedNode.isMcu()) return QString();
+
+    Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
+    if (!mcu) return QString();
+
+    for(auto algo : mcu->algorithms())
+    {
+        if(algo.name() == name) return QString::number(algo.getUniqueId());
+    }
+
+    return QString();
 }
 
 

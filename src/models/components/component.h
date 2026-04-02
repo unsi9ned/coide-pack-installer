@@ -221,7 +221,7 @@ public:
     bool isExternal() const;
     void setExternal(bool external);
 
-    static QString generateTimeUUID();
+    QString generateTimeUUID();
 
     operator==(const Component& component);
 

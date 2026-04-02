@@ -1,4 +1,5 @@
 #include "progalgorithm.h"
+#include "common/constants.h"
 
 uint32_t ProgAlgorithm::size() const
 {
@@ -40,6 +41,26 @@ void ProgAlgorithm::setDefault(bool isDefault)
     _isDefault = isDefault;
 }
 
+void ProgAlgorithm::setDocumentId(int id)
+{
+    _documentId = id;
+}
+
+void ProgAlgorithm::setTimeUUID(const QString &uuid)
+{
+    _timeUuid = uuid;
+}
+
+void ProgAlgorithm::setCreateDate(const QString &dt)
+{
+    _createDate = QDateTime::fromString(dt, "yyyy-MM-dd HH:mm:ss.z");
+}
+
+void ProgAlgorithm::setUpdateDate(const QString &dt)
+{
+    _updateDate = QDateTime::fromString(dt, "yyyy-MM-dd HH:mm:ss.z");
+}
+
 uint32_t ProgAlgorithm::start() const
 {
     return _start;
@@ -54,6 +75,10 @@ ProgAlgorithm::ProgAlgorithm(const QString &name)
 {
     this->_coId = -1;
     this->_name = name;
+    this->_timeUuid = generateTimeUUID();
+    this->_createDate = QDateTime::currentDateTime();
+    this->_updateDate = QDateTime::currentDateTime();
+    this->_documentId = static_cast<int>(CoDocument::DOC_FLASH_ALGO);
 }
 
 void ProgAlgorithm::setCoId(int id)
@@ -66,6 +91,11 @@ void ProgAlgorithm::setName(QString name)
     this->_name = name;
 }
 
+void ProgAlgorithm::setInstallPath(const QString &path)
+{
+    _installPath = path;
+}
+
 int ProgAlgorithm::coId() const
 {
     return this->_coId;
@@ -76,7 +106,48 @@ QString ProgAlgorithm::name() const
     return this->_name;
 }
 
+QString ProgAlgorithm::installPath() const
+{
+    return _installPath;
+}
+
 bool ProgAlgorithm::isNull()
 {
     return this->_coId <= 0 || this->_name.isEmpty();
+}
+
+QString ProgAlgorithm::getPath() const
+{
+    QString path = _installPath;
+    return path.replace('\\', '/');
+}
+
+int ProgAlgorithm::documentId() const
+{
+    return _documentId;
+}
+
+QString ProgAlgorithm::timeUUID() const
+{
+    return _timeUuid;
+}
+
+QString ProgAlgorithm::creationDate(QString dtFormat) const
+{
+    QDateTime dt = this->_createDate;
+
+    if(!dt.isValid())
+        dt = QDateTime::currentDateTime();
+
+    return dt.toString(dtFormat);
+}
+
+QString ProgAlgorithm::updateDate(QString dtFormat) const
+{
+    QDateTime dt = this->_updateDate;
+
+    if(!dt.isValid())
+        dt = QDateTime::currentDateTime();
+
+    return dt.toString(dtFormat);
 }

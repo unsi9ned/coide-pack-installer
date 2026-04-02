@@ -4,6 +4,7 @@
 #include <QString>
 #include <QByteArray>
 #include <QDebug>
+#include <QUuid>
 
 class DeviceHierarchyNode
 {
@@ -34,6 +35,18 @@ public:
     }
     virtual QString getPath() const { return QString(); }
     virtual qint32 getCoMaxId() const { return 0; }
+    virtual QString generateTimeUUID()
+    {
+        QString str = QUuid::createUuid().toString();
+
+        // Удаляем фигурные скобки в начале и конце
+        if (str.startsWith('{') && str.endsWith('}'))
+        {
+            str = str.mid(1, str.length() - 2);
+        }
+
+        return str;
+    }
 };
 
 #endif // DEVICEHIERARCHYNODE_H

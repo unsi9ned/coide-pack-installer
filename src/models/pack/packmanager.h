@@ -32,6 +32,7 @@ private:
     QStringList getCmsisFileList(PackDescription& pack, const QString version);
     bool extractSources(PackDescription& pack, QString& errorString);
     bool createComponentMirrors(PackDescription& pack, QString& errorString);
+    void updatePaths(PackDescription& pack);
 
 signals:
 
