@@ -61,6 +61,11 @@ void ProgAlgorithm::setUpdateDate(const QString &dt)
     _updateDate = QDateTime::fromString(dt, "yyyy-MM-dd HH:mm:ss.z");
 }
 
+void ProgAlgorithm::setDescription(const QString& dscr)
+{
+    _description = dscr;
+}
+
 uint32_t ProgAlgorithm::start() const
 {
     return _start;
@@ -75,7 +80,14 @@ ProgAlgorithm::ProgAlgorithm(const QString &name)
 {
     this->_coId = -1;
     this->_name = name;
+    this->_installPath = name;
+    this->_description = "";
     this->_timeUuid = generateTimeUUID();
+    this->_start = 0;
+    this->_size = 0;
+    this->_RAMstart = 0;
+    this->_RAMsize = 0;
+    this->_isDefault = false;
     this->_createDate = QDateTime::currentDateTime();
     this->_updateDate = QDateTime::currentDateTime();
     this->_documentId = static_cast<int>(CoDocument::DOC_FLASH_ALGO);
@@ -113,7 +125,10 @@ QString ProgAlgorithm::installPath() const
 
 bool ProgAlgorithm::isNull()
 {
-    return this->_coId <= 0 || this->_name.isEmpty();
+    return this->_coId <= 0 ||
+           this->_name.isEmpty() ||
+           this->_start == this->_size == 0 ||
+           this->_RAMstart == this->_RAMsize == 0;
 }
 
 QString ProgAlgorithm::getPath() const
@@ -150,4 +165,43 @@ QString ProgAlgorithm::updateDate(QString dtFormat) const
         dt = QDateTime::currentDateTime();
 
     return dt.toString(dtFormat);
+}
+
+QString ProgAlgorithm::description() const
+{
+    return _description;
+}
+
+bool ProgAlgorithm::isValid(QString* errorString)
+{
+    QString e;
+
+    if(errorString)
+        return isValid(*errorString);
+    else
+        return isValid(e);
+}
+
+bool ProgAlgorithm::isValid(QString& errorString)
+{
+    qint32 uniqueId = getUniqueId();
+    QString uniquePath = getPath();
+
+    if(uniqueId <= 0 || uniqueId <= getCoMaxId())
+        errorString = QString("Invalid Flash Algorithm ID = %1").arg(uniqueId);
+    else if(_name.isEmpty())
+        errorString = QString("Flash Algorithm name is not defined");
+    else if(uniquePath.isEmpty())
+        errorString = QString("Flash Algorithm path is not defined");
+    else if(_timeUuid.isEmpty())
+        errorString = QString("Uuid for Flash Algorithm is not defined");
+    else if(_start == _RAMstart)
+        errorString = QString("FLASH and RAM memory have the same addresses");
+    else if(_size == 0)
+        errorString = QString("The FLASH region has a size of zero");
+    else if(_RAMsize == 0)
+        errorString = QString("The RAM region has a size of zero");
+    else return true;
+
+    return false;
 }

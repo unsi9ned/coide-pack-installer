@@ -414,21 +414,89 @@ DebugAlgorithm RequestManager::requestDebugAlgorithm(const QString &name)
 //------------------------------------------------------------------------------
 // Загрузить из базы алгоритм программирования
 //------------------------------------------------------------------------------
-ProgAlgorithm RequestManager::requestFlashAlgorithm(int id)
+ProgAlgorithm RequestManager::requestFlashAlgorithm(int algId)
 {
     ProgAlgorithm fa;
 
-    QString queryStr = QString("SELECT * FROM flash_algorithm "
-                               "WHERE id=%1 LIMIT 1").arg(id);
+    QString queryStr = QString("SELECT "
+                               "flash_algorithm.id, "
+                               "flash_algorithm.name, "
+                               "flash_algorithm.description, "
+                               "flash_algorithm.deviceType, "
+                               "flash_algorithm.deviceSize, "
+                               "flash_algorithm.create_date, "
+                               "flash_algorithm.update_date, "
+                               "flash_algorithm.timeuuid, "
+                               "flash_algorithm.documentId "
+                               "FROM flash_algorithm "
+                               "WHERE id = '%1' LIMIT 1").arg(algId);
+
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
-        id = result.value(0).toInt();
-        QString name = result.value(1).toString();
+        qint32 id = result.value("id").toInt();
+        QString name = result.value("name").toString();
+        QString description = result.value("description").toString();
+        QString createDate = result.value("create_date").toString();
+        QString updateDate = result.value("update_date").toString();
+        QString timeUuid = result.value("timeuuid").toString();
+        int documentId = result.value("documentId").toInt();
 
         fa.setCoId(id);
         fa.setName(name);
+        fa.setInstallPath(name);
+        fa.setDocumentId(documentId);
+        fa.setTimeUUID(timeUuid);
+        fa.setCreateDate(createDate);
+        fa.setUpdateDate(updateDate);
+        fa.setDescription(description);
+        break;
+    }
+
+    return fa;
+}
+
+//------------------------------------------------------------------------------
+// Загрузить из базы алгоритм программирования
+//------------------------------------------------------------------------------
+ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
+{
+    ProgAlgorithm fa;
+
+    QString queryStr = QString("SELECT "
+                               "flash_algorithm.id, "
+                               "flash_algorithm.name, "
+                               "flash_algorithm.description, "
+                               "flash_algorithm.deviceType, "
+                               "flash_algorithm.deviceSize, "
+                               "flash_algorithm.create_date, "
+                               "flash_algorithm.update_date, "
+                               "flash_algorithm.timeuuid, "
+                               "flash_algorithm.documentId "
+                               "FROM flash_algorithm "
+                               "WHERE name = '%1' LIMIT 1").arg(name);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
+
+    while(result.next())
+    {
+        qint32 id = result.value("id").toInt();
+        QString name = result.value("name").toString();
+        QString description = result.value("description").toString();
+        QString createDate = result.value("create_date").toString();
+        QString updateDate = result.value("update_date").toString();
+        QString timeUuid = result.value("timeuuid").toString();
+        int documentId = result.value("documentId").toInt();
+
+        fa.setCoId(id);
+        fa.setName(name);
+        fa.setInstallPath(name);
+        fa.setDocumentId(documentId);
+        fa.setTimeUUID(timeUuid);
+        fa.setCreateDate(createDate);
+        fa.setUpdateDate(updateDate);
+        fa.setDescription(description);
         break;
     }
 
@@ -442,18 +510,39 @@ QList<ProgAlgorithm> RequestManager::requestFlashAlgorithmList()
 {
     QList<ProgAlgorithm> faList;
 
-    QString queryStr = QString("SELECT * FROM flash_algorithm");
+    QString queryStr = QString("SELECT "
+                               "flash_algorithm.id, "
+                               "flash_algorithm.name, "
+                               "flash_algorithm.description, "
+                               "flash_algorithm.deviceType, "
+                               "flash_algorithm.deviceSize, "
+                               "flash_algorithm.create_date, "
+                               "flash_algorithm.update_date, "
+                               "flash_algorithm.timeuuid, "
+                               "flash_algorithm.documentId "
+                               "FROM flash_algorithm");
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
 
     while(result.next())
     {
         ProgAlgorithm fa;
 
-        int id = result.value(0).toInt();
-        QString name = result.value(1).toString();
+        qint32 id = result.value("id").toInt();
+        QString name = result.value("name").toString();
+        QString description = result.value("description").toString();
+        QString createDate = result.value("create_date").toString();
+        QString updateDate = result.value("update_date").toString();
+        QString timeUuid = result.value("timeuuid").toString();
+        int documentId = result.value("documentId").toInt();
 
         fa.setCoId(id);
         fa.setName(name);
+        fa.setInstallPath(name);
+        fa.setDocumentId(documentId);
+        fa.setTimeUUID(timeUuid);
+        fa.setCreateDate(createDate);
+        fa.setUpdateDate(updateDate);
+        fa.setDescription(description);
 
         faList.append(fa);
     }
@@ -956,62 +1045,78 @@ bool RequestManager::createDebugAlgorithm(DebugAlgorithm &algo)
 //------------------------------------------------------------------------------
 // Добавить алгоритм программирования в базу
 //------------------------------------------------------------------------------
-bool RequestManager::createFlashAlgorithm(QString nameAlg)
+bool RequestManager::createFlashAlgorithm(ProgAlgorithm& algo)
 {
     QString errorStr;
     bool status = true;
 
-    if(nameAlg.isEmpty())
+    if(!algo.isValid(&errorStr))
     {
         status = false;
-        errorStr = tr("Название алгоритма имеет нулевую длину");
     }
     else
     {
-        //Загружаем алгоритмы из базы
         bool isset = false;
-        int lastId = 0;
-        QList<ProgAlgorithm> faList = requestFlashAlgorithmList();
 
-        for(int a = 0; a < faList.length(); a++)
+        //
+        // Сначала проверяем нет ли устройства в базе
+        //
+#if 0
+        auto progAlgList = requestFlashAlgorithmList();
+
+        for (auto currAlg : progAlgList)
         {
-            ProgAlgorithm fa = faList.at(a);
-
-            if(fa.coId() > lastId)
-            {
-                lastId = fa.coId();
-            }
-
-            if(fa.name().trimmed().toLower() == nameAlg.trimmed().toLower())
+            if(currAlg.getPath() == algo.getPath())
             {
                 isset = true;
+                algo.setCoId(currAlg.coId());
+                algo.setTimeUUID(currAlg.timeUUID());
+                algo.setCreateDate(currAlg.creationDate());
+                algo.setUpdateDate(currAlg.updateDate());
+                algo.setDescription(currAlg.description());
+                break;
             }
         }
+#else
+        auto foundAlg = requestFlashAlgorithm(algo.getPath());
 
-        if(isset)
+        if(!foundAlg.isNull())
         {
-            status = false;
-            errorStr = tr("Алгоритм %1 уже есть в базе").arg(nameAlg);
+            isset = true;
+            algo.setCoId(foundAlg.coId());
+            algo.setTimeUUID(foundAlg.timeUUID());
+            algo.setCreateDate(foundAlg.creationDate());
+            algo.setUpdateDate(foundAlg.updateDate());
+            algo.setDescription(foundAlg.description());
         }
-        else
+#endif
+
+        //
+        // Создаем новое устройство
+        //
+        if(!isset)
         {
             QString queryStr = QString("INSERT INTO flash_algorithm "
                                        "VALUES ('%1','%2','%3','%4','%5','%6','%7','%8','%9')").
-                                arg(lastId + 1).
-                                arg(nameAlg).
-                                arg("").
-                                arg("").
-                                arg("").
-                                arg("2012-10-30 18:09:28.0").
-                                arg("2012-10-30 18:09:28.0").
-                                arg("da181949-d3d0-41f6-b16c-956433f00e0b").
-                                arg(2);
+                                arg(algo.getUniqueId()).
+                                arg(algo.getPath()).
+                                arg(algo.description()).
+                                arg("").                      //deviceType
+                                arg("").                      //deviceSize
+                                arg(algo.creationDate()).
+                                arg(algo.updateDate()).
+                                arg(algo.timeUUID()).
+                                arg(algo.documentId());
 
             QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
 
             if(!status)
             {
                 errorStr = result.lastError().text();
+            }
+            else
+            {
+                algo.setCoId(algo.getUniqueId());
             }
         }
     }

@@ -681,10 +681,7 @@ QString McuBrowserViewModel::defaultFlashAlgorithm() const
         return QString();
     else
     {
-        auto codeMem = mcu->getCodeMemory();
-        int32_t flashStartAddr = codeMem ? codeMem->startAddr() : -1;
-        ProgAlgorithm * flashAlgorithm = mcu->getFlashAlgorithm(flashStartAddr);
-
+        ProgAlgorithm * flashAlgorithm = mcu->getDefaultFlashAlgorithm();
         return flashAlgorithm ? flashAlgorithm->name() : QString();
     }
 }

@@ -117,6 +117,7 @@ public:
     Memory& addMemoryRegion(const QString name);
     Memory* getCodeMemory();
     Memory* getDataMemory();
+    ProgAlgorithm * getDefaultFlashAlgorithm();
 
     QString generateTimeUUID();
 

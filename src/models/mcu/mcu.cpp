@@ -144,6 +144,20 @@ Memory *Mcu::getDataMemory()
     return nullptr;
 }
 
+//------------------------------------------------------------------------------
+// Поиск дефолтного алгоритма программирования
+//------------------------------------------------------------------------------
+ProgAlgorithm*Mcu::getDefaultFlashAlgorithm()
+{
+    ProgAlgorithm * flashAlgorithm = nullptr;
+
+    auto codeMem = getCodeMemory();
+    int32_t flashStartAddr = codeMem ? codeMem->startAddr() : -1;
+    flashAlgorithm = getFlashAlgorithm(flashStartAddr);
+
+    return flashAlgorithm;
+}
+
 QString Mcu::generateTimeUUID()
 {
     QString str = QUuid::createUuid().toString();

@@ -301,6 +301,7 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                 {
                     Mcu& mcu = dev.value();
                     DebugAlgorithm& algorithm = mcu.getDebugAlgorithm();
+                    ProgAlgorithm*  flashAlgorithm = mcu.getDefaultFlashAlgorithm();
 
                     logInfo(QString("Adding the Debug algorithm '%1'").arg(mcu.getDebugAlgorithm().name()));
 
@@ -308,6 +309,16 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                         break;
                     else
                         mcu.setDebugAlgorithmId(algorithm.coId());
+
+                    if(flashAlgorithm)
+                    {
+                        logInfo(QString("Adding the Flash algorithm '%1'").arg(flashAlgorithm->name()));
+
+                        if(!reqManager->createFlashAlgorithm(*flashAlgorithm))
+                            break;
+                    }
+                    else
+                        logWarning("The default programming algorithm was not found");
 
                     logInfo(QString("Adding the MCU = %1").arg(mcu.getName()));
 
