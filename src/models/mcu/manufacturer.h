@@ -36,12 +36,37 @@ public:
         }
     };
 
+    struct FlmInfo
+    {
+        QString pathInArchive;
+        QString destDirectory;
+        QString relativePath;
+        QStringList mcuList;
+
+        FlmInfo(const QString& path, const QString& dir = QString())
+        {
+            pathInArchive = path;
+            destDirectory = dir;
+        }
+
+        bool operator==(const FlmInfo &other) const
+        {
+            return pathInArchive == other.pathInArchive;
+        }
+
+        void addMcuName(const QString& mcuName)
+        {
+            mcuList.append(mcuName);
+        }
+    };
+
 private:
 
     int id;
     QString name;
     QMap<QString, Family> familyMap;
     QList<SvdInfo> _svdList;
+    QList<FlmInfo> _flmList;
 
     static const QMap<QString, int> _coVendorMap;
     static const QMap<QString, int> _keilVendorMap;
@@ -85,9 +110,11 @@ public:
 
     //Возврат списка svd-файлов
     QList<SvdInfo>& svdList();
+    QList<FlmInfo>& flmList();
 
     //Возврат конкретного SVD
     SvdInfo * svd(const QString& path);
+    FlmInfo * flm(const QString& path);
 
     bool isValid(QString * errorString = nullptr) const;
     bool isNull();

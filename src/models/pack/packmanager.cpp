@@ -236,6 +236,21 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     }
 
     //
+    // Распаковка FLM-файлов
+    //
+    logInfo(QString("Extracting FLM files"));
+
+    if(!extractFLM(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            logError("Couldn't extract FLM files");
+        else
+            logError(QString("Couldn't extract FLM files: %1").arg(errorString));
+
+        return false;
+    }
+
+    //
     // Распаковка исходников
     //
     logInfo("Unpacking sources");
@@ -579,6 +594,97 @@ bool PackManager::extractSVD(PackDescription &pack, QString &errorString)
         if(!ZipArchive().extractFile(pack.pathToArchive(), s.destDirectory, s.pathInArchive))
         {
             errorString = QString("An error occurred while extracting the %1 file").arg(s.pathInArchive);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Извлечение алгоритмов программирования FLM
+//------------------------------------------------------------------------------
+bool PackManager::extractFLM(PackDescription& pack, QString& errorString)
+{
+    QDir dir;
+
+    dir.setPath(pack.installDir());
+
+    //
+    // Пакет не валиден
+    //
+    if(pack.pathToArchive().isEmpty())
+    {
+        errorString = QString("The archive path is not set");
+        return false;
+    }
+    else if(pack.installDir().isEmpty() || !dir.exists())
+    {
+        errorString = QString("The installation directory is not defined or does not exist");
+        return false;
+    }
+    else if(!pack.isValid())
+    {
+        errorString = QString("The '%1' package is not valid").arg(pack.name());
+        return false;
+    }
+
+    //
+    // Формирование списка файлов для распаковки
+    //
+    Manufacturer& vendor = pack.vendors().first();
+
+    foreach(QString familyName, vendor.families().keys())
+    {
+        Family& family = vendor.family(familyName);
+
+        foreach(QString seriesName, family.seriesMap().keys())
+        {
+            Series& series = vendor.family(familyName).series(seriesName);
+
+            foreach (QString mcuName, series.mcuMap().keys())
+            {
+                Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
+
+                for(auto& fa : mcu.algorithms())
+                {
+                    QString faLocalPath = fa.name();
+
+                    if(faLocalPath.isEmpty()) continue;
+
+                    if(!vendor.flmList().contains(Manufacturer::FlmInfo(faLocalPath)))
+                    {
+                        Manufacturer::FlmInfo newFlm(faLocalPath);
+                        newFlm.destDirectory = pack.installDir() + "/" + QFileInfo(faLocalPath).path();
+                        newFlm.relativePath = pack.installDir() + "/" + faLocalPath;
+                        newFlm.relativePath = newFlm.relativePath.remove(Paths::instance()->coIdeDir());
+                        newFlm.destDirectory = newFlm.destDirectory.replace('/', '\\');
+                        newFlm.relativePath = newFlm.relativePath.replace('/', '\\');
+                        newFlm.addMcuName(mcu.getName());
+                        vendor.flmList().append(newFlm);
+                    }
+                    else
+                    {
+                        Manufacturer::FlmInfo * currFlm = vendor.flm(faLocalPath);
+
+                        if(currFlm)
+                        {
+                            currFlm->addMcuName(mcu.getName());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //
+    // Распаковка
+    //
+    foreach (Manufacturer::FlmInfo flm, vendor.flmList())
+    {
+        if(!ZipArchive().extractFile(pack.pathToArchive(), flm.destDirectory, flm.pathInArchive))
+        {
+            errorString = QString("An error occurred while extracting the %1 file").arg(flm.pathInArchive);
             return false;
         }
     }

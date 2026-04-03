@@ -383,6 +383,11 @@ QList<Manufacturer::SvdInfo> &Manufacturer::svdList()
     return this->_svdList;
 }
 
+QList<Manufacturer::FlmInfo>&Manufacturer::flmList()
+{
+    return this->_flmList;
+}
+
 //------------------------------------------------------------------------------
 // Возврат конкретного SVD
 //------------------------------------------------------------------------------
@@ -394,6 +399,19 @@ Manufacturer::SvdInfo *Manufacturer::svd(const QString &path)
 
         if(s.pathInArchive == path)
             return &_svdList[i];
+    }
+
+    return nullptr;
+}
+
+Manufacturer::FlmInfo*Manufacturer::flm(const QString& path)
+{
+    for(int i = 0; i < _flmList.count(); i++)
+    {
+        auto f = _flmList.at(i);
+
+        if(f.pathInArchive == path)
+            return &_flmList[i];
     }
 
     return nullptr;
