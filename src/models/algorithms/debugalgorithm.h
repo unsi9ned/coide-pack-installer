@@ -41,7 +41,7 @@ public:
     QString timeUUID() const;
     int documentId() const;
 
-    bool isNull();
+    bool isNull() const;
 
     static QString generateTimeUUID();
 };

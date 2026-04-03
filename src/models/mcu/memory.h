@@ -102,8 +102,8 @@ public:
     void setInit(bool isInit);
     void setDefault(bool state);
 
-    bool isCodeMemory();
-    bool isDataMemory();
+    bool isCodeMemory() const;
+    bool isDataMemory() const;
 
 private:
 

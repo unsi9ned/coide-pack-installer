@@ -63,9 +63,9 @@ public:
     QString updateDate(QString dtFormat = QString("yyyy-MM-dd HH:mm:ss.z")) const;
     QString description() const;
 
-    bool isValid(QString* errorString = nullptr);
+    bool isValid(QString* errorString = nullptr) const;
 private:
-    bool isValid(QString& errorString);
+    bool isValid(QString& errorString) const;
 };
 
 #endif // FLASHALGORITHM_H

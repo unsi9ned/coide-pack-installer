@@ -172,7 +172,7 @@ QString ProgAlgorithm::description() const
     return _description;
 }
 
-bool ProgAlgorithm::isValid(QString* errorString)
+bool ProgAlgorithm::isValid(QString* errorString) const
 {
     QString e;
 
@@ -182,7 +182,7 @@ bool ProgAlgorithm::isValid(QString* errorString)
         return isValid(e);
 }
 
-bool ProgAlgorithm::isValid(QString& errorString)
+bool ProgAlgorithm::isValid(QString& errorString) const
 {
     qint32 uniqueId = getUniqueId();
     QString uniquePath = getPath();

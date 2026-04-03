@@ -30,8 +30,8 @@ Mcu::Mcu(int id, int seriesId, int debugAlgorithmId, int userId)
 QString Mcu::coMemInfo()
 {
     QString memInfo;
-    Memory * codeMem = getCodeMemory();
-    Memory * dataMem = getDataMemory();
+    const Memory * codeMem = getCodeMemory();
+    const Memory * dataMem = getDataMemory();
 
     if(codeMem && dataMem)
     {
@@ -122,23 +122,23 @@ Memory &Mcu::addMemoryRegion(const QString name)
     return memory(name);
 }
 
-Memory *Mcu::getCodeMemory()
+const Memory *Mcu::getCodeMemory() const
 {
     for(auto it = _memoryMap.begin(); it != _memoryMap.end(); ++it)
     {
         if(it.value().isCodeMemory())
-            return &_memoryMap[it.key()];
+            return &it.value();
     }
 
     return nullptr;
 }
 
-Memory *Mcu::getDataMemory()
+const Memory* Mcu::getDataMemory() const
 {
     for(auto it = _memoryMap.begin(); it != _memoryMap.end(); ++it)
     {
         if(it.value().isDataMemory())
-            return &_memoryMap[it.key()];
+            return &it.value();
     }
 
     return nullptr;
@@ -189,8 +189,8 @@ QString Mcu::defSym2coMicro()
 
 QString Mcu::coDescription()
 {
-    Memory * codeMem = getCodeMemory();
-    Memory * dataMem = getDataMemory();
+    const Memory * codeMem = getCodeMemory();
+    const Memory * dataMem = getDataMemory();
 
     if(description.isEmpty())
         return QString("%1 has %2 Kbytes of FLASH and %3 Kbytes of RAM").
@@ -201,7 +201,7 @@ QString Mcu::coDescription()
         return description;
 }
 
-bool Mcu::isValid(QString *errorString)
+bool Mcu::isValid(QString *errorString) const
 {
     QString e;
 
@@ -220,7 +220,7 @@ bool Mcu::isNull()
            name.isEmpty();
 }
 
-bool Mcu::isValid(QString &errorString)
+bool Mcu::isValid(QString &errorString) const
 {
     if(seriesId <= 0)
         errorString = QString("Invalid series ID = %1").arg(seriesId);

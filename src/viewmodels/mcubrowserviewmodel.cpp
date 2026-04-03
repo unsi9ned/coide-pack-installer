@@ -516,7 +516,7 @@ QString McuBrowserViewModel::flashStart() const
     Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
     if (!mcu) return QString();
 
-    Memory* mem = mcu->getCodeMemory();
+    const Memory* mem = mcu->getCodeMemory();
     return mem ? mem->startAddrHex() : QString();
 }
 
@@ -530,7 +530,7 @@ QString McuBrowserViewModel::flashSize() const
     Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
     if (!mcu) return QString();
 
-    Memory* mem = mcu->getCodeMemory();
+    const Memory* mem = mcu->getCodeMemory();
     return mem ? mem->sizeHex() : QString();
 }
 
@@ -544,7 +544,7 @@ QString McuBrowserViewModel::ramStart() const
     Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
     if (!mcu) return QString();
 
-    Memory* mem = mcu->getDataMemory();
+    const Memory* mem = mcu->getDataMemory();
     return mem ? mem->startAddrHex() : QString();
 }
 
@@ -558,7 +558,7 @@ QString McuBrowserViewModel::ramSize() const
     Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
     if (!mcu) return QString();
 
-    Memory* mem = mcu->getDataMemory();
+    const Memory* mem = mcu->getDataMemory();
     return mem ? mem->sizeHex() : QString();
 }
 

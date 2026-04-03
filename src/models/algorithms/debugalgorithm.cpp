@@ -102,7 +102,7 @@ int DebugAlgorithm::documentId() const
     return this->_documentId;
 }
 
-bool DebugAlgorithm::isNull()
+bool DebugAlgorithm::isNull() const
 {
     return this->_name.isEmpty();
 }

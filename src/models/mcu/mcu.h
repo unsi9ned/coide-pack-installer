@@ -108,15 +108,15 @@ public:
 
     QString getPath() const;
 
-    bool isValid(QString* errorString = nullptr);
+    bool isValid(QString* errorString = nullptr) const;
     bool isNull();
 
     QMap<QString, Memory>& memoryRegions();
 
     Memory& memory(const QString& name);
     Memory& addMemoryRegion(const QString name);
-    Memory* getCodeMemory();
-    Memory* getDataMemory();
+    const Memory* getCodeMemory() const;
+    const Memory* getDataMemory() const;
     ProgAlgorithm * getDefaultFlashAlgorithm();
 
     QString generateTimeUUID();
@@ -130,7 +130,7 @@ public:
     QStringList compileHeaders(){return this->_compileHeaders;}
 
 private:
-    bool isValid(QString& errorString);
+    bool isValid(QString& errorString) const;
     Memory& createMemoryRegion(const QString regionName);
 };
 

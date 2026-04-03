@@ -331,6 +331,11 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
 
                         if(!reqManager->createFlashAlgorithm(*flashAlgorithm))
                             break;
+
+                        logInfo(QString("Creating a link to the Flash Algorithm '%1'").arg(flashAlgorithm->name()));
+
+                        if(!reqManager->createFlashAlgorithmLink(mcu, *flashAlgorithm))
+                            break;
                     }
                     else
                         logWarning("The default programming algorithm was not found");

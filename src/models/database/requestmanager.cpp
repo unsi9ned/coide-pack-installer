@@ -308,6 +308,71 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
     return microcontrollers;
 }
 
+Mcu RequestManager::requestMcu(const QString& name)
+{
+    QString mcuName = name;
+    Mcu mcu;
+    QString queryStr = QString("SELECT * FROM mcu WHERE name = '%1' LIMIT 1").
+                       arg(mcuName.remove("'"));
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
+
+    while(result.next())
+    {
+        int id = result.value(0).toInt();
+        int seriesId = result.value(1).toInt();
+        int userId = result.value(2).toInt();
+        int debugAlgorithmId = result.value(3).toInt();
+        QString name = result.value(4).toString();
+        QString description = result.value(5).toString();
+        QByteArray keyParameter = result.value(6).toByteArray();
+        QByteArray webPageURL = result.value(7).toByteArray();
+        QByteArray datasheetURL = result.value(8).toByteArray();
+        QByteArray memInfo = result.value(9).toByteArray();
+        QString micro = result.value(10).toString();
+        QString advertising = result.value(11).toString();
+        QString price = result.value(12).toString();
+        QString timeuuid = result.value(13).toString();
+        int hits = result.value(14).toInt();
+
+        memInfo = memInfo.replace("\\", "");
+        memInfo = memInfo.replace("\"{", "{");
+        memInfo = memInfo.replace("}\"", "}");
+
+        QByteArray ba;
+        ba.append("{\"memInfo\" : ");
+        ba.append(memInfo);
+        ba.append("}");
+
+        memInfo = ba;
+
+        mcu.setId(id);
+        mcu.setSeriesId(seriesId);
+        mcu.setUserId(userId);
+        mcu.setDebugAlgorithmId(debugAlgorithmId);
+        mcu.setName(name);
+        mcu.setDescription(description);
+        mcu.setKeyParameter(keyParameter);
+        mcu.setWebPageURL(webPageURL);
+        mcu.setDatasheetURL(datasheetURL);
+        mcu.setMemInfo(memInfo);
+        mcu.setMicro(micro);
+        mcu.setAdvertising(advertising);
+        mcu.setPrice(price);
+        mcu.setTimeuuid(timeuuid);
+        mcu.setHits(hits);
+
+        DebugAlgorithm da = requestDebugAlgorithm(debugAlgorithmId);
+        mcu.setDebugAlgorithm(da);
+
+        ProgAlgorithm fa = getMcuFlashAlgorithm(id);
+        mcu.setFlashAlgorithm(fa);
+
+        break;
+    }
+
+    return mcu;
+}
+
 //------------------------------------------------------------------------------
 // Загрузить из базы алгоритм отладки
 //------------------------------------------------------------------------------
@@ -1117,6 +1182,94 @@ bool RequestManager::createFlashAlgorithm(ProgAlgorithm& algo)
             else
             {
                 algo.setCoId(algo.getUniqueId());
+            }
+        }
+    }
+
+    if(!status)
+    {
+        logError(errorStr);
+    }
+
+    return status;
+}
+
+//------------------------------------------------------------------------------
+// Создание связи между алгоритмом и устройством
+//------------------------------------------------------------------------------
+bool RequestManager::createFlashAlgorithmLink(const Mcu& device,
+                                              const ProgAlgorithm& algo)
+{
+    QString errorStr;
+    bool status = true;
+
+    if(!algo.isValid(&errorStr) || !device.isValid(&errorStr))
+    {
+        status = false;
+    }
+    else
+    {
+        auto foundAlg = requestFlashAlgorithm(algo.getPath());
+        auto foundDevice = requestMcu(device.getCoName());
+
+        if(foundAlg.isNull())
+        {
+            errorStr = QString("The Flash Algorithm '%1' is not found").arg(algo.getPath());
+            status = false;
+        }
+        else if(foundDevice.isNull())
+        {
+            errorStr = QString("The Mcu '%1' is not found").arg(device.getCoName());
+            status = false;
+        }
+        else
+        {
+            // Проверка существования связи
+            QString queryStr = QString("SELECT "
+                                       "mcu_has_flash_algorithm.mcuId, "
+                                       "mcu_has_flash_algorithm.flashAlgorithmId "
+                                       "FROM mcu_has_flash_algorithm "
+                                       "WHERE mcuId = '%1' AND flashAlgorithmId = '%2' LIMIT 1").
+                                arg(device.getUniqueId()).
+                                arg(algo.getUniqueId());
+
+            QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+            if(!status)
+            {
+                errorStr = result.lastError().text();
+            }
+            else
+            {
+                QPair<qint32, qint32> link;
+                bool exists = false;
+
+                while(result.next())
+                {
+                    qint32 mcuId = result.value("mcuId").toInt();
+                    qint32 flashAlgorithmId = result.value("flashAlgorithmId").toInt();
+
+                    link.first = mcuId;
+                    link.second = flashAlgorithmId;
+                    exists = true;
+
+                    break;
+                }
+
+                if(!exists)
+                {
+                    queryStr = QString("INSERT INTO mcu_has_flash_algorithm "
+                                       "VALUES ('%1','%2')").
+                                       arg(device.getUniqueId()).
+                                       arg(algo.getUniqueId());
+
+                    result = DataBase::instance()->sendQuery(queryStr, &status);
+
+                    if(!status)
+                    {
+                        errorStr = result.lastError().text();
+                    }
+                }
             }
         }
     }
