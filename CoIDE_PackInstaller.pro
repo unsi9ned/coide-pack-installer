@@ -11,6 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = CoIDE_PackInstaller
 TEMPLATE = app
 
+CONFIG += console
+
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
@@ -23,27 +25,138 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 
-SOURCES += main.cpp\
-    pdscparser.cpp \
-    packdescription.cpp \
-    memory.cpp \
-    mainform.cpp
+SOURCES += src/main.cpp\
+    src/models/pack/pdscparser.cpp \
+    src/models/pack/packdescription.cpp \
+    src/models/pack/packmanager.cpp \
+    src/models/mcu/memory.cpp \
+    src/views/mainform.cpp \
+    src/models/mcu/devicefeature.cpp \
+    src/models/mcu/featurecontainer.cpp \
+    src/models/algorithms/algorithmcontainer.cpp \
+    src/models/algorithms/progalgorithm.cpp \
+    src/models/algorithms/debugalgorithm.cpp \
+    src/services/paths.cpp \
+    src/utils/ziparchive.cpp \
+    src/models/mcu/manufacturer.cpp \
+    src/services/logger.cpp \
+    src/models/database/database.cpp \
+    src/models/database/requestmanager.cpp \
+    src/models/components/component.cpp \
+    src/models/database/componentsinfo.cpp \
+    src/models/components/category.cpp \
+    src/models/mcu/family.cpp \
+    src/models/mcu/series.cpp \
+    src/models/mcu/mcu.cpp \
+    src/models/database/dbgarbagecollector.cpp \
+    src/models/components/example.cpp \
+    src/models/pdsc/pdscelement.cpp \
+    src/models/pdsc/pdscfile.cpp \
+    src/models/pdsc/pdsccomponentattr.cpp \
+    src/models/pdsc/pdsccomponent.cpp \
+    src/models/pdsc/pdsccondition.cpp \
+    src/models/pdsc/pdscrequirement.cpp \
+    src/utils/makelink.cpp \
+    src/services/settings.cpp \
+    src/viewmodels/mcubrowserviewmodel.cpp \
+    src/views/aboutdialog.cpp \
+    src/models/pack/jdscparser.cpp \
+    src/models/pack/packdescriptionparser.cpp \
+    src/models/jdsc/jdsccondition.cpp \
+    src/models/jdsc/jdsccomponent.cpp
 
 HEADERS  += \
-    pdscparser.h \
-    mcu.h \
-    debugalgorithm.h \
-    flashalgorithm.h \
-    family.h \
-    manufacturer.h \
-    packdescription.h \
-    series.h \
-    memory.h \
-    mainform.h \
-    qclickablelabel.h
+    src/models/pack/pdscparser.h \
+    src/models/pack/packdescription.h \
+    src/models/pack/packmanager.h \
+    src/models/mcu/mcu.h \
+    src/models/algorithms/debugalgorithm.h \
+    src/models/mcu/family.h \
+    src/models/mcu/manufacturer.h \
+    src/models/mcu/series.h \
+    src/models/mcu/memory.h \
+    src/views/mainform.h \
+    src/views/widgets/qclickablelabel.h \
+    src/models/mcu/devicefeature.h \
+    src/models/mcu/featurecontainer.h \
+    src/models/algorithms/algorithmcontainer.h \
+    src/models/algorithms/progalgorithm.h \
+    src/services/paths.h \
+    src/utils/ziparchive.h \
+    src/services/logger.h \
+    src/models/database/database.h \
+    src/models/database/requestmanager.h \
+    src/models/components/component.h \
+    src/models/database/componentsinfo.h \
+    src/models/components/category.h \
+    src/common/constants.h \
+    src/models/database/dbgarbagecollector.h \
+    src/models/components/example.h \
+    src/models/pdsc/pdscelement.h \
+    src/models/pdsc/pdscfile.h \
+    src/models/pdsc/pdscfilecategory.h \
+    src/models/pdsc/pdsccomponentattr.h \
+    src/models/pdsc/pdsccomponent.h \
+    src/models/pdsc/pdsccondition.h \
+    src/models/pdsc/pdscrequirement.h \
+    src/utils/makelink.h \
+    src/services/settings.h \
+    src/viewmodels/mcubrowserviewmodel.h \
+    src/models/mcu/devicehierarchynode.h \
+    src/views/aboutdialog.h \
+    src/common/version.h \
+    src/models/pack/jdscparser.h \
+    src/models/pack/packdescriptionparser.h \
+    src/models/jdsc/jdsccondition.h \
+    src/models/jdsc/jdsccomponent.h \
+    src/common/loglevels.h \
+    src/common/loggable.h
 
 FORMS    += \
-    mainform.ui
+    src/views/mainform.ui \
+    src/views/aboutdialog.ui
 
 RESOURCES += \
-    resources.qrc
+    resources/resources.qrc \
+
+INCLUDEPATH += \
+    src \
+
+# Копирует utils в каталог сборки (debug/release)
+
+# Определяем исходный путь
+UTILS_SRC = $$PWD/utils
+CMSIS_SRC = $$PWD/CMSIS
+
+# Определяем целевую папку в зависимости от конфигурации
+CONFIG(debug, debug|release) {
+    # Debug сборка
+    BUILD_TYPE = debug
+} else {
+    # Release сборка
+    BUILD_TYPE = release
+}
+
+# Путь назначения с учетом типа сборки
+UTILS_DST = $$OUT_PWD/$$BUILD_TYPE/utils
+CMSIS_DST = $$OUT_PWD/$$BUILD_TYPE/CMSIS
+
+# Отладочная информация
+# message("Copying utils from: $$UTILS_SRC")
+# message("Copying utils to: $$UTILS_DST")
+# message("Build type: $$BUILD_TYPE")
+
+# Создаем команду копирования
+win32 {
+    # Для Windows - используем QMAKE_COPY_DIR
+    copy_cmd = $$QMAKE_COPY_DIR \"$$shell_path($$UTILS_SRC)\" \"$$shell_path($$UTILS_DST)\"
+    QMAKE_POST_LINK += $$copy_cmd
+    copy_cmd = && $$QMAKE_COPY_DIR \"$$shell_path($$CMSIS_SRC)\" \"$$shell_path($$CMSIS_DST)\"
+    QMAKE_POST_LINK += $$copy_cmd
+}
+
+# Для Linux/macOS
+unix {
+    copy_cmd = cp -rf \"$$UTILS_SRC\" \"$$UTILS_DST\"
+    QMAKE_POST_LINK += $$copy_cmd
+}

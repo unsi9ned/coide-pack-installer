@@ -1,0 +1,254 @@
+Спецификацию читать здесь: https://open-cmsis-pack.github.io/Open-CMSIS-Pack-Spec/main/html/index.html
+
+Не в каждом файле <processor> находится внутри <device>. Иногда он объявлен глобально внутри <family>
+
+Некоторые устройства, такие как STM32 содержат внутри <family> ветку <subFamily>, в то время как Nordic такой ветки не содержит
+
+В CoIDE принято такое разделение:
+-- Manufacturer -> Family -> Serie -> Chip
+
+Если провести аналогию с pdsc, то :
+Manufacturer = <family Dvendor="STMicroelectronics:13"> (13 - это Vendor ID)
+Family = <processor Dcore="Cortex-M4">
+Serie = <subFamily DsubFamily="STM32F401"> или <family Dfamily="nRF51 Series"> (если нет subFamily)
+Chip = <device Dname="nRF51801_xxAB">
+
+То, что внесено в базу как Family, Serie и Chip средой автоматически генерируется в качестве Define, т.е. -DSTM32F401;
+
+ID Manufacturer в базе CoIDE не соответствуют Vendor ID в системе Keil
+
+Family в структуре CoIDE должны быть переименованы с "Cortex-M0" на "Cortex M0" (иногда автоматически вставляется дефайн -DM0;)
+
+Алгоритмы программирование могут быть заданы как для семейства, так и для отдельного устройства. Например, Nordic DFP не содержит алгоритмов внутри device
+
+значение default=1 может быть отмечено для нескольких алгоритмов (если они шьют разные регионы). Надо отслеживать
+
+-------------------------------------------------------------------------------------------------------------------------------
+Вот так можно в Windows создавать ссылки на файлы, чтобы не размножать их копии в качестве компонентов CoIDE и
+не дробить SDK на множество разбросанных каталогов:
+
+# Переходим в целевую директорию
+cd C:\Projects\MyApp
+
+# Создаем относительную ссылку на файл
+mklink config.json ..\Shared\config.json
+
+# Создаем относительную ссылку на папку
+mklink /D node_modules ..\..\Common\node_modules
+
+
+for %i in (..\..\..\..\..\..\ThirdParty\Delfino_HAL\lib\buffer\*.h) do mklink "%~ni.h" "%i"
+
+------------------------- Компоненты и взаимосвязь между ними и устройствами в базе данных ---------------------------------------
+Каждый компонент имет:
+- уникальный ID
+- Layer ID (layer - это фактически вкладка на отображалке Repository в CoIDE):
+    1	Driver      - отображается на вкладке Drivers
+	2	MCU         - отображается на вкладке Peripherals (type = 2)
+	3	User        - отображается на вкладке Others (бывает только с type = 2), применяется для mcu
+	4	Middleware  - отображается на вкладке Peripherals (type = 2)
+	5	Device      - отображается на вкладке Others (бывает только с type = 2), применяется для внешних устройств
+	
+- Type - 1 или 2, 1 - это всегда Drivers, 2 - это все остальное
+
+В таблице components_has_category указан categoryId, к которой относится компонент.
+В таблице components_has_subcategory указан subcategoryId, к которой относится компонент.
+
+Таблица Category может содерждать произвольное название категории и может дополняться. От содержимого в Category.name зависит то,
+что будет подписано в названии группы компонентов на вкладке Peripherals
+
+Таблица Subcategory может содерждать произвольное название подкатегории и может дополняться. От содержимого в Subcategory.name зависит то,
+что будет подписано в названии группы компонентов на вкладке Peripherals после точки.
+
+
+Пример: Category.name = "peripherals", Subcategory.name = "ST" породит группу компонентов с названием "PERIPHERALS.ST" и будет видна на вкладке Peripherals
+
+-------------------------------------------------------------------------------------------------
+---------- Пример: Mcu.name = "STM32F103C8", Mcu.id = 305 ---------------------------------------
+-------------------------------------------------------------------------------------------------
+В таблице `component_supports_mcu` находим компоненты с mcuId = 305: 
+	componentId = 30, mcuId = 305
+	componentId = 31, mcuId = 305
+	....
+	componentId = 34, mcuId = 305
+	....
+	componentId = 51, mcuId = 305
+	....
+	componentId = 439, mcuId = 305
+	....
+	componentId = 444, mcuId = 305
+	....
+	componentId = 588, mcuId = 305
+	....
+	componentId = 966, mcuId = 305
+
+Компонент 30
+-------------
+Читаем данные из таблицы component:
+Component.id = 30, Component.name = "C Library", Component.Layer_id = 2, Component.type = 2
+
+Читаем данные из таблицы components_has_category: componentId = 30, categoryId = 2
+Читаем данные из таблицы category: Category.id = 2, Category.name = "Common"
+В таблице components_has_subcategory нет данных о компоненте с id = 30
+
+Отсюда следует, что компонент "C Library" будет отображаться в группе "COMMON" на вкладке "Peripherals"
+
+Компонент 439 
+-------------
+Читаем данные из таблицы component:
+Component.id = 439, Component.name = "CMSIS_Boot", Component.Layer_id = 2, Component.type = 2
+
+Читаем данные из таблицы components_has_category: componentId = 439, categoryId = 5
+Читаем данные из таблицы category: Category.id = 5, Category.name = "Boot"
+В таблице components_has_subcategory нет данных о компоненте с id = 439
+
+Отсюда следует, что компонент "CMSIS_Boot" будет отображаться в группе "BOOT" на вкладке "Peripherals"
+
+
+Компонент 444
+-------------
+Читаем данные из таблицы component:
+Component.id = 444, Component.name = "GPIO", Component.Layer_id = 2, Component.type = 2
+
+Читаем данные из таблицы components_has_category: componentId = 444, categoryId = 7
+Читаем данные из таблицы category: Category.id = 7, Category.name = "peripheral"
+
+Читаем данные из таблицы components_has_subcategory: componentId = 444, subcategoryId = 8
+Читаем данные из таблицы subcategory: subcategory.id = 8, subcategory.name = "ST"
+
+Отсюда следует, что компонент "GPIO" будет отображаться в группе "PERIPHERAL.ST" на вкладке "Peripherals"
+
+Компонент 51
+-------------
+Читаем данные из таблицы component:
+Component.id = 51, Component.name = "CooCox OS", Component.Layer_id = 4, Component.type = 2
+
+Читаем данные из таблицы components_has_category: componentId = 51, categoryId = 6
+Читаем данные из таблицы category: Category.id = 6, Category.name = "rtos"
+В таблице components_has_subcategory нет данных о компоненте с id = 51
+
+Отсюда следует, что компонент "CooCox OS" будет отображаться в группе "RTOS" на вкладке "Peripherals"
+
+Компонент 34
+-------------
+Читаем данные из таблицы component:
+Component.id = 34, Component.name = "IFAT Example", Component.Layer_id = 3, Component.type = 2
+
+Читаем данные из таблицы components_has_category: componentId = 34, categoryId = 3
+Читаем данные из таблицы category: Category.id = 3, Category.name = "FileSystem"
+В таблице components_has_subcategory нет данных о компоненте с id = 34
+
+Отсюда следует, что компонент "IFAT Example" будет отображаться в группе "FILESYSTEM" на вкладке "Others"
+
+Компонент 966
+-------------
+Читаем данные из таблицы component:
+Component.id = 966, Component.name = "W5200", Component.Layer_id = 5, Component.type = 2
+
+Читаем данные из таблицы components_has_category: componentId = 966, categoryId = 17
+Читаем данные из таблицы category: Category.id = 17, Category.name = "Protocol Stack"
+В таблице components_has_subcategory нет данных о компоненте с id = 966
+
+Отсюда следует, что компонент "W5200" будет отображаться в группе "PROTOCOL STACK" на вкладке "Others"
+
+ПРИМЕЧАНИЕ: Компонент обязательно должен быть записан в таблице component_supports_mcu. Его нельзя задать глобально
+для какой-то серии в component_supports_mcuseries, семейства в component_supports_mcufamily или
+производителя в component_supports_mcumanufacturer. Фактически записи дублируются, но не имеют силы.
+
+ПРИМЕЧАНИЕ: Таблицы с префиксом component_not_supports_* не содержат данных и не несут никакой смысловой нагрузки
+--------------------------------------------------------------------------------------------------------------------------------
+Чтобы не раздувать занимаемое место программой, ссылки на даташиты можно сделать вида https://yandex.ru/search/?text=mdr32ve91t+datasheet
+
+TODO List:
+- Нужно при формировании TXT-базы для SVD проверять какие устройства есть в списке и не перезаписывать ее, а дополнять
+- Нужно реализовать валидацию пакета
+- С путями Windows постоянная проблема из-за путаницы с прямым и обратным слешем /\
+- Попробовать адаптировать алгоритмы программирования Keil
+- Реализовать удаление устройств из базы данных и обновление, а так же учет версий
+
+-------------------------------- ПОИСК КОМПОНЕНТА В БД ПО КОСВЕННЫМ ПРИЗНАКАМ -------------------------------
+SELECT 
+	component.id, 
+	component.type, 
+	component.Layer_id AS layerId, 
+	component_has_category.categoryId, 
+	category.name AS category,
+	component.name, 
+	component.description, 
+	component.uuid, 
+	component.version, 
+	component_supports_mcu.mcuId, 
+	mcu.name AS mcu, 
+	mcuseries.seriesName AS series,
+	mcufamily.familyName AS family,
+	mcumanufacturer.name AS vendor
+FROM component, component_supports_mcu, mcu, mcuseries, mcufamily, mcumanufacturer, component_has_category, category
+WHERE component.name = 'CMSIS_Boot' 
+AND component.version = '1.0.1' 
+AND component.id = component_supports_mcu.componentId 
+AND mcu.id = component_supports_mcu.mcuId 
+AND mcuseries.id = mcu.seriesId
+AND mcufamily.id = mcuseries.familyId
+AND mcumanufacturer.id = mcufamily.manufacturerId
+AND component_has_category.componentId = component.id
+AND category.id = component_has_category.categoryId;
+-------------------------------------- С ВЫВОДОМ ПОДКАТЕГОРИЙ -------------------------------------------------
+SELECT 
+    component.id, 
+    component.type, 
+    component.Layer_id AS layerId, 
+    component_has_category.categoryId, 
+    category.name AS category,
+	COALESCE(component_has_subcategory.subcategoryId, -1) AS subcategoryId,
+	COALESCE(subcategory.name, NULL) AS subcategory,
+    component.name, 
+    component.description, 
+    component.uuid, 
+    component.version, 
+    component_supports_mcu.mcuId, 
+    mcu.name AS mcu, 
+    mcuseries.seriesName AS series,
+    mcufamily.familyName AS family,
+    mcumanufacturer.name AS vendor
+FROM component
+INNER JOIN component_supports_mcu ON component.id = component_supports_mcu.componentId
+INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId
+INNER JOIN mcuseries ON mcuseries.id = mcu.seriesId
+INNER JOIN mcufamily ON mcufamily.id = mcuseries.familyId
+INNER JOIN mcumanufacturer ON mcumanufacturer.id = mcufamily.manufacturerId
+INNER JOIN component_has_category ON component_has_category.componentId = component.id
+INNER JOIN category ON category.id = component_has_category.categoryId
+LEFT JOIN component_has_subcategory ON component_has_subcategory.componentId = component.id
+LEFT JOIN subcategory ON subcategory.id = component_has_subcategory.subcategoryId
+WHERE component.name = 'CMSIS_Boot' 
+AND component.version = '1.0.1';
+
+SELECT 
+    component_supports_mcu.componentId,
+	component.name AS componentName,
+    component_supports_mcu.mcuId,
+    mcu.name AS mcuName
+FROM component_supports_mcu
+INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId
+INNER JOIN component ON component.id = component_supports_mcu.componentId
+WHERE mcu.name = 'STM32F103C8'
+
+----------------------------------------------------------------------------------------
+Замечено, что не все категории отображаются на вкладках. Вот список принадлежности категорий вкладкам:
+
+1 = driver = скорее всего Drivers (но нужно еще менять тип type = 1 и создавать подкатегорию)
+
+2 = Common  = Peripherals
+5 = Boot = Peripherals
+6 = rtos = Peripherals
+7 = peripheral = Peripherals
+
+3 = FileSystem = Others
+4 = other = Others
+8 = Board Support = Others
+11 = Algorithm = Others
+12 = LCD = Others
+15 = Framework = Others
+16 = OS = Others
+23 = Others = Others
+25 = Algorithm = Others

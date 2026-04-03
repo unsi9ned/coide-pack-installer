@@ -1,0 +1,410 @@
+#include <QFile>
+#include <QDebug>
+#include <QDir>
+#include "dbgarbagecollector.h"
+#include "database.h"
+#include "services/paths.h"
+#include "requestmanager.h"
+
+//------------------------------------------------------------------------------
+// Класс очистки БД от ненужных данных и таблиц
+//------------------------------------------------------------------------------
+DBGarbageCollector::DBGarbageCollector() : QObject()
+{
+#if 1
+    // На время отладки создаем бекап базы данных
+    QFile dbFile(Paths::instance()->coIdeDatabaseFile());
+    QFile dbBackup(Paths::instance()->coIdeDatabaseFile() + ".bak");
+
+    if(dbFile.exists() && !dbBackup.exists())
+    {
+        QFile::copy(dbFile.fileName(), dbBackup.fileName());
+    }
+#endif
+}
+
+//------------------------------------------------------------------------------
+// Очистка БД от ненужных мусорных данных
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::deleteObsoleteData()
+{
+    if(cleanComponents())
+        if(cleanExamples())
+        {
+            logInfo("Remove phantom relations in `status`");
+
+            if(RequestManager::instance()->removeStatusPhantomRelations(&_errorString))
+                if(cleanUsers())
+                    return true;
+        }
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+// Удаление из БД не используемых таблиц
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::deleteUnnecessaryTables()
+{
+    QStringList tables =
+    {
+        "Education", "Group_has_User", "Groups", "Industry",
+        "Nationality", "Position", "comment",
+        "component_not_supports_mcu", "component_not_supports_mcufamily",
+        "component_not_supports_mcumanufacturer", "component_not_supports_mcuseries",
+        "solution", "solution_has_component",
+        "solution_has_example", "solution_has_keyword", "solution_has_category",
+        "solution_has_subcategory", "solutioncategory", "solutionsubcategory",
+        "user_glorification"
+    };
+
+    foreach (QString table, tables)
+    {
+        bool status = false;
+        QString sql = QString("DROP TABLE IF EXISTS `%1`;").arg(table);
+        QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+#ifdef VERBOSE_DEBUG
+        logInfo(QString("Delete table %1: %2").arg(table).arg(sql));
+#else
+        logInfo(QString("Delete table %1").arg(table));
+#endif
+
+        if(!status)
+        {
+            _errorString = result.lastError().text();
+            logError(QString("Error: %1").arg(_errorString));
+            return false;
+        }
+    }
+
+    logInfo(QString("Delete Unnecessary Tables DONE"));
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+// Вывод текста последней ошибки
+//------------------------------------------------------------------------------
+QString DBGarbageCollector::errorString()
+{
+    return _errorString;
+}
+
+//------------------------------------------------------------------------------
+// Удаление пользователей, которые не задействованы в других таблицах
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::cleanUsers()
+{
+    struct User
+    {
+        int id;
+        QString name;
+        int level;
+        int componentsCount;
+        int examplesCount;
+        int mcuCount;
+    };
+
+    QList<User> users;
+
+    bool status = false;
+    QString sql = QString("SELECT `id`, `name`, `level` FROM user;");
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        _errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        User u;
+        u.id = result.value(0).toInt();
+        u.name = result.value(1).toString();
+        u.level = result.value(2).toInt();
+
+        users.append(u);
+    }
+
+    foreach (User u, users)
+    {
+        sql = QString("SELECT COUNT(*) FROM `component` WHERE authorId = '%1';").arg(u.id);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status || !result.next())
+        {
+            _errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            u.componentsCount = result.value(0).toInt();
+        }
+
+        sql = QString("SELECT COUNT(*) FROM `example` WHERE userId = '%1';").arg(u.id);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status || !result.next())
+        {
+            _errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            u.examplesCount = result.value(0).toInt();
+        }
+
+        sql = QString("SELECT COUNT(*) FROM `mcu` WHERE userId = '%1';").arg(u.id);
+        result = DataBase::instance()->sendQuery(sql, &status);
+
+        if(!status || !result.next())
+        {
+            _errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            u.mcuCount = result.value(0).toInt();
+        }
+
+        if(u.componentsCount == 0 && u.examplesCount == 0 && u.mcuCount == 0 && u.level == 0)
+        {
+            sql = QString("DELETE FROM `user` WHERE id = '%1';").arg(u.id);
+            result = DataBase::instance()->sendQuery(sql, &status);
+
+            logInfo(QString("Remove User %1 with %2 components, %3 examples, %4 MCUs: %5").
+                            arg(u.name).
+                            arg(u.componentsCount).
+                            arg(u.examplesCount).
+                            arg(u.mcuCount).
+                            arg(sql));
+
+            if(!status)
+            {
+                _errorString = result.lastError().text();
+                logError(QString("Error: %1").arg(_errorString));
+                return false;
+            }
+        }
+    }
+
+    logInfo(QString("Clean `user` table DONE"));
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаление из базы несуществующих в локальном репозитории компонентов
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::cleanComponents()
+{
+    RequestManager * reqManager = RequestManager::instance();
+
+    logInfo("Remove phantom relations in `component_depends_component`");
+
+    if(!reqManager->removeComponentPhantomRelations(&_errorString))
+        return false;
+
+    QMap<int, Component> components = reqManager->requestComponentMap();
+
+    for(auto it = components.begin(); it != components.end(); ++it)
+    {
+        Component c = it.value();
+        QString componentPath;
+        QDir componentDir;
+
+        if(c.isDriver())
+        {
+            componentPath = Paths::instance()->coIdeDriverDir(c.getId(), c.getName());
+        }
+        else
+        {
+            componentPath = Paths::instance()->coIdeComponentDir(c.getId(), c.getName());
+        }
+
+        componentDir.setPath(componentPath);
+
+        QStringList componentEntryList = componentDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+        bool componentExists = componentDir.exists();
+
+        if(componentEntryList.isEmpty() || ((componentEntryList.count() == 1 &&
+                                             componentEntryList.first().toLower() == "doc")))
+            componentExists = false;
+
+        // Статус компонента прочитан неверно либо отсутствует в базе данных
+        if(c.getStatus().isNull())
+        {
+            logInfo(QString("Component %1 is NULL").arg(it.key()));
+        }
+        // Каталог существует, но в базе помечен как не скачанный
+        else if(componentExists && !c.isDownloaded())
+        {
+            logInfo(QString("Fixed the component status %1").arg(c.getId()));
+
+            if(!reqManager->setComponentStatusOK(c.getComponentStatusId(), &_errorString))
+                return false;
+        }
+        // Каталог не существует, но в базе помечен как скачанный
+        else if(!componentExists && c.isDownloaded())
+        {
+            logInfo(QString("Deleting a phantom component '%1_%2'").
+                              arg(c.getId()).
+                              arg(c.getName()));
+
+            if(!reqManager->removeComponent(c, &_errorString))
+                return false;
+        }
+        // И каталог не существует на диске, и в базе помечен как не скачанный
+        else if(!componentExists && !c.isDownloaded())
+        {
+            logInfo(QString("Deleting a non-existent component '%1_%2'").
+                              arg(c.getId()).
+                              arg(c.getName()));
+
+            if(!reqManager->removeComponent(c, &_errorString))
+                return false;
+        }
+        // Каталог существует и статус верный
+        else if(componentExists && c.isDownloaded())
+        {
+            //qInfo() << "Status OK" << componentPath;
+        }
+    }
+
+    logInfo("Remove phantom relations in `component_depends_component`");
+
+    if(!reqManager->removeComponentPhantomRelations(&_errorString))
+        return false;
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаление из базы несуществующих в локальном репозитории примеров
+// и удаление фантомных связей
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::cleanExamples()
+{
+    RequestManager * reqManager = RequestManager::instance();
+
+    logInfo("Remove phantom relations in `example_depends_component`");
+
+    if(!reqManager->removeExamplePhantomRelations(&_errorString))
+        return false;
+
+    QMap<int, Example> examples = reqManager->requestExampleMap();
+
+    for(auto it = examples.begin(); it != examples.end(); ++it)
+    {
+        Example ex = it.value();
+        QString examplePath;
+        QDir exampleDir;
+
+        examplePath = Paths::instance()->coIdeExampleDir(ex.getId(), ex.getName());
+        exampleDir.setPath(examplePath);
+
+        QStringList exampleEntryList = exampleDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+        bool exampleExists = exampleDir.exists() && !exampleEntryList.isEmpty();
+
+        // Статус компонента прочитан неверно либо отсутствует в базе данных
+        if(ex.getStatus().isNull())
+        {
+            logInfo(QString("Example %1 is NULL").arg(it.key()));
+        }
+        // Каталог существует, но в базе помечен как не скачанный
+        else if(exampleExists && !ex.isDownloaded())
+        {
+            logInfo(QString("Fixed the example status %1").arg(ex.getId()));
+
+            if(!reqManager->setComponentStatusOK(ex.getStatusId(), &_errorString))
+                return false;
+        }
+        // Каталог не существует, но в базе помечен как скачанный
+        else if(!exampleExists && ex.isDownloaded())
+        {
+            logInfo(QString("Deleting a phantom example '%1_%2'").
+                             arg(ex.getId()).
+                             arg(ex.getName()));
+
+            if(!reqManager->removeExample(ex, &_errorString))
+                return false;
+        }
+        // И каталог не существует на диске, и в базе помечен как не скачанный
+        else if(!exampleExists && !ex.isDownloaded())
+        {
+            logInfo(QString("Deleting a non-existent example '%1_%2'").
+                             arg(ex.getId()).
+                             arg(ex.getName()));
+
+            if(!reqManager->removeExample(ex, &_errorString))
+                return false;
+        }
+        // Каталог существует и статус верный
+        else if(exampleExists && ex.isDownloaded())
+        {
+            //qInfo() << "Status OK" << componentPath;
+        }
+    }
+
+    logInfo("Remove phantom relations in `example_depends_component`");
+
+    if(!reqManager->removeExamplePhantomRelations(&_errorString))
+        return false;
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет каталог вместе со всем содержимым
+//------------------------------------------------------------------------------
+bool DBGarbageCollector::removeDirectory(const QString &dirPath)
+{
+    QDir dir(dirPath);
+
+    // Если каталог не существует - считаем успехом
+    if (!dir.exists()) {
+        return true;
+    }
+
+    // Удаляем все файлы и подкаталоги
+    QFileInfoList entries = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
+
+    foreach (QFileInfo entry, entries)
+    {
+        QString path = entry.absoluteFilePath();
+
+        if (entry.isDir())
+        {
+            // Рекурсивно удаляем подкаталог
+            if (!removeDirectory(path))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            // Удаляем файл
+            if (!QFile::remove(path))
+            {
+                _errorString = QString("Failed to delete file: %1").arg(path);
+                return false;
+            }
+        }
+    }
+
+    // Удаляем сам каталог
+    return dir.rmdir(".");
+}
+
+//------------------------------------------------------------------------------
+// Вывод ошибок
+//------------------------------------------------------------------------------
+void DBGarbageCollector::logError(const QString& e)
+{
+    _errorString = e;
+    Loggable::logError(e);
+}
+
+
