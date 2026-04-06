@@ -22,6 +22,7 @@ private:
     static constexpr const char* CO_DRIVERS_DIR = "Drivers";
     static constexpr const char* CO_EXAMPLES_DIR = "Examples";
     static constexpr const char* APP_SETTINGS = "config.ini";
+    static constexpr const char* APP_LOG = "log.txt";
     static constexpr const char* APP_UTILS_DIR = "utils";
     static constexpr const char* SEVEN_ZIP = "7z.exe";
     static constexpr const char* APP_CMSIS_DIR = "CMSIS";
@@ -41,7 +42,9 @@ public:
 
     static Paths* instance();
 
+    QString appDirPath();
     QString appSettingsFile();
+    QString appLogFile();
     QString sevenZipExe();
     QString cmsisCore(QString version = "0.0.0");
     QString coIdeDir();

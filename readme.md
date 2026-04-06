@@ -43,7 +43,6 @@ cd coide-pack-installer
 qmake CoIDE_PackInstaller.pro
 mingw32-make
 windeployqt release
-xcopy utils release\utils /E /I /Y
 release\CoIDE_PackInstaller.exe
 ```
 

@@ -41,7 +41,7 @@ QString Settings::coIdePath()
 {
     return Settings::getCustomParameter(MAIN_SETTINGS_GRP,
                                         MAIN_PARAMETER_COIDE,
-                                        QApplication::applicationDirPath()).toString();
+                                        Paths::instance()->appDirPath()).toString();
 }
 
 //------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ QString Settings::lastLoadedPack()
 {
     return Settings::getCustomParameter(MAIN_SETTINGS_GRP,
                                         MAIN_PARAMETER_PACK,
-                                        QApplication::applicationDirPath()).toString();
+                                        Paths::instance()->appDirPath()).toString();
 }
 
 //------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ int runGui(int argc, char *argv[])
     Logger::instance()->enableConsoleLogging(true);
 
     // Путь для файла лога
-    Logger::instance()->enableFileLogging(QApplication::applicationDirPath() + "/log.txt");
+    Logger::instance()->enableFileLogging(Paths::instance()->appLogFile());
 
     LOG_INFO("Main", "Application started");
 
@@ -55,7 +55,7 @@ int runConsole(int argc, char *argv[])
     Logger::instance()->enableConsoleLogging(true);
 
     // Путь для файла лога
-    Logger::instance()->enableFileLogging(QApplication::applicationDirPath() + "/log.txt");
+    Logger::instance()->enableFileLogging(Paths::instance()->appLogFile());
 
     QCommandLineParser parser;
     parser.addHelpOption();
@@ -150,7 +150,6 @@ int runConsole(int argc, char *argv[])
     if (showDeviceList)
     {
         LOG_INFO("Main", "Printing the device tree");
-
 
         McuBrowserViewModel viewModel;
 

@@ -1,6 +1,10 @@
 #include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <QString>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 #include "paths.h"
 #include "settings.h"
 
@@ -52,11 +56,34 @@ Paths::~Paths()
 }
 
 //------------------------------------------------------------------------------
+// Путь к каталогу программы
+//------------------------------------------------------------------------------
+QString Paths::appDirPath()
+{
+#ifdef Q_OS_WIN
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    QString path(buffer);
+    return path.mid(0, path.lastIndexOf('\\'));
+#else
+    return QApplication::applicationDirPath();
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Путь к файлу настроек
 //------------------------------------------------------------------------------
 QString Paths::appSettingsFile()
 {
-    return QApplication::applicationDirPath() + "/" + Paths::APP_SETTINGS;
+    return appDirPath() + "/" + Paths::APP_SETTINGS;
+}
+
+//------------------------------------------------------------------------------
+// Путь к логу программы
+//------------------------------------------------------------------------------
+QString Paths::appLogFile()
+{
+    return appDirPath() + "/" + Paths::APP_LOG;
 }
 
 //------------------------------------------------------------------------------
@@ -64,7 +91,7 @@ QString Paths::appSettingsFile()
 //------------------------------------------------------------------------------
 QString Paths::sevenZipExe()
 {
-    return QApplication::applicationDirPath() + "/" + Paths::APP_UTILS_DIR + "/" + Paths::SEVEN_ZIP;
+    return appDirPath() + "/" + Paths::APP_UTILS_DIR + "/" + Paths::SEVEN_ZIP;
 }
 
 //------------------------------------------------------------------------------
@@ -72,7 +99,7 @@ QString Paths::sevenZipExe()
 //------------------------------------------------------------------------------
 QString Paths::cmsisCore(QString version)
 {
-    QString path =  QApplication::applicationDirPath() + "/" +
+    QString path =  appDirPath() + "/" +
                     Paths::APP_CMSIS_DIR + "/" +
                     QString(Paths::CMSIS_CORE_ZIP).replace("%VERSION%", version);
 
