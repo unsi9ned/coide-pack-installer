@@ -84,9 +84,9 @@ ProgAlgorithm::ProgAlgorithm(const QString &name)
     this->_description = "";
     this->_timeUuid = generateTimeUUID();
     this->_start = 0;
-    this->_size = 0;
+    this->_size = -1;
     this->_RAMstart = 0;
-    this->_RAMsize = 0;
+    this->_RAMsize = -1;
     this->_isDefault = false;
     this->_createDate = QDateTime::currentDateTime();
     this->_updateDate = QDateTime::currentDateTime();
@@ -126,9 +126,7 @@ QString ProgAlgorithm::installPath() const
 bool ProgAlgorithm::isNull()
 {
     return this->_coId <= 0 ||
-           this->_name.isEmpty() ||
-           this->_start == this->_size == 0 ||
-           this->_RAMstart == this->_RAMsize == 0;
+           this->_name.isEmpty();
 }
 
 QString ProgAlgorithm::getPath() const
@@ -195,7 +193,7 @@ bool ProgAlgorithm::isValid(QString& errorString) const
         errorString = QString("Flash Algorithm path is not defined");
     else if(_timeUuid.isEmpty())
         errorString = QString("Uuid for Flash Algorithm is not defined");
-    else if(_start == _RAMstart)
+    else if(_size != -1 && _RAMsize != -1 && _start == _RAMstart)
         errorString = QString("FLASH and RAM memory have the same addresses");
     else if(_size == 0)
         errorString = QString("The FLASH region has a size of zero");

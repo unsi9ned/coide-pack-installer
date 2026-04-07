@@ -259,7 +259,7 @@ void MainForm::loadDFP(bool hideFileDialog)
     }
 
     QFileInfo packFileInfo(Settings::instance()->lastLoadedPack());
-    QFileDialog dialog(this, tr("Device Family Pack"), packFileInfo.path(), "*.jpack *.pack");
+    QFileDialog dialog(this, tr("Device Family Pack"), packFileInfo.path(), "*.jpack *.pack *.atpack");
 
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setOption(QFileDialog::DontUseNativeDialog);
@@ -426,6 +426,19 @@ void MainForm::onComponentTreeItemClicked(QTreeWidgetItem* item, int column)
     ui->lineEditComponentId->setText(m_mcuBrowserViewModel->componentId());
     ui->lineEditUniquePath->setText(m_mcuBrowserViewModel->componentNodePath());
     ui->lineEditUniquePath->setCursorPosition(0);
+
+    ui->plainTextEditFeatures->clear();
+    ui->plainTextEditDescription->clear();
+
+    for (QString file : m_mcuBrowserViewModel->componentFiles())
+    {
+        ui->plainTextEditFeatures->appendPlainText(file);
+    }
+
+    for (QString dev : m_mcuBrowserViewModel->componentDevices())
+    {
+        ui->plainTextEditDescription->appendPlainText(dev);
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -469,7 +482,11 @@ QTreeWidgetItem*MainForm::createTreeItem(const DeviceNode& node, QTreeWidgetItem
         case DeviceNode::VendorType: icon = style()->standardIcon(QStyle::SP_ComputerIcon); break;
         case DeviceNode::FamilyType: icon = style()->standardIcon(QStyle::SP_DirIcon); break;
         case DeviceNode::SeriesType: icon = style()->standardIcon(QStyle::SP_FileIcon); break;
+#if 0
         case DeviceNode::McuType: icon = style()->standardIcon(QStyle::SP_FileLinkIcon); break;
+#else
+        case DeviceNode::McuType: icon = QIcon(":/img/memory_24x24.png"); break;
+#endif
         default: break;
     }
 
@@ -575,10 +592,12 @@ void MainForm::updateComponentsTree()
     }
 
     // Разворачиваем до первого уровня
+#if 0
     for (int i = 0; i < ui->treeWidgetComponents->topLevelItemCount(); ++i)
     {
         ui->treeWidgetComponents->topLevelItem(i)->setExpanded(true);
     }
+#endif
 
     ui->treeWidgetComponents->resizeColumnToContents(0);
     ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->columnWidth(0) + 20);
@@ -599,10 +618,14 @@ QTreeWidgetItem *MainForm::createComponentTreeItem(const ComponentNode &node,
     item->setText(1, node.description);
 
     // Иконки
+#if 0
     if(node.hasChildren())
         item->setIcon(0, style()->standardIcon(QStyle::SP_DirIcon));
     else
         item->setIcon(0, style()->standardIcon(QStyle::SP_FileIcon));
+#else
+    item->setIcon(0, QIcon(":/img/package_24x24.png"));
+#endif
 
     for (const auto& child : node.children)
     {

@@ -40,7 +40,9 @@ public:
 
         QFileInfo archiveInfo(_pathToArchive);
 
-        if(archiveInfo.isFile() && archiveInfo.suffix().toLower() == "pack")
+        if(archiveInfo.isFile() &&
+           (archiveInfo.suffix().toLower() == "pack" ||
+            archiveInfo.suffix().toLower() == "atpack"))
             return true;
 
         return false;

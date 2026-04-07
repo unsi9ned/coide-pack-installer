@@ -17,6 +17,7 @@ public:
         // Основная информация
         QString name;              // Имя внутри архива
         QString fullPath;          // Полный путь внутри архива
+        QString completeBaseName;  // Базовое имя без расширения
         qint64 size = 0;           // Оригинальный размер
         qint64 compressedSize = 0; // Сжатый размер
         QDateTime modified;        // Дата модификации

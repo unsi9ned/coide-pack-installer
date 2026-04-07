@@ -189,6 +189,8 @@ ZipArchive::ArchiveEntry ZipArchive::from7zOutput(const QMap<QString, QStringLis
         entry.extension = entry.name.mid(entry.name.lastIndexOf('.') + 1);
     }
 
+    entry.completeBaseName = entry.name.mid(0, entry.name.lastIndexOf('.'));
+
     return entry;
 }
 

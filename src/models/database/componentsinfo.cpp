@@ -751,6 +751,23 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
         if(component.isNull())
             component.setId(foundComponent.getId());
 
+        // Создаем связь между компонентом и устройствами
+        foreach(QString dev, component.supportedMcuList())
+        {
+            int mcuId = -1;
+
+            if(hasComponentMcuLink(component.getId(), dev, &mcuId, &status, errorString))
+            {
+                continue;
+            }
+            else if(!status)
+            {
+                return false;
+            }
+            else if(!createComponentMcuLink(component.getId(), dev, errorString))
+                return false;
+        }
+
         // Создаем связи между существующими и новыми компонентами
         foreach (Component* child, component.getChildren())
         {
@@ -1309,8 +1326,44 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
 {
     bool status = true;
     Component foundComponent;
-    QList<Component> foundComponentList;
     QString sql;
+
+#if USE_UNIQUE_ID
+    sql = QString("SELECT "
+                    "component.id, "
+                    "component.type, "
+                    "component.Layer_id AS layerId, "
+                    "component_has_category.categoryId, "
+                    "category.name AS category, "
+                    "COALESCE(component_has_subcategory.subcategoryId, -1) AS subcategoryId, "
+                    "COALESCE(subcategory.name, NULL) AS subcategory, "
+                    "component.name, "
+                    "component.description, "
+                    "component.uuid, "
+                    "component.version, "
+                    "component_supports_mcu.mcuId, "
+                    "mcu.name AS mcu, "
+                    "mcuseries.seriesName AS series, "
+                    "mcufamily.familyName AS family, "
+                    "mcumanufacturer.name AS vendor "
+                "FROM component "
+                "INNER JOIN component_supports_mcu ON component.id = component_supports_mcu.componentId "
+                "INNER JOIN mcu ON mcu.id = component_supports_mcu.mcuId "
+                "INNER JOIN mcuseries ON mcuseries.id = mcu.seriesId "
+                "INNER JOIN mcufamily ON mcufamily.id = mcuseries.familyId "
+                "INNER JOIN mcumanufacturer ON mcumanufacturer.id = mcufamily.manufacturerId "
+                "INNER JOIN component_has_category ON component_has_category.componentId = component.id "
+                "INNER JOIN category ON category.id = component_has_category.categoryId "
+                "LEFT JOIN component_has_subcategory ON component_has_subcategory.componentId = component.id "
+                "LEFT JOIN subcategory ON subcategory.id = component_has_subcategory.subcategoryId "
+                "WHERE component.name = '%1' "
+                "AND component.version = '%2' "
+                "AND component.id = '%3';").
+            arg(component.getName()).
+            arg(component.getVersion()).
+            arg(component.getUniqueId());
+#else
+    QList<Component> foundComponentList;
 
     sql = QString("SELECT "
                     "component.id, "
@@ -1343,6 +1396,7 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
                 "AND component.version = '%2';").
             arg(component.getName()).
             arg(component.getVersion());
+#endif
 
     QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
 
@@ -1367,8 +1421,10 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
             QString description = result.value("description").toString();
             QString uuid = result.value("uuid").toString();
             QString version = result.value("version").toString();
+#if !USE_UNIQUE_ID
             int mcuId = result.value("mcuId").toInt();
             QString mcu = result.value("mcu").toString();
+#endif
 #if 0
             QString series = result.value("series").toString();
             QString family = result.value("family").toString();
@@ -1391,6 +1447,8 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
             current.setDescription(description);
             current.setUuid(uuid);
             current.setVersion(version);
+
+#if !USE_UNIQUE_ID
             current.addSupportedMcu(mcu);
             current.appendMcuId(mcuId);
 
@@ -1414,9 +1472,14 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
             }
             else
                 foundComponentList.append(current);
+#else
+            foundComponent = current;
+            break;
+#endif
         }
     }
 
+#if !USE_UNIQUE_ID
     if(!foundComponentList.isEmpty())
     {
         foreach (Component c, foundComponentList)
@@ -1430,6 +1493,7 @@ Component ComponentsInfo::findComponent(const Component component, QString *erro
             }
         }
     }
+#endif
 
     return foundComponent;
 }

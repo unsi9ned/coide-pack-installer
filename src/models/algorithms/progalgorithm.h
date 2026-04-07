@@ -21,9 +21,9 @@ private:
     QString  _description;
     QString  _timeUuid;
     uint32_t _start;
-    uint32_t _size;
+    int32_t  _size;
     uint32_t _RAMstart;
-    uint32_t _RAMsize;
+    int32_t  _RAMsize;
     bool     _isDefault;
     int      _documentId;
     QDateTime _createDate;
@@ -63,6 +63,8 @@ public:
     QString updateDate(QString dtFormat = QString("yyyy-MM-dd HH:mm:ss.z")) const;
     QString description() const;
 
+    bool isRamDefined() const { return _RAMsize != -1; }
+    bool isRomDefined() const { return _size != -1; }
     bool isValid(QString* errorString = nullptr) const;
 private:
     bool isValid(QString& errorString) const;

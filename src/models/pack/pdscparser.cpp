@@ -600,9 +600,9 @@ ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
 
     QString name = algorithmElement.attribute("name");
     QString start = algorithmElement.attribute("start");
-    QString size = algorithmElement.attribute("size");
+    QString size = algorithmElement.attribute("size", "-1");
     QString ramStart = algorithmElement.attribute("RAMstart");
-    QString ramSize = algorithmElement.attribute("RAMsize");
+    QString ramSize = algorithmElement.attribute("RAMsize", "-1");
     QString isDefault = algorithmElement.attribute("default");
 
     algo.setName(name);
@@ -613,9 +613,9 @@ ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
         algo.setStart(start.toUInt(nullptr, 10));
 
     if(size.contains("0x", Qt::CaseInsensitive))
-        algo.setSize(size.toUInt(nullptr, 16));
+        algo.setSize(size.toInt(nullptr, 16));
     else
-        algo.setSize(size.toUInt(nullptr, 10));
+        algo.setSize(size.toInt(nullptr, 10));
 
     if(ramStart.contains("0x", Qt::CaseInsensitive))
         algo.setRAMstart(ramStart.toUInt(nullptr, 16));
@@ -623,9 +623,9 @@ ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
         algo.setRAMstart(ramStart.toUInt(nullptr, 10));
 
     if(ramSize.contains("0x", Qt::CaseInsensitive))
-        algo.setRAMsize(ramSize.toUInt(nullptr, 16));
+        algo.setRAMsize(ramSize.toInt(nullptr, 16));
     else
-        algo.setRAMsize(ramSize.toUInt(nullptr, 10));
+        algo.setRAMsize(ramSize.toInt(nullptr, 10));
 
     if(isDefault == "true" || isDefault == "1")
         algo.setDefault(true);
@@ -1143,8 +1143,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
         if(!r.isValid())
             continue;
 
+        QString regexPattern = cmsisWildcardToRegex(r.Dname());
+
         if(device.getName().toUpper() != r.Dname().toUpper() &&
-           !device.getName().contains(QRegExp(r.Dname(), Qt::CaseInsensitive)))
+           !device.getName().contains(QRegExp(regexPattern, Qt::CaseInsensitive)))
         {
             status = false;
             break;
@@ -1179,6 +1181,55 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
     }
 
     return status;
+}
+
+//------------------------------------------------------------------------------
+// Преобразование имени устройства в регулярное выражение
+//------------------------------------------------------------------------------
+QString PdscParser::cmsisWildcardToRegex(const QString& pattern)
+{
+    QString regex = pattern;
+
+    // Экранируем специальные символы regex, кроме * ? [ ]
+    // Но делаем это аккуратно, чтобы не сломать [abc] классы
+
+    // Сначала защищаем классы символов [...] от экранирования
+    // Заменяем их на временные маркеры
+    QList<QString> classes;
+    QRegExp classRx("\\[[^\\]]+\\]");
+    int pos = 0;
+    while ((pos = classRx.indexIn(regex, pos)) != -1) {
+        QString match = classRx.cap(0);
+        classes.append(match);
+        regex.replace(pos, match.length(), QString("__CLASS_%1__").arg(classes.size() - 1));
+        pos += QString("__CLASS_%1__").arg(classes.size() - 1).length();
+    }
+
+    // Экранируем остальные спецсимволы regex
+    // . \ + { } ( ) | ^ $ ? (кроме * и [])
+    regex = regex.replace(".", "\\.")
+                 .replace("\\", "\\\\")
+                 .replace("+", "\\+")
+                 .replace("{", "\\{")
+                 .replace("}", "\\}")
+                 .replace("(", "\\(")
+                 .replace(")", "\\)")
+                 .replace("|", "\\|")
+                 .replace("^", "\\^")
+                 .replace("$", "\\$");
+
+    // Преобразуем CMSIS * (любая последовательность) в regex .*
+    regex = regex.replace("*", ".*");
+
+    // Преобразуем CMSIS ? (один любой символ) в regex .
+    regex = regex.replace("?", ".");
+
+    // Возвращаем классы символов обратно
+    for (int i = 0; i < classes.size(); ++i) {
+        regex.replace(QString("__CLASS_%1__").arg(i), classes[i]);
+    }
+
+    return regex;
 }
 
 //------------------------------------------------------------------------------
@@ -1282,6 +1333,14 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
         if(allowedCategories.contains(f.category().name()))
         {
             //
+            // Не добавляем файлы, являющиеся шаблонами
+            //
+            if(f.attr().toLower() == "template")
+            {
+                continue;
+            }
+
+            //
             // Добавляем сначала файлы без условий
             //
             if(!f.hasCondition() )
@@ -1299,6 +1358,18 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
                 // если на практике окажется, что нужна праверка еще каких-то условий,
                 // то доработаю проверку
                 foreach (PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Compiler))
+                {
+                    if(!r.isValid())
+                        continue;
+
+                    if(r.Tcompiler() == "GCC")
+                    {
+                        files.append(QString("%1=%2").arg(f.category().name()).arg(f.name()));
+                        break;
+                    }
+                }
+
+                foreach (PdscRequirement r, requirementMap[PdscRequirement::Accept].value(PdscRequirement::Compiler))
                 {
                     if(!r.isValid())
                         continue;

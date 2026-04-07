@@ -7,5 +7,11 @@
         <file>img/settings.png</file>
         <file>img/hamlab_64x64.png</file>
         <file>img/hamlab.ico</file>
+        <file>img/brick_16x16.png</file>
+        <file>img/brick_24x24.png</file>
+        <file>img/package_16x16.png</file>
+        <file>img/package_24x24.png</file>
+        <file>img/folder_24x24.png</file>
+        <file>img/memory_24x24.png</file>
     </qresource>
 </RCC>

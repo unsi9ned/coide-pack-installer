@@ -815,4 +815,52 @@ QString McuBrowserViewModel::flashAlgorithmId(const QString& name) const
     return QString();
 }
 
+//------------------------------------------------------------------------------
+// Содержит ли компонент файлы
+//------------------------------------------------------------------------------
+bool McuBrowserViewModel::componentHasFiles() const
+{
+    qint32 id = m_selectedComponentNode.hierarchyNode->getUniqueId();
+    if(id == -1) return false;
+
+    const Component * component =
+            reinterpret_cast<const Component*>(m_selectedComponentNode.hierarchyNode);
+
+    return !component->fileListConst().isEmpty();
+}
+
+//------------------------------------------------------------------------------
+// Выводит список файлов, принадлежащих компоненту
+//------------------------------------------------------------------------------
+QStringList McuBrowserViewModel::componentFiles() const
+{
+    QStringList files;
+
+    if(m_selectedComponentNode.hierarchyNode->getUniqueId() != -1)
+    {
+        const Component * component =
+                reinterpret_cast<const Component*>(m_selectedComponentNode.hierarchyNode);
+        files = component->fileListConst();
+    }
+
+    return files;
+}
+
+//------------------------------------------------------------------------------
+// Выводит список устройств, которые используют компонент
+//------------------------------------------------------------------------------
+QStringList McuBrowserViewModel::componentDevices() const
+{
+    QStringList devices;
+
+    if(m_selectedComponentNode.hierarchyNode->getUniqueId() != -1)
+    {
+        const Component * component =
+                reinterpret_cast<const Component*>(m_selectedComponentNode.hierarchyNode);
+        devices = component->supportedMcuList();
+    }
+
+    return devices;
+}
+
 

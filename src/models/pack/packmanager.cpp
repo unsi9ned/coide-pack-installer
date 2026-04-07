@@ -331,11 +331,6 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
 
                         if(!reqManager->createFlashAlgorithm(*flashAlgorithm))
                             break;
-
-                        logInfo(QString("Creating a link to the Flash Algorithm '%1'").arg(flashAlgorithm->name()));
-
-                        if(!reqManager->createFlashAlgorithmLink(mcu, *flashAlgorithm))
-                            break;
                     }
                     else
                         logWarning("The default programming algorithm was not found");
@@ -344,6 +339,13 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
 
                     if(!reqManager->createMcu(mcu))
                         break;
+                    else if(flashAlgorithm)
+                    {
+                        logInfo(QString("Creating a link to the Flash Algorithm '%1'").arg(flashAlgorithm->name()));
+
+                        if(!reqManager->createFlashAlgorithmLink(mcu, *flashAlgorithm))
+                            break;
+                    }
                 }
             }
         }
@@ -596,6 +598,8 @@ bool PackManager::extractSVD(PackDescription &pack, QString &errorString)
     //
     foreach (Manufacturer::SvdInfo s, vendor.svdList())
     {
+        logInfo(QString("Extract file '%1'").arg(s.pathInArchive));
+
         if(!ZipArchive().extractFile(pack.pathToArchive(), s.destDirectory, s.pathInArchive))
         {
             errorString = QString("An error occurred while extracting the %1 file").arg(s.pathInArchive);
@@ -687,6 +691,8 @@ bool PackManager::extractFLM(PackDescription& pack, QString& errorString)
     //
     foreach (Manufacturer::FlmInfo flm, vendor.flmList())
     {
+        logInfo(QString("Extract file '%1'").arg(flm.pathInArchive));
+
         if(!ZipArchive().extractFile(pack.pathToArchive(), flm.destDirectory, flm.pathInArchive))
         {
             errorString = QString("An error occurred while extracting the %1 file").arg(flm.pathInArchive);
@@ -988,7 +994,7 @@ void PackManager::loadCoComponents(PackDescription &pack)
                     }
                 }
 
-                if(!componentContainsFile)
+                if(!componentContainsFile && f.name != "FlashOS.h")
                 {
                     QStringList& list = coMap[compileUuid];
                     list.append(f.fullPath);
@@ -1113,6 +1119,8 @@ bool PackManager::extractSources(PackDescription &pack, QString &errorString)
             QString destinationDir = Paths::instance()->coIdeCmsisDir(it.key()).replace('/', '\\') + "\\" +
                                      QFileInfo(s).path().replace('/','\\');
 
+            logInfo(QString("Extract file '%1'").arg(s));
+
             if(!ZipArchive().extractFile(Paths::instance()->cmsisCore(it.key()), destinationDir, s))
             {
                 errorString = QString("An error occurred while extracting the %1 file").arg(s);
@@ -1137,6 +1145,8 @@ bool PackManager::extractSources(PackDescription &pack, QString &errorString)
     foreach (QString s, sources)
     {
         QString destinationDir = pack.installDir() + "\\" + QFileInfo(s).path().replace('/','\\');
+
+        logInfo(QString("Extract file '%1'").arg(s));
 
         if(!ZipArchive().extractFile(pack.pathToArchive(), destinationDir, s))
         {
@@ -1201,6 +1211,14 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
             QString targetPath = pack.installDir() + "/" + f;
             QString linkPath = rootDir.path() + "/" + f;
 
+            // CoIDE не импортирует ld-файлы
+            if(info.suffix().toLower() == "ld")
+            {
+                linkPath = rootDir.path() + "/" +
+                           info.path() + "/" +
+                           info.completeBaseName() + "." + "ls";
+            }
+
             if(component.getName().startsWith("CMSIS_Core_"))
             {
                 targetPath = Paths::instance()->coIdeCmsisDir(component.getVersion()) + "/" + f;
@@ -1213,6 +1231,15 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
                 errorString = QString("The %1 directory cannot be created").arg(rootDir.path());
                 return false;
             }
+
+            QString relativePath = linkPath;
+            int beginPos = (component.getType() == Component::DRIVER) ?
+                           Paths::instance()->coIdeDriversDir().length() :
+                           Paths::instance()->coIdeComponentsDir().length();
+
+            relativePath.remove(0, beginPos + 1);
+
+            logInfo(QString("Create symbolic link '%1'").arg(relativePath));
 
             if(!QFile(linkPath).exists() && !MakeLink::createLink(linkPath, targetPath))
             {

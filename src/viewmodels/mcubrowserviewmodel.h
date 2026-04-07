@@ -162,6 +162,10 @@ public:
     QString componentId() const;
     QString flashAlgorithmId(const QString& name) const;
 
+    bool componentHasFiles() const;
+    QStringList componentFiles() const;
+    QStringList componentDevices() const;
+
 private:
     void printDeviceTree(const DeviceNode& childNode) const;
     void printComponentTree(const ComponentNode& childNode) const;

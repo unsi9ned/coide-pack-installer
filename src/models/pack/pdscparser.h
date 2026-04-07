@@ -61,6 +61,8 @@ private:
 
     QList<Component*> findParentsComponent(const QMap<QString, Component>& coComponentMap,
                                            const PackDescriptionParser::ParentComponentInfo& parent);
+
+    QString cmsisWildcardToRegex(const QString& pattern);
 };
 
 #endif // PDSCPARSER_H
