@@ -343,6 +343,8 @@ void MainForm::showMcuDetails()
     ui->lineEditFamilyId->setText(m_mcuBrowserViewModel->familyId());
     ui->lineEditSeriesId->setText(m_mcuBrowserViewModel->seriesId());
     ui->lineEditMcuId->setText(m_mcuBrowserViewModel->mcuId());
+    ui->lineEditFlashAlgoId->setText(m_mcuBrowserViewModel->flashAlgorithmId());
+    ui->lineEditDebugAlgoId->setText(m_mcuBrowserViewModel->debugAlgorithmId());
 
     // Уникальный путь
     ui->lineEditUniquePath->setText(m_mcuBrowserViewModel->devNodePath());
@@ -373,6 +375,7 @@ void MainForm::clearForm()
     ui->lineEditComponentId->clear();
     ui->lineEditUniquePath->clear();
     ui->lineEditFlashAlgoId->clear();
+    ui->lineEditDebugAlgoId->clear();
 }
 
 //------------------------------------------------------------------------------
@@ -599,6 +602,8 @@ void MainForm::updateComponentsTree()
     }
 #endif
 
+    // Сортируем по первой колонке по возрастанию
+    ui->treeWidgetComponents->sortItems(0, Qt::AscendingOrder);
     ui->treeWidgetComponents->resizeColumnToContents(0);
     ui->treeWidgetComponents->setColumnWidth(0, ui->treeWidgetComponents->columnWidth(0) + 20);
 }

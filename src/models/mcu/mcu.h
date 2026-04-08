@@ -27,7 +27,6 @@ private:
     int id;
     int seriesId;
     int userId;
-    int debugAlgorithmId;
     QString name;
     QString description;
     QString keyParameter;
@@ -51,16 +50,12 @@ private:
     Series * m_parent;
 public:
     Mcu();
-    Mcu(int id,
-        int seriesId,
-        int debugAlgorithmId,
-        int userId = CoUser::USER_COOCOX);
 
     int getId() const {return id;}
     qint32 getCoMaxId() const {return ID_MCU_LAST; }
     int getSeriesId() const {return seriesId;}
     int getUserId() const {return userId;}
-    int getDebugAlgorithmId() const {return debugAlgorithmId;}
+    int getDebugAlgorithmId() const;
     QString getName() const {return name;}
     QString getCoName() const {return QString(name).toUpper();}
     QString getDescription() const {return description;}

@@ -323,7 +323,10 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                     if(!reqManager->createDebugAlgorithm(algorithm))
                         break;
                     else
+                    {
                         mcu.setDebugAlgorithmId(algorithm.coId());
+                        Paths::instance()->copyDebugAlgorithm(algorithm.name());
+                    }
 
                     if(flashAlgorithm)
                     {
@@ -973,6 +976,7 @@ void PackManager::loadCoComponents(PackDescription &pack)
     // Читаем список файлов в архиве и находим h-файлы, которые не были включены
     // ни в один из компонентов
     //
+#if 0
     if(!compileUuid.isEmpty())
     {
         QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(pack.pathToArchive());
@@ -1002,6 +1006,46 @@ void PackManager::loadCoComponents(PackDescription &pack)
             }
         }
     }
+#else
+    // TODO некоторые pdsc-файлы составлены некорректно
+    // Пока такое решение для них
+    // Оказалось, что копировать все h-файлы - не очень хорошее решение,
+    // потому что появляется много ненужного мусора
+    //
+    if(!compileUuid.isEmpty() &&
+       (pack.packVendor() == "NordicSemiconductor" ||
+        pack.packVendor() == "Nordic Semiconductor"))
+    {
+        QString includeDir = "Device/Include/";
+
+        QList<ZipArchive::ArchiveEntry> files = ZipArchive().listContents(pack.pathToArchive(), includeDir.replace('/', '\\'));
+
+        foreach(ZipArchive::ArchiveEntry f, files)
+        {
+            if(!f.isDir && f.extension.toLower() == "h")
+            {
+                bool componentContainsFile = false;
+
+                for(auto it = coMap.begin(); it != coMap.end(); ++it)
+                {
+                    QStringList fList = it.value();
+
+                    if(fList.contains(f.fullPath.replace('/', '\\')))
+                    {
+                        componentContainsFile = true;
+                        break;
+                    }
+                }
+
+                if(!componentContainsFile)
+                {
+                    QStringList& list = coMap[compileUuid];
+                    list.append(f.fullPath);
+                }
+            }
+        }
+    }
+#endif
 
     return;
 }
