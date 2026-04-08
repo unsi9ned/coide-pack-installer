@@ -148,6 +148,9 @@ public:
     QStringList flashAlgorithms() const;
     QString defaultFlashAlgorithm() const;
 
+    QString mcuDefinedSymbols() const;
+    QString componentDefinedSymbols() const;
+
     QString releaseVersion() const;
 
     QString vendorId() const;

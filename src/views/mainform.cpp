@@ -349,6 +349,9 @@ void MainForm::showMcuDetails()
     // Уникальный путь
     ui->lineEditUniquePath->setText(m_mcuBrowserViewModel->devNodePath());
     ui->lineEditUniquePath->setCursorPosition(0);
+
+    // Дефайны
+    ui->lineEditDefinedSymbols->setText(m_mcuBrowserViewModel->mcuDefinedSymbols());
 }
 
 //------------------------------------------------------------------------------
@@ -376,6 +379,7 @@ void MainForm::clearForm()
     ui->lineEditUniquePath->clear();
     ui->lineEditFlashAlgoId->clear();
     ui->lineEditDebugAlgoId->clear();
+    ui->lineEditDefinedSymbols->clear();
 }
 
 //------------------------------------------------------------------------------
@@ -442,6 +446,8 @@ void MainForm::onComponentTreeItemClicked(QTreeWidgetItem* item, int column)
     {
         ui->plainTextEditDescription->appendPlainText(dev);
     }
+
+    ui->lineEditDefinedSymbols->setText(m_mcuBrowserViewModel->componentDefinedSymbols());
 }
 
 //------------------------------------------------------------------------------

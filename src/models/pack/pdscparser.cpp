@@ -826,6 +826,27 @@ PdscComponent PdscParser::parseComponent(const QDomNode &componentNode,
         }
     }
 
+    // Компонент включает RTE_Components_h
+    if(!componentNode.firstChildElement("RTE_Components_h").isNull())
+    {
+        QString rteText = componentNode.firstChildElement("RTE_Components_h").text();
+        int startSymbol = rteText.indexOf("#define", Qt::CaseInsensitive);
+
+        while(startSymbol != -1)
+        {
+            rteText.remove(0, startSymbol);
+
+            int endLinePos = rteText.indexOf('\n');
+            endLinePos = (endLinePos == -1) ? rteText.indexOf('\r') : endLinePos;
+
+            QString s = rteText.mid(0, endLinePos).remove("#define", Qt::CaseInsensitive).trimmed();
+            component.addDefSymbol(s);
+
+            rteText.remove(0, endLinePos);
+            startSymbol = rteText.indexOf("#define");
+        }
+    }
+
     return component;
 }
 
@@ -969,7 +990,11 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             {
                                 coCategory = Category::categoryBoot();
                                 coComponent.setMicro("__START=main");
+                                coComponent.addDefSymbol("__START=main");
                             }
+
+                            // Добавляем дефайны
+                            coComponent.addDefSymbols(pComponent.definedSymbols());
 
                             coCategory.setSubCategoryName(pComponent.attributes().getCclass());
 

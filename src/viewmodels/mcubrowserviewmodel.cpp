@@ -687,6 +687,34 @@ QString McuBrowserViewModel::defaultFlashAlgorithm() const
 }
 
 //------------------------------------------------------------------------------
+// Дефайны MCU
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::mcuDefinedSymbols() const
+{
+    if (!m_selectedNode.isMcu()) return QString();
+
+    Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
+    if (!mcu) return QString();
+
+    return mcu->defSym2coMicro();
+}
+
+//------------------------------------------------------------------------------
+// Дефайны компонента
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::componentDefinedSymbols() const
+{
+    if(m_selectedComponentNode.hierarchyNode->getUniqueId() != -1)
+    {
+        const Component * component =
+                reinterpret_cast<const Component*>(m_selectedComponentNode.hierarchyNode);
+        return component->defSym2coMicro();
+    }
+
+    return QString();
+}
+
+//------------------------------------------------------------------------------
 // Версия пакета
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::releaseVersion() const

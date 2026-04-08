@@ -159,6 +159,36 @@ void Component::setMicro(const QString &value)
     micro = value;
 }
 
+void Component::addDefSymbol(const QString& symbol)
+{
+    if(!_definedSymbols.contains(symbol))
+        _definedSymbols.append(symbol);
+}
+
+void Component::addDefSymbols(const QStringList& symbols)
+{
+    for(QString s : symbols)
+    {
+        addDefSymbol(s);
+    }
+}
+
+QString Component::defSym2coMicro() const
+{
+    QString micro;
+
+    foreach(QString d, _definedSymbols)
+    {
+        micro += d;
+        micro += ",";
+    }
+
+    if(micro.endsWith(','))
+        micro.chop(1);
+
+    return micro;
+}
+
 int Component::getCox() const
 {
     return cox;

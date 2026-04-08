@@ -73,6 +73,17 @@ QStringList PdscComponent::supportVendors()
     return vendors;
 }
 
+void PdscComponent::addDefSymbol(const QString& symbol)
+{
+    if(!m_definedSymbols.contains(symbol))
+        m_definedSymbols.append(symbol);
+}
+
+QStringList PdscComponent::definedSymbols() const
+{
+    return m_definedSymbols;
+}
+
 PdscComponent::PdscComponent() : PdscElement()
 {
 

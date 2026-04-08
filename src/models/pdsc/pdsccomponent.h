@@ -13,6 +13,7 @@ private:
     PdscCondition m_condition;
     QString m_description;
     QList<PdscFile> m_files;
+    QStringList m_definedSymbols;
 
 public:
     PdscComponent();
@@ -28,6 +29,9 @@ public:
     void setAttributes(const PdscComponentAttributes &attributes);
 
     QStringList supportVendors();
+
+    void addDefSymbol(const QString& symbol);
+    QStringList definedSymbols() const;
 
 };
 
