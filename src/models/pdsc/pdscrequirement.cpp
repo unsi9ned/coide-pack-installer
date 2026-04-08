@@ -312,6 +312,42 @@ void PdscRequirement::setType(const RequirementType &type)
     m_type = type;
 }
 
+bool PdscRequirement::operator==(const PdscRequirement& require)
+{
+    if (m_type != require.type()) return false;
+    if (m_target != require.target()) return false;
+
+    // Device requirements
+    if (m_Dname != require.Dname()) return false;
+    if (m_Dfamily != require.Dfamily()) return false;
+    if (m_DsubFamily != require.DsubFamily()) return false;
+    if (m_Dcore != require.Dcore()) return false;
+    if (m_Dfpu != require.Dfpu()) return false;
+    if (m_Dmpu != require.Dmpu()) return false;
+    if (m_Ddsp != require.Ddsp()) return false;
+    if (m_Dvendor != require.Dvendor()) return false;
+    if (m_Dvariant != require.Dvariant()) return false;
+
+    // Component requirements
+    if (m_Cclass != require.Cclass()) return false;
+    if (m_Cgroup != require.Cgroup()) return false;
+    if (m_Csub != require.Csub()) return false;
+    if (m_Cvariant != require.Cvariant()) return false;
+    if (m_Cversion != require.Cversion()) return false;
+
+    // Compiler requirements
+    if (m_Tcompiler != require.Tcompiler()) return false;
+    if (m_Tversion != require.Tversion()) return false;
+
+    // Pack requirements
+    if (m_Pvendor != require.Pvendor()) return false;
+    if (m_Pname != require.Pname()) return false;
+    if (m_Pversion != require.Pversion()) return false;
+
+    return true;
+}
+
+
 PdscRequirement::PdscRequirement(RequirementType type) : PdscElement()
 {
     m_type = type;

@@ -1138,6 +1138,9 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
     bool status = true;
     auto requirementMap = component.condition().requirementsMap();
 
+    // Компонент не может требовать сразу нескольких устройств. Он может
+    // только подходить более, чем для одного устройства.
+    // Потому применяем условия по принципу "ИЛИ"
     foreach(PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Device))
     {
         if(!r.isValid())
@@ -1149,6 +1152,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
            !device.getName().contains(QRegExp(regexPattern, Qt::CaseInsensitive)))
         {
             status = false;
+        }
+        else
+        {
+            status = true;
             break;
         }
     }
@@ -1158,8 +1165,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
         if(!r.isValid())
             continue;
 
+        QString regexPattern = cmsisWildcardToRegex(r.Dname());
+
         if(device.getName().toUpper() == r.Dname().toUpper() ||
-           device.getName().contains(QRegExp(r.Dname(), Qt::CaseInsensitive)))
+           device.getName().contains(QRegExp(regexPattern, Qt::CaseInsensitive)))
         {
             status = true;
             break;
@@ -1173,7 +1182,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
         if(!r.isValid())
             continue;
 
-        if(device.getName() == r.Dname() || device.getName().contains(QRegExp(r.Dname())))
+        QString regexPattern = cmsisWildcardToRegex(r.Dname());
+
+        if(device.getName().toUpper() == r.Dname().toUpper() ||
+           device.getName().contains(QRegExp(regexPattern, Qt::CaseInsensitive)))
         {
             status = false;
             break;
