@@ -609,7 +609,7 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                                arg(component.getTimeuuid()).
                                arg(component.getRepoUser()).
                                arg(component.getRepoPass()).
-                               arg(component.getMicro()).
+                               arg(component.defSym2coMicro()).
                                arg(component.getCox()).
                                arg(component.getVersion()).
                                arg(component.getPublishStatus()).
