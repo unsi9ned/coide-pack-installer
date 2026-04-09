@@ -7,8 +7,9 @@
 #include <QMap>
 #include <QDateTime>
 #include "common/constants.h"
+#include "models/mcu/devicehierarchynode.h"
 
-class DebugAlgorithm
+class DebugAlgorithm : public DeviceHierarchyNode
 {
 
 private:
@@ -34,6 +35,7 @@ public:
     void setDocumentId(int id);
 
     int coId() const;
+    qint32 getCoMaxId() const {return ID_DEBUG_ALGO_LAST; }
     QString name() const;
     QString description() const;
     QString creationDate(QString dtFormat = QString("yyyy-MM-dd HH:mm:ss")) const;
@@ -43,7 +45,8 @@ public:
 
     bool isNull() const;
 
-    static QString generateTimeUUID();
+    QString generateTimeUUID();
+    QString getPath() const;
 };
 
 #endif // DEDUGALGORITHM_H

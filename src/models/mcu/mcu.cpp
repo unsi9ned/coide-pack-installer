@@ -6,19 +6,7 @@ Mcu::Mcu()
 {
     this->id = -1;
     this->seriesId = -1;
-    this->debugAlgorithmId = -1;
     this->userId = CoUser::USER_COOCOX;
-    this->timeuuid = generateTimeUUID();
-    this->hits = 0;
-    this->m_parent = nullptr;
-}
-
-Mcu::Mcu(int id, int seriesId, int debugAlgorithmId, int userId)
-{
-    this->id = id;
-    this->seriesId = seriesId;
-    this->debugAlgorithmId = debugAlgorithmId;
-    this->userId = userId;
     this->timeuuid = generateTimeUUID();
     this->hits = 0;
     this->m_parent = nullptr;
@@ -55,9 +43,13 @@ QString Mcu::coMemInfo()
     return memInfo;
 }
 
+int Mcu::getDebugAlgorithmId() const
+{
+    return this->debugAlgorithm.coId();
+}
+
 void Mcu::setDebugAlgorithmId(int id)
 {
-    this->debugAlgorithmId = id;
     this->debugAlgorithm.setCoId(id);
 }
 
@@ -215,7 +207,6 @@ bool Mcu::isNull()
 {
     return id == -1 ||
            seriesId == -1 ||
-           debugAlgorithmId == -1 ||
            debugAlgorithm.isNull() ||
            name.isEmpty();
 }

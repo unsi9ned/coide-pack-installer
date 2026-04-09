@@ -116,6 +116,8 @@ public:
 
     bool isValid();
 
+    bool operator==(const PdscRequirement& require);
+
 };
 
 #endif // PDSCREQUIREMENT_H

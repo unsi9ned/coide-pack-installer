@@ -826,6 +826,27 @@ PdscComponent PdscParser::parseComponent(const QDomNode &componentNode,
         }
     }
 
+    // Компонент включает RTE_Components_h
+    if(!componentNode.firstChildElement("RTE_Components_h").isNull())
+    {
+        QString rteText = componentNode.firstChildElement("RTE_Components_h").text();
+        int startSymbol = rteText.indexOf("#define", Qt::CaseInsensitive);
+
+        while(startSymbol != -1)
+        {
+            rteText.remove(0, startSymbol);
+
+            int endLinePos = rteText.indexOf('\n');
+            endLinePos = (endLinePos == -1) ? rteText.indexOf('\r') : endLinePos;
+
+            QString s = rteText.mid(0, endLinePos).remove("#define", Qt::CaseInsensitive).trimmed();
+            component.addDefSymbol(s);
+
+            rteText.remove(0, endLinePos);
+            startSymbol = rteText.indexOf("#define");
+        }
+    }
+
     return component;
 }
 
@@ -969,7 +990,11 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             {
                                 coCategory = Category::categoryBoot();
                                 coComponent.setMicro("__START=main");
+                                coComponent.addDefSymbol("__START=main");
                             }
+
+                            // Добавляем дефайны
+                            coComponent.addDefSymbols(pComponent.definedSymbols());
 
                             coCategory.setSubCategoryName(pComponent.attributes().getCclass());
 
@@ -1138,6 +1163,9 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
     bool status = true;
     auto requirementMap = component.condition().requirementsMap();
 
+    // Компонент не может требовать сразу нескольких устройств. Он может
+    // только подходить более, чем для одного устройства.
+    // Потому применяем условия по принципу "ИЛИ"
     foreach(PdscRequirement r, requirementMap[PdscRequirement::Require].value(PdscRequirement::Device))
     {
         if(!r.isValid())
@@ -1149,6 +1177,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
            !device.getName().contains(QRegExp(regexPattern, Qt::CaseInsensitive)))
         {
             status = false;
+        }
+        else
+        {
+            status = true;
             break;
         }
     }
@@ -1158,8 +1190,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
         if(!r.isValid())
             continue;
 
+        QString regexPattern = cmsisWildcardToRegex(r.Dname());
+
         if(device.getName().toUpper() == r.Dname().toUpper() ||
-           device.getName().contains(QRegExp(r.Dname(), Qt::CaseInsensitive)))
+           device.getName().contains(QRegExp(regexPattern, Qt::CaseInsensitive)))
         {
             status = true;
             break;
@@ -1173,7 +1207,10 @@ bool PdscParser::checkRequirements(const PackDescription& pack,
         if(!r.isValid())
             continue;
 
-        if(device.getName() == r.Dname() || device.getName().contains(QRegExp(r.Dname())))
+        QString regexPattern = cmsisWildcardToRegex(r.Dname());
+
+        if(device.getName().toUpper() == r.Dname().toUpper() ||
+           device.getName().contains(QRegExp(regexPattern, Qt::CaseInsensitive)))
         {
             status = false;
             break;

@@ -24,6 +24,7 @@ private:
     static constexpr const char* APP_SETTINGS = "config.ini";
     static constexpr const char* APP_LOG = "log.txt";
     static constexpr const char* APP_UTILS_DIR = "utils";
+    static constexpr const char* APP_DEBUG_ALGORITHMS_DIR = "algorithms";
     static constexpr const char* SEVEN_ZIP = "7z.exe";
     static constexpr const char* APP_CMSIS_DIR = "CMSIS";
     static constexpr const char* CMSIS_CORE_ZIP = "CMSIS_Core_%VERSION%.zip";
@@ -45,6 +46,7 @@ public:
     QString appDirPath();
     QString appSettingsFile();
     QString appLogFile();
+    QString appDebugAlgorithmDir();
     QString sevenZipExe();
     QString cmsisCore(QString version = "0.0.0");
     QString coIdeDir();
@@ -68,6 +70,7 @@ public:
     QMap<QString, QString> cmsisCores();
 
     void setCoIdeDir(const QString& dir);
+    void copyDebugAlgorithm(const QString& algorithmName);
 
 signals:
 

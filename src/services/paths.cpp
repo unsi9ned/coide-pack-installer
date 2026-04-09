@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QFile>
 #include <QString>
+#include <QDateTime>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
@@ -19,6 +20,10 @@ const QMap<QString, QString> Paths::_coDebugAlgorithmsMap = {
     //TODO временное решение для полной установки пакетов с новыми ядрами,
     //которых нет в CoIDE
     {"Cortex-M33",  "cortex-m3.xml"},
+
+    //TODO для Cortex-M1 добавляем базовый алгоритм, который находится
+    //в каталоге программы
+    {"Cortex-M1",  "cortex-m1.xml"},
 };
 
 const QMap<QString, QString> Paths::_cmsisCoreMap = {
@@ -84,6 +89,14 @@ QString Paths::appSettingsFile()
 QString Paths::appLogFile()
 {
     return appDirPath() + "/" + Paths::APP_LOG;
+}
+
+//------------------------------------------------------------------------------
+// Путь к папке с алгоритмами отладки, которые идут в комплекте с программой
+//------------------------------------------------------------------------------
+QString Paths::appDebugAlgorithmDir()
+{
+    return appDirPath() + "/" + Paths::APP_DEBUG_ALGORITHMS_DIR;
 }
 
 //------------------------------------------------------------------------------
@@ -280,4 +293,32 @@ QMap<QString, QString> Paths::cmsisCores()
 void Paths::setCoIdeDir(const QString &dir)
 {
     Settings::instance()->saveCoIdePath(dir);
+}
+
+//------------------------------------------------------------------------------
+// Копирует алгоритм отладки из папки algorithms в папку назначения CoIDE
+//------------------------------------------------------------------------------
+void Paths::copyDebugAlgorithm(const QString& algorithmName)
+{
+    if(algorithmName.isEmpty()) return;
+
+    QString destFilename = coIdeDebugAlgorithmDir() + "/" + algorithmName;
+    QString sourceFilename = appDebugAlgorithmDir() + "/" + algorithmName;
+    QDir destDir = coIdeDebugAlgorithmDir();
+    QFile destFile(destFilename);
+    QFileInfo destFileInfo(destFilename);
+    QFileInfo sourceFileInfo(sourceFilename);
+
+    if(!destDir.exists()) return;
+    if(!sourceFileInfo.exists()) return;
+
+    if(destFileInfo.exists() &&
+       (destFileInfo.size() != sourceFileInfo.size() ||
+        destFileInfo.lastModified() != sourceFileInfo.lastModified()))
+    {
+        destFile.remove();
+        QFile::copy(sourceFilename, destFilename);
+    }
+    else if(!destFileInfo.exists())
+        QFile::copy(sourceFilename, destFilename);
 }

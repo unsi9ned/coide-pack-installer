@@ -119,3 +119,8 @@ QString DebugAlgorithm::generateTimeUUID()
 
     return str;
 }
+
+QString DebugAlgorithm::getPath() const
+{
+    return _name;
+}

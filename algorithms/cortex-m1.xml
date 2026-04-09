@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<Debugger>
+    <Debug>
+        <Arch>Cortex-M1</Arch>
+        
+        <SWD support="true">
+            <ExpectedID>0x0BC11477</ExpectedID>
+        </SWD>
+        
+        <JTAG support="true">
+            <TAP name="ARM CoreSight JTAG-DP" irLen="4" ircapture="0x1" irmask="0xF" irIDCode="0xE" select="true">
+                <ExpectedID>0x0BC11477</ExpectedID>
+            </TAP>  
+        </JTAG>
+        
+        <Reset>
+            <HwReset support="true" />
+            <SoftSysReset support="true" select="true"/>
+        </Reset>
+        
+        <SystemResetClkFreq>8000000</SystemResetClkFreq>
+    </Debug>
+
+    <MemMap>
+        <Block addr="0xE000E000" size="0x1000" read="true" write="true" execute="false" name="System Control Space" /> 
+        <Block addr="0x40000000" size="0x1FFFFFFF" read="true" write="true" execute="false" name="Peripheral" /> 
+    </MemMap>
+</Debugger>

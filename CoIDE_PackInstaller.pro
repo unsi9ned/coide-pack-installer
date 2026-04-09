@@ -127,6 +127,7 @@ INCLUDEPATH += \
 # Определяем исходный путь
 UTILS_SRC = $$PWD/utils
 CMSIS_SRC = $$PWD/CMSIS
+ALGO_SRC = $$PWD/algorithms
 
 # Определяем целевую папку в зависимости от конфигурации
 CONFIG(debug, debug|release) {
@@ -140,6 +141,7 @@ CONFIG(debug, debug|release) {
 # Путь назначения с учетом типа сборки
 UTILS_DST = $$OUT_PWD/$$BUILD_TYPE/utils
 CMSIS_DST = $$OUT_PWD/$$BUILD_TYPE/CMSIS
+ALGO_DST = $$OUT_PWD/$$BUILD_TYPE/algorithms
 
 # Отладочная информация
 # message("Copying utils from: $$UTILS_SRC")
@@ -152,6 +154,8 @@ win32 {
     copy_cmd = $$QMAKE_COPY_DIR \"$$shell_path($$UTILS_SRC)\" \"$$shell_path($$UTILS_DST)\"
     QMAKE_POST_LINK += $$copy_cmd
     copy_cmd = && $$QMAKE_COPY_DIR \"$$shell_path($$CMSIS_SRC)\" \"$$shell_path($$CMSIS_DST)\"
+    QMAKE_POST_LINK += $$copy_cmd
+    copy_cmd = && $$QMAKE_COPY_DIR \"$$shell_path($$ALGO_SRC)\" \"$$shell_path($$ALGO_DST)\"
     QMAKE_POST_LINK += $$copy_cmd
 }
 

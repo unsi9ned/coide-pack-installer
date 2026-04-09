@@ -1078,11 +1078,9 @@ bool RequestManager::createDebugAlgorithm(DebugAlgorithm &algo)
 
         if(!isset)
         {
-            algo.setCoId(lastId + 1);
-
             QString queryStr = QString("INSERT INTO debug_algorithm "
                                        "VALUES ('%1','%2','%3','%4','%5','%6','%7')").
-                                       arg(algo.coId()).
+                                       arg(algo.getUniqueId()).
                                        arg(algo.name()).
                                        arg(algo.description()).
                                        arg(algo.creationDate("yyyy-MM-dd HH:mm:ss.z")).
@@ -1095,6 +1093,10 @@ bool RequestManager::createDebugAlgorithm(DebugAlgorithm &algo)
             if(!status)
             {
                 errorStr = result.lastError().text();
+            }
+            else
+            {
+                algo.setCoId(algo.getUniqueId());
             }
         }
     }

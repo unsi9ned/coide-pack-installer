@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "pdsccondition.h"
 
 PdscCondition::PdscCondition() : PdscElement()
@@ -87,7 +88,17 @@ void PdscCondition::addRequirement(const PdscRequirement &requirement)
 void PdscCondition::combineRequirements(QList<PdscRequirement> &requirements,
                                         const PdscCondition &condition)
 {
+#if 1
+    for(auto r : condition.currRequirements())
+    {
+        if(!requirements.contains(r))
+        {
+            requirements.append(r);
+        }
+    }
+#else
     requirements.append(condition.currRequirements());
+#endif
 
     if(!condition.nestedConditions().isEmpty())
     {

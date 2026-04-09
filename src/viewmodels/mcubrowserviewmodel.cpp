@@ -687,6 +687,34 @@ QString McuBrowserViewModel::defaultFlashAlgorithm() const
 }
 
 //------------------------------------------------------------------------------
+// Дефайны MCU
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::mcuDefinedSymbols() const
+{
+    if (!m_selectedNode.isMcu()) return QString();
+
+    Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
+    if (!mcu) return QString();
+
+    return mcu->defSym2coMicro();
+}
+
+//------------------------------------------------------------------------------
+// Дефайны компонента
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::componentDefinedSymbols() const
+{
+    if(m_selectedComponentNode.hierarchyNode->getUniqueId() != -1)
+    {
+        const Component * component =
+                reinterpret_cast<const Component*>(m_selectedComponentNode.hierarchyNode);
+        return component->defSym2coMicro();
+    }
+
+    return QString();
+}
+
+//------------------------------------------------------------------------------
 // Версия пакета
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::releaseVersion() const
@@ -798,6 +826,22 @@ QString McuBrowserViewModel::componentId() const
 }
 
 //------------------------------------------------------------------------------
+// Уникальный ID алгоритма программирования по умолчанию
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::flashAlgorithmId() const
+{
+    if (!m_selectedNode.isMcu()) return QString();
+
+    Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
+    if (!mcu) return QString();
+
+    ProgAlgorithm* algo = mcu->getDefaultFlashAlgorithm();
+    if(!algo) return QString();
+
+    return QString::number(algo->getUniqueId());
+}
+
+//------------------------------------------------------------------------------
 // Уникальный ID алгоритма программирования
 //------------------------------------------------------------------------------
 QString McuBrowserViewModel::flashAlgorithmId(const QString& name) const
@@ -813,6 +857,20 @@ QString McuBrowserViewModel::flashAlgorithmId(const QString& name) const
     }
 
     return QString();
+}
+
+//------------------------------------------------------------------------------
+// Уникальный ID алгоритма отладки
+//------------------------------------------------------------------------------
+QString McuBrowserViewModel::debugAlgorithmId() const
+{
+    if (!m_selectedNode.isMcu()) return QString();
+
+    Mcu* mcu = m_mcuCache.value(m_selectedNode.name);
+    if (!mcu) return QString();
+
+    const DebugAlgorithm& algo = mcu->getDebugAlgorithm();
+    return QString::number(algo.getUniqueId());
 }
 
 //------------------------------------------------------------------------------

@@ -75,6 +75,7 @@ private:
     QString repoUser;
     QString repoPass;
     QString micro;
+    QStringList _definedSymbols;
     int cox; //Зависит ли компонент от драйверов CooCox
     QString version;
     QString publishStatus;
@@ -146,6 +147,12 @@ public:
     void setRepoPass(const QString &value);
     QString getMicro() const;
     void setMicro(const QString &value);
+
+    void addDefSymbol(const QString& symbol);
+    void addDefSymbols(const QStringList& symbols);
+    QStringList definedSymbols() const {return this->_definedSymbols;}
+    QString defSym2coMicro() const;
+
     int getCox() const;
     void setCox(int value);
     QString getVersion() const;
