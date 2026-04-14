@@ -90,6 +90,7 @@ public:
     QString getName() const;
     QString toKeilName() const;
     int toKeilId() const;
+    static QString makeKeilVendor(const QString& vendorName);
 
     static QString co2keilName(const QString& coName);
     static int co2keilId(int coId);

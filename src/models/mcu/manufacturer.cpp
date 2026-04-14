@@ -229,6 +229,19 @@ int Manufacturer::toKeilId() const
 }
 
 //------------------------------------------------------------------------------
+// Преобразовать обычное имя производителя в пару <vendor>:<id>
+//------------------------------------------------------------------------------
+QString Manufacturer::makeKeilVendor(const QString& vendorName)
+{
+    if(vendorName.contains(":"))
+        return vendorName;
+    else if(_keilVendorMap.contains(vendorName))
+        return QString("%1:%2").arg(vendorName).arg(_keilVendorMap.value(vendorName));
+
+    return vendorName;
+}
+
+//------------------------------------------------------------------------------
 // Преобразовать имя вендора CoIDE в валидное имя Keil
 //------------------------------------------------------------------------------
 QString Manufacturer::co2keilName(const QString &coName)

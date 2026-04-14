@@ -1916,16 +1916,27 @@ void ComponentsInfo::requestComponentMap(const QMap<QString, Manufacturer>& vend
 
                         if(!component.isNull() && !component.getUuid().isEmpty())
                         {
-                            bool found = false;
-                            PdscComponentAttributesEx attributes;
-
-                            if(requestComponentPdscAttributes(componentId, attributes, &found) &&
-                               found)
+                            // Компонент уже находится в списке
+                            if(mcuComponents.contains(component.getUuid()))
                             {
-                                component.setPdscAttributes(attributes);
+                                Component& c = mcuComponents[component.getUuid()];
+                                c.addSupportedMcu(device.getName());
                             }
+                            // Впервые найденный компонент
+                            else
+                            {
+                                bool found = false;
+                                PdscComponentAttributesEx attributes;
 
-                            mcuComponents.insert(component.getUuid(), component);
+                                if(requestComponentPdscAttributes(componentId, attributes, &found) &&
+                                   found)
+                                {
+                                    component.setPdscAttributes(attributes);
+                                }
+
+                                component.addSupportedMcu(device.getName());
+                                mcuComponents.insert(component.getUuid(), component);
+                            }
                         }
                     }
                 }

@@ -139,9 +139,20 @@ void PackManager::readPackDescription(PackDescription &pack)
             }
 
             QMap<QString, Component> componentMap;
+            QList<PdscComponent> pdscComponents;
             RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
             RequestManager::instance()->requestComponentMap(pack.vendors(), componentMap);
-            //pack.coComponentMap().unite(componentMap);
+
+            for(auto coComponent : componentMap)
+            {
+                pdscComponents.append(coComponent.toPdscComponent());
+            }
+
+#if 0
+            pack.pdscComponentList().append(pdscComponents);
+#else
+            pack.pdscComponentList() = pdscComponents;
+#endif
             parser->reloadComponents(pack);
         }
 

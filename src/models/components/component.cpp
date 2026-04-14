@@ -3,6 +3,7 @@
 #include <QStringList>
 #include "component.h"
 #include "common/constants.h"
+#include "models/mcu/manufacturer.h"
 
 int Component::getId() const
 {
@@ -644,6 +645,89 @@ QString Component::getPath() const
         path.chop(1);
 
     return path;
+}
+
+//------------------------------------------------------------------------------
+// Преобразует компонент к формату PDSC
+//------------------------------------------------------------------------------
+PdscComponent Component::toPdscComponent() const
+{
+    PdscComponentAttributes attr = m_pdscAttributes;
+    PdscComponent pdscComponent;
+    PdscCondition requireComponentCond;
+    PdscCondition acceptDevicesCond;
+
+    pdscComponent.setAttributes(attr);
+    pdscComponent.setDescription(description);
+
+    if(!m_parents.isEmpty())
+    {
+        QString condId = m_pdscAttributes.getPdscCondition().isEmpty() ?
+                         name:
+                         m_pdscAttributes.getPdscCondition();
+
+        requireComponentCond.setId(condId);
+
+        for(Component* parent : m_parents)
+        {
+            PdscRequirement require(PdscRequirement::Require);
+
+            QString Cclass = parent->getPdscClass();
+            QString Cgroup = parent->getPdscGroup();
+            QString Csub = parent->getPdscSub();
+            QString Cvariant = parent->getPdscVariant();
+            QString Cversion = parent->getPdscVersion();
+
+            require.setCclass(Cclass);
+            require.setCgroup(Cgroup);
+            require.setCsub(Csub);
+            require.setCvariant(Cvariant);
+            require.setCversion(Cversion);
+
+            requireComponentCond.addRequirement(require);
+        }
+    }
+
+    if(!_supportsMcuList.isEmpty())
+    {
+        QString deviceVendor = Manufacturer::makeKeilVendor(m_pdscAttributes.getCvendor());
+
+        // Искусственно создает атрибут condition
+        QStringList mcuList = _supportsMcuList;
+        std::sort(mcuList.begin(), mcuList.end());
+
+        QString conditionId = mcuList.join("+") + "/";
+
+        if(conditionId.endsWith('/'))
+            conditionId.chop(1);
+
+        acceptDevicesCond.setId(conditionId);
+
+        for(QString mcu : _supportsMcuList)
+        {
+            PdscRequirement accept(PdscRequirement::Accept);
+
+            accept.setDvendor(deviceVendor);
+            accept.setDname(mcu);
+            acceptDevicesCond.addRequirement(accept);
+        }
+    }
+
+    if(!requireComponentCond.isNull() && !acceptDevicesCond.isNull())
+    {
+        requireComponentCond.addCondition(acceptDevicesCond);
+        pdscComponent.setCondition(requireComponentCond);
+    }
+    else if(!requireComponentCond.isNull())
+    {
+        pdscComponent.setCondition(requireComponentCond);
+    }
+    else if(!acceptDevicesCond.isNull())
+    {
+        pdscComponent.setCondition(acceptDevicesCond);
+    }
+
+    return pdscComponent;
 }
 
 Category Component::getCategory() const

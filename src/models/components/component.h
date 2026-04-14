@@ -8,6 +8,8 @@
 #include "category.h"
 #include "models/mcu/devicehierarchynode.h"
 #include "models/pdsc/pdsccomponentattr.h"
+#include "models/pdsc/pdsccomponent.h"
+#include "models/pdsc/pdsccondition.h"
 
 class PdscComponentAttributesEx : public PdscComponentAttributes
 {
@@ -284,6 +286,8 @@ public:
 
     void setJdscPath(const QString& path) { m_jdscPath = path; }
     const QString getJdscPath() { return m_jdscPath; }
+
+    PdscComponent toPdscComponent() const;
 };
 
 #endif // COMPONENT_H
