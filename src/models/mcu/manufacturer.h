@@ -78,6 +78,7 @@ public:
     Manufacturer(Manufacturer* m);
 
     QMap<QString, Family>& families();
+    const QMap<QString, Family>& familiesConst() const;
 
     bool hasFamilies();
 

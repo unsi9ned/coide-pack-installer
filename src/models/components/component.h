@@ -280,6 +280,7 @@ public:
     const QString getPdscCondition() { return m_pdscAttributes.getPdscCondition(); }
 
     PdscComponentAttributesEx pdscAttributes() const {return m_pdscAttributes; }
+    void setPdscAttributes(const PdscComponentAttributesEx& attr) {m_pdscAttributes = attr; }
 
     void setJdscPath(const QString& path) { m_jdscPath = path; }
     const QString getJdscPath() { return m_jdscPath; }

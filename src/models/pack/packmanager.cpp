@@ -138,7 +138,10 @@ void PackManager::readPackDescription(PackDescription &pack)
                 supportVendors.append(pack.packVendor());
             }
 
+            QMap<QString, Component> componentMap;
             RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
+            RequestManager::instance()->requestComponentMap(pack.vendors(), componentMap);
+            //pack.coComponentMap().unite(componentMap);
             parser->reloadComponents(pack);
         }
 

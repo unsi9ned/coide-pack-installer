@@ -176,6 +176,11 @@ QMap<QString, Family> &Manufacturer::families()
     return this->familyMap;
 }
 
+const QMap<QString, Family>&Manufacturer::familiesConst() const
+{
+    return this->familyMap;
+}
+
 //------------------------------------------------------------------------------
 // Проверить имеет ли производитель загруженные семейства
 //------------------------------------------------------------------------------

@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QPair>
 
+#include "models/mcu/manufacturer.h"
 #include "models/components/component.h"
 #include "models/components/category.h"
 #include "models/components/example.h"
@@ -49,6 +50,8 @@ public:
     QMap<int, Category> * categories();
     QMap<int, Category> * subcategories();
 
+    Component requestComponent(qint32 componentId, QString * errorString = nullptr);
+    void requestComponentMap(const QMap<QString, Manufacturer>& vendorMap, QMap<QString, Component>& componentMap);
     QMap<int, Component> requestComponentMap();
     QMap<int, Category> requestCategoryMap();
     QMap<int, Category> requestSubcategoryMap();
@@ -106,6 +109,8 @@ private:
     bool createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
 
     bool addComponentPdscAttributes(const Component& component, QString * errorString = nullptr);
+    bool requestComponentPdscAttributes(qint32 componentId, PdscComponentAttributesEx& attributes, bool * found, QString * errorString = nullptr);
+    bool requestComponentPdscAttributes(QMap<qint32, PdscComponentAttributesEx>& attributes, QString * errorString = nullptr);
 
 signals:
 

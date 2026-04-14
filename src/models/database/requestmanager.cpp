@@ -65,15 +65,27 @@ void RequestManager::loadDataFromDb(const QString &vendorName, Manufacturer &ven
         Family fam = families.at(f);
         QList<Series> series = requestSeriesList(fam.getId());
 
+        Family& newFamily = vendor.addFamily(fam.getName());
+        newFamily.setId(fam.getId());
+        newFamily.setManufacturerId(fam.getManufacturerId());
+        newFamily.setName(fam.getName());
+
         for(int s = 0 ; s < series.length(); s++)
         {
             Series serie = series.at(s);
             QList<Mcu> mcuList = requestMcuList(serie.getId());
 
+            Series& newSeries = vendor.family(fam.getName()).addSeries(serie.getName());
+            newSeries.setId(serie.getId());
+            newSeries.setFamilyId(fam.getId());
+            newSeries.setName(serie.getName());
+
             for(int m = 0; m < mcuList.length(); m++)
             {
                 Mcu mcu = mcuList.at(m);
-                vendor.family(fam.getName()).series(serie.getName()).addMcu(mcu);
+                Mcu& newMcu = vendor.family(fam.getName()).series(serie.getName()).addMcu(mcu);
+                mcu.setParent(newMcu.getParent());
+                newMcu = mcu;
             }
         }
     }

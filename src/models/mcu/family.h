@@ -37,6 +37,7 @@ public:
     int getManufacturerId() const;
 
     QMap<QString, Series>& seriesMap();
+    const QMap<QString, Series>& seriesMapConst() const;
 
     bool hasSeries();
 

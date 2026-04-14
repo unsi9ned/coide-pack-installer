@@ -1307,51 +1307,18 @@ bool ComponentsInfo::createComponentPdscAttrTable(QString * errorString)
 //------------------------------------------------------------------------------
 bool ComponentsInfo::addComponentPdscAttributes(const Component& component, QString* errorString)
 {
-    qint32 componentId = -1;
-    bool opstatus = false;
+    bool foundAttr = false, opstatus = false;
     PdscComponentAttributesEx attributes;
+    QString queryStr;
+    QSqlQuery result;
 
-    QString queryStr = QString("SELECT "
-                               "component_pdsc_attributes.componentId, "
-                               "component_pdsc_attributes.Cvendor, "
-                               "component_pdsc_attributes.Cclass, "
-                               "component_pdsc_attributes.Cgroup, "
-                               "component_pdsc_attributes.Csub, "
-                               "component_pdsc_attributes.Cversion, "
-                               "component_pdsc_attributes.Capiversion, "
-                               "component_pdsc_attributes.Cvariant, "
-                               "component_pdsc_attributes.condition "
-                               "FROM component_pdsc_attributes "
-                               "WHERE componentId = '%1' LIMIT 1;").
-                       arg(component.getUniqueId());
-
-    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
-
-    if(!opstatus)
+    if(!requestComponentPdscAttributes(component.getUniqueId(), attributes, &foundAttr, errorString))
     {
-        if(errorString)
-            *errorString = result.lastError().text();
         return false;
     }
 
-    while(result.next())
-    {
-        componentId = result.value("componentId").toInt();
-
-        attributes.setCvendor(result.value("Cvendor").toString());
-        attributes.setCclass(result.value("Cclass").toString());
-        attributes.setCgroup(result.value("Cgroup").toString());
-        attributes.setCsub(result.value("Csub").toString());
-        attributes.setCversion(result.value("Cversion").toString());
-        attributes.setCapiversion(result.value("Capiversion").toString());
-        attributes.setCvariant(result.value("Cvariant").toString());
-        attributes.setPdscCondition(result.value("condition").toString());
-
-        break;
-    }
-
     // Обновляем аттрибуты компонента
-    if(componentId != -1 && component.pdscAttributes() != attributes)
+    if(foundAttr && component.pdscAttributes() != attributes)
     {
         queryStr = QString("UPDATE component_pdsc_attributes SET "
                            "Cvendor = '%2', "
@@ -1363,7 +1330,7 @@ bool ComponentsInfo::addComponentPdscAttributes(const Component& component, QStr
                            "Cvariant = '%8', "
                            "condition = '%9' "
                            "WHERE componentId = %1;").
-                           arg(componentId).
+                           arg(component.getUniqueId()).
                            arg(component.pdscAttributes().getCvendor()).
                            arg(component.pdscAttributes().getCclass()).
                            arg(component.pdscAttributes().getCgroup()).
@@ -1383,7 +1350,7 @@ bool ComponentsInfo::addComponentPdscAttributes(const Component& component, QStr
         }
     }
     // Добавляем аттрибуты компонента
-    else if(componentId == -1)
+    else if(!foundAttr)
     {
         queryStr = QString("INSERT INTO component_pdsc_attributes ("
                            "componentId, Cvendor, Cclass, Cgroup, Csub, Cversion, Capiversion, Cvariant, condition "
@@ -1408,6 +1375,117 @@ bool ComponentsInfo::addComponentPdscAttributes(const Component& component, QStr
                 *errorString = result.lastError().text();
             return false;
         }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Запрос из БД аттрибутов компонента
+//------------------------------------------------------------------------------
+bool ComponentsInfo::requestComponentPdscAttributes(qint32 componentId,
+                                                    PdscComponentAttributesEx& attributes,
+                                                    bool* found,
+                                                    QString* errorString)
+{
+    bool opstatus = false;
+
+    if(found) *found = false;
+
+    if(!DataBase::instance()->tables().contains("component_pdsc_attributes"))
+        return true;
+
+    QString queryStr = QString("SELECT "
+                               "component_pdsc_attributes.componentId, "
+                               "component_pdsc_attributes.Cvendor, "
+                               "component_pdsc_attributes.Cclass, "
+                               "component_pdsc_attributes.Cgroup, "
+                               "component_pdsc_attributes.Csub, "
+                               "component_pdsc_attributes.Cversion, "
+                               "component_pdsc_attributes.Capiversion, "
+                               "component_pdsc_attributes.Cvariant, "
+                               "component_pdsc_attributes.condition "
+                               "FROM component_pdsc_attributes "
+                               "WHERE componentId = '%1' LIMIT 1;").
+                       arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        //qint32 id = result.value("componentId").toInt();
+
+        attributes.setCvendor(result.value("Cvendor").toString());
+        attributes.setCclass(result.value("Cclass").toString());
+        attributes.setCgroup(result.value("Cgroup").toString());
+        attributes.setCsub(result.value("Csub").toString());
+        attributes.setCversion(result.value("Cversion").toString());
+        attributes.setCapiversion(result.value("Capiversion").toString());
+        attributes.setCvariant(result.value("Cvariant").toString());
+        attributes.setPdscCondition(result.value("condition").toString());
+
+        if(found) *found = true;
+
+        break;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Запрос из БД аттрибутов компонентов
+//------------------------------------------------------------------------------
+bool ComponentsInfo::requestComponentPdscAttributes(QMap<qint32, PdscComponentAttributesEx>& attributes,
+                                                    QString* errorString)
+{
+    bool opstatus = false;
+
+    if(!DataBase::instance()->tables().contains("component_pdsc_attributes"))
+        return true;
+
+    QString queryStr = QString("SELECT "
+                               "component_pdsc_attributes.componentId, "
+                               "component_pdsc_attributes.Cvendor, "
+                               "component_pdsc_attributes.Cclass, "
+                               "component_pdsc_attributes.Cgroup, "
+                               "component_pdsc_attributes.Csub, "
+                               "component_pdsc_attributes.Cversion, "
+                               "component_pdsc_attributes.Capiversion, "
+                               "component_pdsc_attributes.Cvariant, "
+                               "component_pdsc_attributes.condition "
+                               "FROM component_pdsc_attributes;");
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        PdscComponentAttributesEx attr;
+        qint32 id = result.value("componentId").toInt();
+
+        attr.setCvendor(result.value("Cvendor").toString());
+        attr.setCclass(result.value("Cclass").toString());
+        attr.setCgroup(result.value("Cgroup").toString());
+        attr.setCsub(result.value("Csub").toString());
+        attr.setCversion(result.value("Cversion").toString());
+        attr.setCapiversion(result.value("Capiversion").toString());
+        attr.setCvariant(result.value("Cvariant").toString());
+        attr.setPdscCondition(result.value("condition").toString());
+
+        attributes.insert(id, attr);
     }
 
     return true;
@@ -1736,6 +1814,202 @@ Category ComponentsInfo::findSubCategory(const Category category,
 }
 
 //------------------------------------------------------------------------------
+// Запрос компонента из БД
+//------------------------------------------------------------------------------
+Component ComponentsInfo::requestComponent(qint32 componentId, QString* errorString)
+{
+    bool status = true;
+    QString sql = QString("SELECT component.*, "
+                          "status.shouldupdate, "
+                          "status.hasdownloaded, "
+                          "status.hasdeleted, "
+                          "status.auditstatus "
+                          "FROM component, status "
+                          "WHERE component.Component_Status_id = status.id "
+                          "AND component.id = %1 LIMIT 1;").arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return Component();
+    }
+    else
+    {
+        if (result.next())
+        {
+            Component newComponent;
+
+            newComponent.setId(result.value(0).toInt());
+            newComponent.setAuthorId(result.value(1).toInt());
+            newComponent.setLayerId(result.value(2).toInt());
+            newComponent.setComponentStatusId(result.value(3).toInt());
+            newComponent.setShareDocumentId(result.value(4).toInt());
+            newComponent.setType(result.value(5).toInt());
+            newComponent.setName(result.value(6).toString());
+            newComponent.setDescription(result.value(7).toString());
+            newComponent.setAdvertisingWord(result.value(8).toString());
+            newComponent.setAdvertisingURL(result.value(9).toString());
+            newComponent.setUuid(result.value(10).toString());
+            newComponent.setTimeuuid(result.value(11).toString());
+            newComponent.setRepoUser(result.value(12).toString());
+            newComponent.setRepoPass(result.value(13).toString());
+            newComponent.setMicro(result.value(14).toString());
+            newComponent.setCox(result.value(15).toInt());
+            newComponent.setVersion(result.value(16).toString());
+            newComponent.setPublishStatus(result.value(17).toString());
+            newComponent.setHits(result.value(18).toInt());
+            newComponent.setCreationDate(result.value(19).toString());
+            newComponent.setUpdateDate(result.value(20).toString());
+            newComponent.setTags(result.value(21).toString());
+
+            //Чтение статуса компонента
+            Component::ComponentStatus status;
+
+            status.statusId = result.value(3).toInt();
+            status.shouldUpdate = result.value(22).toInt();
+            status.hasDownloaded = result.value(23).toInt();
+            status.hasDeleted = result.value(24).toInt();
+            status.auditStatus = result.value(25).toInt();
+            newComponent.setStatus(status);
+
+            return newComponent;
+        }
+    }
+
+    return Component();
+}
+
+//------------------------------------------------------------------------------
+// Загрузить данные о компонентах из базы данных
+//------------------------------------------------------------------------------
+void ComponentsInfo::requestComponentMap(const QMap<QString, Manufacturer>& vendorMap,
+                                         QMap<QString, Component>& componentMap)
+{
+    QMap<QString, Component> mcuComponents;
+    QMap<QString, Component> thirdPartyComponents;
+    QMap<QString, QStringList> componentParents;
+    QString sql;
+    QSqlQuery result;
+
+    for(const auto& vendor : vendorMap)
+    {
+        for(const auto& family : vendor.familiesConst())
+        {
+            for(const auto& series : family.seriesMapConst())
+            {
+                for(const auto& device : series.mcuMapConst())
+                {
+                    sql = QString("SELECT component_supports_mcu.componentId, "
+                                  "component_supports_mcu.mcuId "
+                                  "FROM component_supports_mcu "
+                                  "WHERE mcuId = %1;").arg(device.getId());
+
+                    result = DataBase::instance()->sendQuery(sql);
+
+                    while(result.next())
+                    {
+                        qint32 componentId = result.value("componentId").toInt();
+                        Component component = requestComponent(componentId);
+
+                        if(!component.isNull() && !component.getUuid().isEmpty())
+                        {
+                            bool found = false;
+                            PdscComponentAttributesEx attributes;
+
+                            if(requestComponentPdscAttributes(componentId, attributes, &found) &&
+                               found)
+                            {
+                                component.setPdscAttributes(attributes);
+                            }
+
+                            mcuComponents.insert(component.getUuid(), component);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Ищем внешние зависимости
+    for(auto& component : mcuComponents)
+    {
+        sql = QString("SELECT component_depends_component.parentComponentId, "
+                      "component_depends_component.childComponentId, "
+                      "component.uuid "
+                      "FROM component_depends_component, component "
+                      "WHERE parentComponentId = %1 "
+                      "AND component.id = component_depends_component.childComponentId;").
+                      arg(component.getId());
+
+        result = DataBase::instance()->sendQuery(sql);
+
+        while(result.next())
+        {
+            qint32 parentId = result.value("childComponentId").toInt();
+            QString parentUuid = result.value("uuid").toString();
+
+            if(!mcuComponents.contains(parentUuid) && !thirdPartyComponents.contains(parentUuid))
+            {
+                Component parentComponent;
+                parentComponent.setId(parentId);
+                parentComponent.setUuid(parentUuid);
+                thirdPartyComponents.insert(parentUuid, parentComponent);
+            }
+
+            if(!componentParents.contains(component.getUuid()))
+            {
+                componentParents.insert(component.getUuid(), QStringList());
+            }
+
+            QStringList& parentList = componentParents[component.getUuid()];
+            parentList.append(parentUuid);
+        }
+    }
+
+    // Запрашиваем внешние компоненты
+    for(auto it = thirdPartyComponents.begin(); it != thirdPartyComponents.end(); ++it)
+    {
+        Component& c = it.value();
+        Component component = requestComponent(c.getId());
+
+        if(!component.isNull() && !component.getUuid().isEmpty())
+        {
+            bool found = false;
+            PdscComponentAttributesEx attributes;
+
+            if(requestComponentPdscAttributes(c.getId(), attributes, &found) &&
+               found)
+            {
+                component.setPdscAttributes(attributes);
+            }
+
+            c = component;
+        }
+    }
+
+    // Связывает компоненты с их родителями
+    for(auto& component : mcuComponents)
+    {
+        for(QString uuid : componentParents[component.getUuid()])
+        {
+            if(mcuComponents.contains(uuid))
+            {
+                component.addParent(&mcuComponents[uuid]);
+            }
+            else if(thirdPartyComponents.contains(uuid))
+            {
+                component.addParent(&thirdPartyComponents[uuid]);
+            }
+        }
+    }
+
+    componentMap = mcuComponents;
+}
+
+//------------------------------------------------------------------------------
 // Загрузить данные о компонентах из базы данных
 //------------------------------------------------------------------------------
 QMap<int, Component> ComponentsInfo::requestComponentMap()
@@ -1789,6 +2063,19 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
         newComponent.setStatus(status);
 
         componentsMap.insert(newComponent.getId(), newComponent);
+    }
+
+    // Запрос атрибутов компонента
+    QMap<qint32, PdscComponentAttributesEx> attributes;
+    requestComponentPdscAttributes(attributes, nullptr);
+
+    for(auto it = attributes.begin(); it != attributes.end(); ++it)
+    {
+        qint32 id = it.key();
+        auto attr = it.value();
+
+        Component * component = &componentsMap[id];
+        component->setPdscAttributes(attr);
     }
 
     //Установка связи между компонентами
