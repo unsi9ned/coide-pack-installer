@@ -60,7 +60,12 @@ QString PackDescription::pathToSVD(const Mcu &device)
 
 void PackDescription::setVendor(QString vendor)
 {
-   this->_vendor = vendor;
+    QString v = vendor;
+
+    if(v.toLower().trimmed() == "nordicsemiconductor")
+        this->_vendor = "Nordic Semiconductor";
+    else
+        this->_vendor = vendor;
 }
 
 void PackDescription::setName(QString name)

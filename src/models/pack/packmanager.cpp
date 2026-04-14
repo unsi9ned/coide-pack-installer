@@ -355,6 +355,22 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     }
 
     //
+    // Создание вспомогательной таблицы атрибутов компонента
+    //
+    logInfo("Creating a table of component attributes");
+
+    if(!reqManager->createComponentPdscAttrTable(&errorString))
+    {
+        if(errorString.isEmpty())
+            logError(QString("Error when creating the components attribute table"));
+        else
+            logError(QString("Error when creating the components attribute table: %1").
+                     arg(errorString));
+
+        return false;
+    }
+
+    //
     // Установка компонентов
     //
     QMap<QString, Component>& componentMap = pack.coComponentMap();

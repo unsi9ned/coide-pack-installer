@@ -78,6 +78,7 @@ public:
 
     bool createComponent(Component& component, QString *errorString = nullptr);
     bool updateComponent(Component& component, QString *errorString = nullptr);
+    bool createComponentPdscAttrTable(QString * errorString = nullptr);
 
 private:
 
@@ -103,6 +104,8 @@ private:
 
     bool hasComponentsLink(int parentId, int childId, bool * status = nullptr, QString * errorString = nullptr);
     bool createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+
+    bool addComponentPdscAttributes(const Component& component, QString * errorString = nullptr);
 
 signals:
 

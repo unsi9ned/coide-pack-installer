@@ -632,22 +632,13 @@ QString Component::getPath() const
 {
     if(!m_jdscPath.isEmpty()) return m_jdscPath;
 
-    QString localCondition;
-
-    if(name.startsWith("Compile_") && !_supportsMcuList.isEmpty())
-    {
-        QStringList mcuList = _supportsMcuList;
-        std::sort(mcuList.begin(), mcuList.end());
-        localCondition = mcuList.join("+") + "/";
-    }
-
-    QString path = m_cvendor.isEmpty() ? "" : m_cvendor + "/";
-    path += m_cclass.isEmpty() ? "" : m_cclass + "/";
-    path += m_cgroup.isEmpty() ? "" : m_cgroup + "/";
-    path += m_csub.isEmpty() ? "" : m_csub + "/";
-    path += m_cvariant.isEmpty() ? "" : m_cvariant + "/";
-    path += m_cversion.isEmpty() ? "" : m_cversion + "/";
-    path += m_condition.isEmpty() ? localCondition : m_condition + "/";
+    QString path = m_pdscAttributes.getCvendor().isEmpty() ? "" : m_pdscAttributes.getCvendor() + "/";
+    path += m_pdscAttributes.getCclass().isEmpty() ? "" : m_pdscAttributes.getCclass() + "/";
+    path += m_pdscAttributes.getCgroup().isEmpty() ? "" : m_pdscAttributes.getCgroup() + "/";
+    path += m_pdscAttributes.getCsub().isEmpty() ? "" : m_pdscAttributes.getCsub() + "/";
+    path += m_pdscAttributes.getCvariant().isEmpty() ? "" : m_pdscAttributes.getCvariant() + "/";
+    path += m_pdscAttributes.getCversion().isEmpty() ? "" : m_pdscAttributes.getCversion() + "/";
+    path += m_pdscAttributes.getPdscCondition().isEmpty() ? "" : m_pdscAttributes.getPdscCondition() + "/";
 
     if(path.endsWith('/'))
         path.chop(1);

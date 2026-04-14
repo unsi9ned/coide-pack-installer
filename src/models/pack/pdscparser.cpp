@@ -974,6 +974,20 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                                 coComponentMap.insert(gccComponent.getUuid(), gccComponent);
                                 compileComponent = &coComponentMap[gccComponent.getUuid()];
                             }
+
+                            // Искусственно создает атрибут condition
+                            if(!compileComponent->supportedMcuList().isEmpty())
+                            {
+                                QString conditions;
+                                QStringList mcuList = compileComponent->supportedMcuList();
+                                std::sort(mcuList.begin(), mcuList.end());
+                                conditions = mcuList.join("+") + "/";
+
+                                if(conditions.endsWith('/'))
+                                    conditions.chop(1);
+
+                                compileComponent->setPdscCondition(conditions);
+                            }
                         }
 
                         //

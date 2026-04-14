@@ -734,6 +734,10 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                         return false;
                 }
             }
+
+            // Добавляем атрибуты компонента в БД
+            if(!addComponentPdscAttributes(component, errorString))
+                return false;
         }
     }
 #if 0
@@ -786,6 +790,10 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
             else if(!status)
                 return false;
         }
+
+        // Добавляем атрибуты компонента в БД
+        if(!addComponentPdscAttributes(component, errorString))
+            return false;
 
         // Помечаем, что компонент не требует установки
         component.setPersisted(true);
@@ -1258,6 +1266,148 @@ bool ComponentsInfo::createComponentsLink(int parentId,
         if(errorString)
             *errorString = result.lastError().text();
         return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создать или проверить существование таблицы component_pdsc_attributes
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponentPdscAttrTable(QString * errorString)
+{
+    bool opstatus = false;
+    QString queryStr = QString("CREATE TABLE IF NOT EXISTS component_pdsc_attributes ( "
+                               "componentId INTEGER PRIMARY KEY, "
+                               "Cvendor TEXT NOT NULL, "
+                               "Cclass TEXT NOT NULL, "
+                               "Cgroup TEXT NOT NULL, "
+                               "Csub TEXT, "
+                               "Cversion TEXT NOT NULL, "
+                               "Capiversion TEXT, "
+                               "Cvariant TEXT, "
+                               "condition TEXT, "
+                               "FOREIGN KEY (componentId) REFERENCES component(id)"
+                               ");");
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создать или проверить существование таблицы component_pdsc_attributes
+//------------------------------------------------------------------------------
+bool ComponentsInfo::addComponentPdscAttributes(const Component& component, QString* errorString)
+{
+    qint32 componentId = -1;
+    bool opstatus = false;
+    PdscComponentAttributesEx attributes;
+
+    QString queryStr = QString("SELECT "
+                               "component_pdsc_attributes.componentId, "
+                               "component_pdsc_attributes.Cvendor, "
+                               "component_pdsc_attributes.Cclass, "
+                               "component_pdsc_attributes.Cgroup, "
+                               "component_pdsc_attributes.Csub, "
+                               "component_pdsc_attributes.Cversion, "
+                               "component_pdsc_attributes.Capiversion, "
+                               "component_pdsc_attributes.Cvariant, "
+                               "component_pdsc_attributes.condition "
+                               "FROM component_pdsc_attributes "
+                               "WHERE componentId = '%1' LIMIT 1;").
+                       arg(component.getUniqueId());
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        componentId = result.value("componentId").toInt();
+
+        attributes.setCvendor(result.value("Cvendor").toString());
+        attributes.setCclass(result.value("Cclass").toString());
+        attributes.setCgroup(result.value("Cgroup").toString());
+        attributes.setCsub(result.value("Csub").toString());
+        attributes.setCversion(result.value("Cversion").toString());
+        attributes.setCapiversion(result.value("Capiversion").toString());
+        attributes.setCvariant(result.value("Cvariant").toString());
+        attributes.setPdscCondition(result.value("condition").toString());
+
+        break;
+    }
+
+    // Обновляем аттрибуты компонента
+    if(componentId != -1 && component.pdscAttributes() != attributes)
+    {
+        queryStr = QString("UPDATE component_pdsc_attributes SET "
+                           "Cvendor = '%2', "
+                           "Cclass = '%3', "
+                           "Cgroup = '%4', "
+                           "Csub = '%5', "
+                           "Cversion = '%6', "
+                           "Capiversion = '%7', "
+                           "Cvariant = '%8', "
+                           "condition = '%9' "
+                           "WHERE componentId = %1;").
+                           arg(componentId).
+                           arg(component.pdscAttributes().getCvendor()).
+                           arg(component.pdscAttributes().getCclass()).
+                           arg(component.pdscAttributes().getCgroup()).
+                           arg(component.pdscAttributes().getCsub()).
+                           arg(component.pdscAttributes().getCversion()).
+                           arg(component.pdscAttributes().getCapiversion()).
+                           arg(component.pdscAttributes().getCvariant()).
+                           arg(component.pdscAttributes().getPdscCondition());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+    // Добавляем аттрибуты компонента
+    else if(componentId == -1)
+    {
+        queryStr = QString("INSERT INTO component_pdsc_attributes ("
+                           "componentId, Cvendor, Cclass, Cgroup, Csub, Cversion, Capiversion, Cvariant, condition "
+                           ") VALUES ("
+                           "'%1', '%2', '%3', '%4', '%5', '%6', '%7', '%8', '%9'"
+                           ");").
+                           arg(component.getUniqueId()).
+                           arg(component.pdscAttributes().getCvendor()).
+                           arg(component.pdscAttributes().getCclass()).
+                           arg(component.pdscAttributes().getCgroup()).
+                           arg(component.pdscAttributes().getCsub()).
+                           arg(component.pdscAttributes().getCversion()).
+                           arg(component.pdscAttributes().getCapiversion()).
+                           arg(component.pdscAttributes().getCvariant()).
+                           arg(component.pdscAttributes().getPdscCondition());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
     }
 
     return true;

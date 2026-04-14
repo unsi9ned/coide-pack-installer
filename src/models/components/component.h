@@ -7,6 +7,41 @@
 #include <QDateTime>
 #include "category.h"
 #include "models/mcu/devicehierarchynode.h"
+#include "models/pdsc/pdsccomponentattr.h"
+
+class PdscComponentAttributesEx : public PdscComponentAttributes
+{
+private:
+    QString m_condition;    // optional
+
+public:
+    PdscComponentAttributesEx() : m_condition(QString()) {}
+
+    void setPdscCondition(const QString& condition) { m_condition = condition; }
+    const QString getPdscCondition() const { return m_condition; }
+
+    operator ==(const PdscComponentAttributesEx& attr) const
+    {
+        if(m_condition != attr.getPdscCondition()) return false;
+        if(m_cvendor != attr.getCvendor()) return false;
+        if(m_cbundle != attr.getCbundle()) return false;
+        if(m_cclass != attr.getCclass()) return false;
+        if(m_cgroup != attr.getCgroup()) return false;
+        if(m_csub != attr.getCsub()) return false;
+        if(m_cvariant != attr.getCvariant()) return false;
+        if(m_cversion != attr.getCversion()) return false;
+        if(m_capiversion != attr.getCapiversion()) return false;
+        if(m_instances != attr.getInstances()) return false;
+
+        return true;
+    }
+
+    operator !=(const PdscComponentAttributesEx& attr) const
+    {
+        bool compare = *this == attr;
+        return !compare;
+    }
+};
 
 class Component : public DeviceHierarchyNode
 {
@@ -102,13 +137,7 @@ private:
     bool _isPersisted;
 
     // PDSC attributes
-    QString m_cvendor;      // optional
-    QString m_cclass;       // required
-    QString m_cgroup;       // optional
-    QString m_csub;         // optional
-    QString m_cvariant;     // optional
-    QString m_cversion;     // optional
-    QString m_condition;    // optional
+    PdscComponentAttributesEx m_pdscAttributes;
 
     QString m_jdscPath;
     bool m_external;
@@ -234,22 +263,25 @@ public:
 
     QString getPath() const;
 
-    void setPdscVendor(const QString& vendor) { m_cvendor = vendor; }
-    void setPdscClass(const QString& c) { m_cclass = c; }
-    void setPdscGroup(const QString& group) { m_cgroup = group; }
-    void setPdscSub(const QString& sub) { m_csub = sub; }
-    void setPdscVariant(const QString& variant) { m_cvariant = variant; }
-    void setPdscVersion(const QString& version) { m_cversion = version; }
-    void setPdscCondition(const QString& condition) { m_condition = condition; }
-    void setJdscPath(const QString& path) { m_jdscPath = path; }
+    void setPdscVendor(const QString& vendor) { m_pdscAttributes.setCvendor(vendor); }
+    void setPdscClass(const QString& c) { m_pdscAttributes.setCclass(c); }
+    void setPdscGroup(const QString& group) { m_pdscAttributes.setCgroup(group); }
+    void setPdscSub(const QString& sub) { m_pdscAttributes.setCsub(sub); }
+    void setPdscVariant(const QString& variant) { m_pdscAttributes.setCvariant(variant); }
+    void setPdscVersion(const QString& version) { m_pdscAttributes.setCversion(version); }
+    void setPdscCondition(const QString& condition) { m_pdscAttributes.setPdscCondition(condition); }
 
-    const QString getPdscVendor() { return m_cvendor; }
-    const QString getPdscClass() { return m_cclass; }
-    const QString getPdscGroup() { return m_cgroup; }
-    const QString getPdscSub() { return m_csub; }
-    const QString getPdscVariant() { return m_cvariant; }
-    const QString getPdscVersion() { return m_cversion; }
-    const QString getPdscCondition() { return m_condition; }
+    const QString getPdscVendor() { return m_pdscAttributes.getCvendor(); }
+    const QString getPdscClass() { return m_pdscAttributes.getCclass(); }
+    const QString getPdscGroup() { return m_pdscAttributes.getCgroup(); }
+    const QString getPdscSub() { return m_pdscAttributes.getCsub(); }
+    const QString getPdscVariant() { return m_pdscAttributes.getCvariant(); }
+    const QString getPdscVersion() { return m_pdscAttributes.getCversion(); }
+    const QString getPdscCondition() { return m_pdscAttributes.getPdscCondition(); }
+
+    PdscComponentAttributesEx pdscAttributes() const {return m_pdscAttributes; }
+
+    void setJdscPath(const QString& path) { m_jdscPath = path; }
     const QString getJdscPath() { return m_jdscPath; }
 };
 
