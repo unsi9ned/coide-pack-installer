@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QFileInfo>
 
 class Paths : public QObject
 {
@@ -71,6 +72,9 @@ public:
 
     void setCoIdeDir(const QString& dir);
     void copyDebugAlgorithm(const QString& algorithmName);
+    QStringList componentFiles(qint32 componentId, const QString& componentName);
+    QStringList componentFilesTruncated(qint32 componentId, const QString& componentName);
+    QList<QFileInfo> componentFilesVerbose(qint32 componentId, const QString& componentName);
 
 signals:
 

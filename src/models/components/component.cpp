@@ -4,6 +4,8 @@
 #include "component.h"
 #include "common/constants.h"
 #include "models/mcu/manufacturer.h"
+#include "services/paths.h"
+#include "models/pdsc/pdscfile.h"
 
 int Component::getId() const
 {
@@ -710,6 +712,33 @@ PdscComponent Component::toPdscComponent() const
             accept.setDvendor(deviceVendor);
             accept.setDname(mcu);
             acceptDevicesCond.addRequirement(accept);
+        }
+    }
+
+    // Восстанавливаем список файлов
+    QList<QFileInfo> files = Paths::instance()->componentFilesVerbose(id, name);
+
+    if(!files.isEmpty())
+    {
+        for(QFileInfo f : files)
+        {
+            PdscFile pFile;
+
+            if(f.suffix().toLower() == "h")
+            {
+                pFile.setCategory(FileCategory("header"));
+            }
+            else if(f.suffix().toLower() == "c" || f.suffix().toLower() == "s")
+            {
+                pFile.setCategory(FileCategory("source"));
+            }
+            else if(f.suffix().toLower() == "ls" || f.suffix().toLower() == "ld")
+            {
+                pFile.setCategory(FileCategory("linkerScript"));
+            }
+
+            pFile.setName(f.fileName());
+            pdscComponent.files().append(pFile);
         }
     }
 

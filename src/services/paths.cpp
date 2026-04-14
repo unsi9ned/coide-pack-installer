@@ -3,6 +3,8 @@
 #include <QFile>
 #include <QString>
 #include <QDateTime>
+#include <QDirIterator>
+#include <QDebug>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
@@ -321,4 +323,70 @@ void Paths::copyDebugAlgorithm(const QString& algorithmName)
     }
     else if(!destFileInfo.exists())
         QFile::copy(sourceFilename, destFilename);
+}
+
+//------------------------------------------------------------------------------
+// Просматривает содержимое папке компонента и возвращается список найденных файлов
+//------------------------------------------------------------------------------
+QStringList Paths::componentFiles(qint32 componentId, const QString& componentName)
+{
+    QStringList files;
+    QString directory = coIdeComponentsDir() + "/" +
+                        QString("%1_%2").arg(componentId).arg(componentName) + "/src";
+
+    QDirIterator it(directory, QDir::Files, QDirIterator::Subdirectories);
+
+    while (it.hasNext())
+    {
+        files << it.next();
+    }
+
+    return files;
+}
+
+//------------------------------------------------------------------------------
+// Просматривает содержимое папке компонента и возвращается список найденных файлов
+//------------------------------------------------------------------------------
+QStringList Paths::componentFilesTruncated(qint32 componentId, const QString& componentName)
+{
+    QStringList files;
+    QString directory = coIdeComponentsDir() + "/" +
+                        QString("%1_%2").arg(componentId).arg(componentName) + "/src/";
+
+    QDirIterator it(directory, QDir::Files, QDirIterator::Subdirectories);
+
+    while (it.hasNext())
+    {
+        files << it.next().remove(directory.replace('\\', '/'));
+    }
+
+    return files;
+}
+
+//------------------------------------------------------------------------------
+// Просматривает содержимое папке компонента и возвращается список найденных файлов
+//------------------------------------------------------------------------------
+QList<QFileInfo> Paths::componentFilesVerbose(qint32 componentId, const QString& componentName)
+{
+    QList<QFileInfo> fileInfoList;
+    QString directory = coIdeComponentsDir() + "/" +
+                        QString("%1_%2").arg(componentId).arg(componentName) + "/src/";
+
+    QDirIterator it(directory, QDir::Files, QDirIterator::Subdirectories);
+
+    while (it.hasNext())
+    {
+        QString fullPath = it.next();
+        QString shortPath = fullPath.remove(directory.replace('\\', '/'));
+        fileInfoList << QFileInfo(shortPath);
+    }
+
+    if(fileInfoList.isEmpty() == false)
+    {
+        QFileInfo f = fileInfoList.first();
+        qDebug() << f.path();
+        qDebug() << f.suffix();
+    }
+
+    return fileInfoList;
 }
