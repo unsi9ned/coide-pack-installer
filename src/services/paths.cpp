@@ -381,12 +381,5 @@ QList<QFileInfo> Paths::componentFilesVerbose(qint32 componentId, const QString&
         fileInfoList << QFileInfo(shortPath);
     }
 
-    if(fileInfoList.isEmpty() == false)
-    {
-        QFileInfo f = fileInfoList.first();
-        qDebug() << f.path();
-        qDebug() << f.suffix();
-    }
-
     return fileInfoList;
 }

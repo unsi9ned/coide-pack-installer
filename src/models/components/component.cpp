@@ -690,7 +690,9 @@ PdscComponent Component::toPdscComponent() const
         }
     }
 
-    if(!_supportsMcuList.isEmpty())
+    if(!_supportsMcuList.isEmpty() &&
+       m_pdscAttributes.getCclass().toUpper() != "CMSIS" &&
+       m_pdscAttributes.getCgroup().toUpper() != "CORE")
     {
         QString deviceVendor = Manufacturer::makeKeilVendor(m_pdscAttributes.getCvendor());
 

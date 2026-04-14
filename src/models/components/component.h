@@ -18,6 +18,16 @@ private:
 
 public:
     PdscComponentAttributesEx() : m_condition(QString()) {}
+    PdscComponentAttributesEx(const QString& cclass,
+                              const QString& cgroup,
+                              const QString& cversion,
+                              const QString& cvariant) : m_condition(QString())
+    {
+        m_cclass = cclass;
+        m_cgroup = cgroup;
+        m_cversion = cversion;
+        m_cvariant = cvariant;
+    }
 
     void setPdscCondition(const QString& condition) { m_condition = condition; }
     const QString getPdscCondition() const { return m_condition; }
@@ -42,6 +52,22 @@ public:
     {
         bool compare = *this == attr;
         return !compare;
+    }
+
+    QString makeName() const
+    {
+        if(m_cclass.toUpper() == "CMSIS" && m_cgroup.toUpper() == "CORE")
+        {
+            return QString("CMSIS_CORE_%1").arg(m_cversion);
+        }
+        else if(!m_cvariant.isEmpty())
+        {
+            return QString("%1_%2_%3").arg(m_cgroup).arg(m_cvariant).arg(m_cversion);
+        }
+        else
+        {
+            return QString("%1_%2").arg(m_cgroup).arg(m_cversion);
+        }
     }
 };
 

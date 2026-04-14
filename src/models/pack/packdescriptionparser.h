@@ -13,6 +13,7 @@ protected:
         QString Jversion;
         QString Cclass;
         QString Cgroup;
+        QString Cvariant;
         QString Cversion;
 
         ParentComponentInfo() = default;
@@ -25,10 +26,12 @@ protected:
 
         ParentComponentInfo(const QString& Cclass,
                             const QString& Cgroup,
-                            const QString& Cversion = QString())
+                            const QString& Cversion = QString(),
+                            const QString& Cvariant = QString())
         {
             this->Cclass = Cclass;
             this->Cgroup = Cgroup;
+            this->Cvariant = Cvariant;
             this->Cversion = Cversion;
         }
 
@@ -38,7 +41,8 @@ protected:
                    this->Jversion == parent.Jversion &&
                    this->Cclass == parent.Cclass &&
                    this->Cgroup == parent.Cgroup &&
-                   this->Cversion == parent.Cversion;
+                   this->Cversion == parent.Cversion &&
+                   this->Cvariant == parent.Cvariant;
         }
     };
 public:

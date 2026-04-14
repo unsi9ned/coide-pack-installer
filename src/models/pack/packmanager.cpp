@@ -60,7 +60,7 @@ void PackManager::readPackDescription(PackDescription &pack)
         coComponent.setLayerId(Component::LAYER_MCU);
         coComponent.setType(Component::COMPONENT);
         coComponent.setVersion(it.key());
-        coComponent.setName(QString("CMSIS_Core_%1").arg(coComponent.getVersion()));
+        coComponent.setName(QString("CMSIS_CORE_%1").arg(coComponent.getVersion()));
         coComponent.setCategory(coCategory);
         coComponent.setDescription(it.value());
 
@@ -148,11 +148,26 @@ void PackManager::readPackDescription(PackDescription &pack)
                 pdscComponents.append(coComponent.toPdscComponent());
             }
 
-#if 0
+            // Удаляем созданные искусственно CMSIS CORE
+            for(PdscComponent c : pdscComponents)
+            {
+                if(c.attributes().getCclass().toUpper() == "CMSIS" &&
+                   c.attributes().getCgroup().toUpper() == "CORE")
+                {
+                    QString cmVersion = c.attributes().getCversion();
+
+                    if(pack.cmsisComponents().contains(cmVersion))
+                    {
+                        Component* cm = pack.cmsisComponents().value(cmVersion);
+                        QString uuid = cm->getUuid();
+
+                        pack.coComponentMap().remove(uuid);
+                        pack.cmsisComponents().remove(cmVersion);
+                    }
+                }
+            }
+
             pack.pdscComponentList().append(pdscComponents);
-#else
-            pack.pdscComponentList() = pdscComponents;
-#endif
             parser->reloadComponents(pack);
         }
 
@@ -1100,7 +1115,7 @@ QStringList PackManager::getFullFileList(PackDescription &pack)
         Component& component = pack.coComponentMap()[it.key()];
         QStringList coList = it.value();
 
-        if(component.getName().startsWith("CMSIS_Core_"))
+        if(component.getName().startsWith("CMSIS_CORE_", Qt::CaseInsensitive))
             continue;
 
         foreach(QString f, coList)
@@ -1133,7 +1148,7 @@ QStringList PackManager::getCmsisFileList(PackDescription &pack, const QString v
         Component& component = pack.coComponentMap()[it.key()];
         QStringList coList = it.value();
 
-        if(component.getName() == QString("CMSIS_Core_%1").arg(version))
+        if(component.getName() == QString("CMSIS_CORE_%1").arg(version))
         {
             foreach(QString f, coList)
             {
@@ -1293,7 +1308,7 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
                            info.completeBaseName() + "." + "ls";
             }
 
-            if(component.getName().startsWith("CMSIS_Core_"))
+            if(component.getName().startsWith("CMSIS_CORE_", Qt::CaseInsensitive))
             {
                 targetPath = Paths::instance()->coIdeCmsisDir(component.getVersion()) + "/" + f;
             }

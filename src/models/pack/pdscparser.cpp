@@ -1054,7 +1054,18 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             // Формируем имя компонента Cgroup_<version>
                             coComponent.setVersion(coComponent.getPdscVersion());
 
-                            if(!coComponent.getPdscVariant().isEmpty())
+                            // Этот вариант возможет лишь при загрузке существующих
+                            // компонентов CMSIS CORE в БД
+#if 0
+                            if(coComponent.getPdscClass().toUpper() == "CMSIS" &&
+                               coComponent.getPdscGroup().toUpper() == "CORE")
+                            {
+                                QString name = coComponent.getPdscClass() + "_" +
+                                               coComponent.getPdscGroup() + "_" +
+                                               coComponent.getPdscVersion();
+                                coComponent.setName(name);
+                            }
+                            else if(!coComponent.getPdscVariant().isEmpty())
                             {
                                 QString name = coComponent.getPdscGroup() + "_" +
                                                coComponent.getPdscVariant() + "_" +
@@ -1067,6 +1078,10 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                                                coComponent.getPdscVersion();
                                 coComponent.setName(name);
                             }
+#else
+                            QString name = coComponent.pdscAttributes().makeName();
+                            coComponent.setName(name);
+#endif
 
                             //
                             // Добавляем текущий компонент в карту
@@ -1460,7 +1475,19 @@ QList<Component*> PdscParser::findParentsComponent(
         }
         else
         {
-            if(c.getName().startsWith(QString("%1_").arg(parent.Cgroup)))
+            int posVersion = c.getName().lastIndexOf('_');
+            posVersion = (posVersion != -1) ? posVersion + 1 : -1;
+            QString baseName = c.getName().mid(0, posVersion);
+            QString validName = PdscComponentAttributesEx(parent.Cclass,
+                                                          parent.Cgroup,
+                                                          parent.Cversion,
+                                                          parent.Cvariant).makeName();
+
+            if(parent.Cversion.isEmpty() && baseName.startsWith(validName))
+            {
+                foundComponents.append(&const_cast<Component&>(c));
+            }
+            else if(!parent.Cversion.isEmpty() && validName == c.getName())
             {
                 foundComponents.append(&const_cast<Component&>(c));
             }
