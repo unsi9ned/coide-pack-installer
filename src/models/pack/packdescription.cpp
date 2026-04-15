@@ -249,6 +249,11 @@ QList<JdscComponent>&PackDescription::jdscComponentList()
     return _jdscComponentList;
 }
 
+QList<PdscComponent*>&PackDescription::externalComponentList()
+{
+    return _externalComponentList;
+}
+
 //------------------------------------------------------------------------------
 // Очистка содержимого пакета, всех полей и списков
 //------------------------------------------------------------------------------

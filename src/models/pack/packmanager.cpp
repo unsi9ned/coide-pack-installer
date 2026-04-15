@@ -139,17 +139,18 @@ void PackManager::readPackDescription(PackDescription &pack)
             }
 
             QMap<QString, Component> componentMap;
-            QList<PdscComponent> pdscComponents;
             RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
             RequestManager::instance()->requestComponentMap(pack.vendors(), componentMap);
 
             for(auto coComponent : componentMap)
             {
-                pdscComponents.append(coComponent.toPdscComponent());
+                pack.pdscComponentList().append(coComponent.toPdscComponent());
+                PdscComponent& last = pack.pdscComponentList().last();
+                pack.externalComponentList().append(&last);
             }
 
             // Удаляем созданные искусственно CMSIS CORE
-            for(PdscComponent c : pdscComponents)
+            for(PdscComponent c : pack.pdscComponentList())
             {
                 if(c.attributes().getCclass().toUpper() == "CMSIS" &&
                    c.attributes().getCgroup().toUpper() == "CORE")
@@ -167,7 +168,6 @@ void PackManager::readPackDescription(PackDescription &pack)
                 }
             }
 
-            pack.pdscComponentList().append(pdscComponents);
             parser->reloadComponents(pack);
         }
 
