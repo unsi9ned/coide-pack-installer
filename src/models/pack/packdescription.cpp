@@ -249,7 +249,7 @@ QList<JdscComponent>&PackDescription::jdscComponentList()
     return _jdscComponentList;
 }
 
-QList<PdscComponent*>&PackDescription::externalComponentList()
+QList<const PdscComponent*>& PackDescription::externalComponentList()
 {
     return _externalComponentList;
 }
@@ -272,6 +272,8 @@ void PackDescription::clear()
     _coComponentFilesMap.clear();
     _cmsisComponentMap.clear();
     _pdscComponentList.clear();
+    _jdscComponentList.clear();
+    _externalComponentList.clear();
 }
 
 //------------------------------------------------------------------------------

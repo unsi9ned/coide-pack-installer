@@ -19,7 +19,7 @@ void PackDescriptionParser::linkComponents(
 
         foreach(auto parentInfo, parents)
         {
-            QList<Component*> parentComponents = findParentsComponent(componentMap, parentInfo);
+            QList<Component*> parentComponents = findParentsComponent(componentMap, parentInfo, component);
 
             foreach(auto parent, parentComponents)
             {

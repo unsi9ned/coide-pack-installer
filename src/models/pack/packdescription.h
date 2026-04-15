@@ -86,7 +86,7 @@ private:
     // Сохранение промежуточных данных о компонентах
     QList<PdscComponent>  _pdscComponentList;
     QList<JdscComponent>  _jdscComponentList;
-    QList<PdscComponent*> _externalComponentList;
+    QList<const PdscComponent*> _externalComponentList;
 
 public:
     PackDescription();
@@ -127,7 +127,7 @@ public:
     QMap<QString, Component*>& cmsisComponents();
     QList<PdscComponent>& pdscComponentList();
     QList<JdscComponent>& jdscComponentList();
-    QList<PdscComponent*>& externalComponentList();
+    QList<const PdscComponent*>& externalComponentList();
 
     void clear();
 

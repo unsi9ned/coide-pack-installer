@@ -56,11 +56,12 @@ private:
                                  const Family& family,
                                  const Series& series,
                                  const Mcu& device,
-                                 PdscComponent& component,
+                                 const PdscComponent& component,
                                  const QList<PdscComponent> &componentList);
 
     QList<Component*> findParentsComponent(const QMap<QString, Component>& coComponentMap,
-                                           const PackDescriptionParser::ParentComponentInfo& parent);
+                                           const PackDescriptionParser::ParentComponentInfo& parent,
+                                           const Component& child);
 
     QString cmsisWildcardToRegex(const QString& pattern);
 };

@@ -63,7 +63,8 @@ protected:
                                           ParentComponentInfo newParent);
 
     virtual QList<Component*> findParentsComponent(const QMap<QString, Component>& coComponentMap,
-                                                   const ParentComponentInfo& parent) = 0;
+                                                   const ParentComponentInfo& parent,
+                                                   const Component& child) = 0;
 };
 
 #endif // PACKDESCRIPTIONPARSER_H

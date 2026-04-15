@@ -25,6 +25,11 @@ PdscComponentAttributes& PdscComponent::attributes()
     return m_attributes;
 }
 
+const PdscComponentAttributes&PdscComponent::attributesConst() const
+{
+    return m_attributes;
+}
+
 void PdscComponent::setAttributes(const PdscComponentAttributes &attributes)
 {
     m_attributes = attributes;
@@ -35,9 +40,15 @@ QList<PdscFile>& PdscComponent::files()
     return m_files;
 }
 
-bool PdscComponent::hasCondition()
+const QList<PdscFile> PdscComponent::filesConst() const
 {
-    return !m_condition.isNull();
+    return m_files;
+}
+
+bool PdscComponent::hasCondition() const
+{
+    PdscCondition cond = m_condition;
+    return !cond.isNull();
 }
 
 //------------------------------------------------------------------------------

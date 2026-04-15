@@ -635,7 +635,16 @@ QTreeWidgetItem *MainForm::createComponentTreeItem(const ComponentNode &node,
     else
         item->setIcon(0, style()->standardIcon(QStyle::SP_FileIcon));
 #else
-    item->setIcon(0, QIcon(":/img/package_24x24.png"));
+    if(node.external)
+    {
+        //item->setIcon(0, QIcon(":/img/link_24x24.png"));
+        item->setIcon(0, style()->standardIcon(QStyle::SP_DirLinkIcon));
+    }
+    else
+    {
+        //item->setIcon(0, QIcon(":/img/package_24x24.png"));
+        item->setIcon(0, style()->standardIcon(QStyle::SP_DirIcon));
+    }
 #endif
 
     for (const auto& child : node.children)

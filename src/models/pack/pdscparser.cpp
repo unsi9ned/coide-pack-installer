@@ -899,7 +899,7 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
     if(pack.vendors().isEmpty())
         return;
 
-    foreach (PdscComponent pComponent, componentList)
+    foreach (const PdscComponent& pComponent, componentList)
     {
         // Проверка, что компонент соответствует пакету и его версии
         if(!checkRequirements(pack, pComponent, componentList))
@@ -999,8 +999,8 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             Category coCategory = Category::categoryCommon();
 
                             // Принудительно задаем точку входа в программу main()
-                            if(pComponent.attributes().getCclass().toLower() == "device" &&
-                               pComponent.attributes().getCgroup().toLower() == "startup")
+                            if(pComponent.attributesConst().getCclass().toLower() == "device" &&
+                               pComponent.attributesConst().getCgroup().toLower() == "startup")
                             {
                                 coCategory = Category::categoryBoot();
                                 coComponent.setMicro("__START=main");
@@ -1010,7 +1010,7 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             // Добавляем дефайны
                             coComponent.addDefSymbols(pComponent.definedSymbols());
 
-                            coCategory.setSubCategoryName(pComponent.attributes().getCclass());
+                            coCategory.setSubCategoryName(pComponent.attributesConst().getCclass());
 
                             coComponent.setLayerId(Component::LAYER_MCU);
                             coComponent.setType(Component::COMPONENT);
@@ -1034,18 +1034,18 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             // Заполняем поля, которые помогут идентифицировать
                             // компонент как уникальный объект
                             //
-                            if(!pComponent.attributes().getCvendor().isEmpty())
-                                coComponent.setPdscVendor(pComponent.attributes().getCvendor());
+                            if(!pComponent.attributesConst().getCvendor().isEmpty())
+                                coComponent.setPdscVendor(pComponent.attributesConst().getCvendor());
                             else
                                 coComponent.setPdscVendor(pack.packVendor());
 
-                            coComponent.setPdscClass(pComponent.attributes().getCclass());
-                            coComponent.setPdscGroup(pComponent.attributes().getCgroup());
-                            coComponent.setPdscSub(pComponent.attributes().getCsub());
-                            coComponent.setPdscVariant(pComponent.attributes().getCvariant());
+                            coComponent.setPdscClass(pComponent.attributesConst().getCclass());
+                            coComponent.setPdscGroup(pComponent.attributesConst().getCgroup());
+                            coComponent.setPdscSub(pComponent.attributesConst().getCsub());
+                            coComponent.setPdscVariant(pComponent.attributesConst().getCvariant());
 
-                            if(!pComponent.attributes().getCversion().isEmpty())
-                                coComponent.setPdscVersion(pComponent.attributes().getCversion());
+                            if(!pComponent.attributesConst().getCversion().isEmpty())
+                                coComponent.setPdscVersion(pComponent.attributesConst().getCversion());
                             else
                                 coComponent.setPdscVersion(pack.release());
 
@@ -1056,32 +1056,8 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
 
                             // Этот вариант возможет лишь при загрузке существующих
                             // компонентов CMSIS CORE в БД
-#if 0
-                            if(coComponent.getPdscClass().toUpper() == "CMSIS" &&
-                               coComponent.getPdscGroup().toUpper() == "CORE")
-                            {
-                                QString name = coComponent.getPdscClass() + "_" +
-                                               coComponent.getPdscGroup() + "_" +
-                                               coComponent.getPdscVersion();
-                                coComponent.setName(name);
-                            }
-                            else if(!coComponent.getPdscVariant().isEmpty())
-                            {
-                                QString name = coComponent.getPdscGroup() + "_" +
-                                               coComponent.getPdscVariant() + "_" +
-                                               coComponent.getPdscVersion();
-                                coComponent.setName(name);
-                            }
-                            else
-                            {
-                                QString name = coComponent.getPdscGroup() + "_" +
-                                               coComponent.getPdscVersion();
-                                coComponent.setName(name);
-                            }
-#else
                             QString name = coComponent.pdscAttributes().makeName();
                             coComponent.setName(name);
-#endif
 
                             //
                             // Добавляем текущий компонент в карту
@@ -1110,6 +1086,15 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             }
 
                             //
+                            // Отмечаем внешние компоненты
+                            //
+                            if(pack.externalComponentList().contains(&pComponent))
+                            {
+                                coideComponent->setPersisted(true);
+                                coideComponent->setExternal(true);
+                            }
+
+                            //
                             // Фиксируем связь с другими компонентами
                             //
                             QList<PdscRequirement> requiredComponents = pComponent.condition().requirementsMap()[PdscRequirement::Require].value(PdscRequirement::Component);
@@ -1119,6 +1104,7 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                                 ParentComponentInfo newParent;
                                 newParent.Cclass = r.Cclass();
                                 newParent.Cgroup = r.Cgroup();
+                                newParent.Cvariant = r.Cvariant();
 
                                 if(r.Cclass().toUpper() == "CMSIS" && r.Cgroup().toUpper() == "CORE")
                                     newParent.Cversion = "5.6.0";
@@ -1126,8 +1112,8 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                                     newParent.Cversion = r.Cversion();
 
                                 // Компонент не может быть связан сам с собой
-                                if(r.Cclass() == pComponent.attributes().getCclass() &&
-                                   r.Cgroup() == pComponent.attributes().getCgroup())
+                                if(r.Cclass() == pComponent.attributesConst().getCclass() &&
+                                   r.Cgroup() == pComponent.attributesConst().getCgroup())
                                 {
                                     continue;
                                 }
@@ -1140,18 +1126,31 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                             //
                             // Фиксируем связь компонента Device/Startup с компонентом Compile
                             //
-                            if(compileComponent && coideComponent &&
-                               pComponent.attributes().getCclass().toLower() == "device" &&
-                               pComponent.attributes().getCgroup().toLower() == "startup")
+                            Component * startupComponent = nullptr;
+
+                            if(pComponent.attributesConst().getCclass().toLower() == "device" &&
+                               pComponent.attributesConst().getCgroup().toLower() == "startup")
+                            {
+                                startupComponent = coideComponent;
+                            }
+
+                            if(compileComponent && startupComponent)
                             {
                                 ParentComponentInfo newParent;
-                                newParent.Cclass = "Device";
-                                newParent.Cgroup = "Compile";
-                                newParent.Cversion = compileComponent->getVersion();
+                                QSet<QString> coMcuSet = startupComponent->supportedMcuList().toSet();
+                                QSet<QString> compileMcuSet = compileComponent->supportedMcuList().toSet();
+                                bool isIntersect = !coMcuSet.intersect(compileMcuSet).isEmpty();
 
-                                updateParentComponentMap(parentComponentInfoMap,
-                                                         coideComponent->getUuid(),
-                                                         newParent);
+                                if(isIntersect)
+                                {
+                                    newParent.Cclass = "Device";
+                                    newParent.Cgroup = "Compile";
+                                    newParent.Cversion = compileComponent->getVersion();
+
+                                    updateParentComponentMap(parentComponentInfoMap,
+                                                             startupComponent->getUuid(),
+                                                             newParent);
+                                }
 
                                 // Принудительно связываем с CMSIS CORE
                                 // Некоторые версии пакетов не задают явную связь
@@ -1161,7 +1160,7 @@ void PdscParser::loadComponents(QMap<QString, Component> &coComponentMap,
                                 newParent.Cversion = "5.6.0";
 
                                 updateParentComponentMap(parentComponentInfoMap,
-                                                         coideComponent->getUuid(),
+                                                         startupComponent->getUuid(),
                                                          newParent);
                             }
                         }
@@ -1385,7 +1384,7 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
                                          const Family &family,
                                          const Series &series,
                                          const Mcu &device,
-                                         PdscComponent &component,
+                                         const PdscComponent &component,
                                          const QList<PdscComponent> &componentList)
 {
     QStringList files;
@@ -1394,7 +1393,7 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
         "header", "include", "library", "object", "source", "sourceC", "sourceCpp", "sourceAsm", "linkerScript"
     };
 
-    foreach(PdscFile f, component.files())
+    foreach(PdscFile f, component.filesConst())
     {
         if(allowedCategories.contains(f.category().name()))
         {
@@ -1456,9 +1455,9 @@ QStringList PdscParser::getFilteredFiles(const PackDescription &pack,
 //------------------------------------------------------------------------------
 // Ищет компонент в карте по косвенным признакам
 //------------------------------------------------------------------------------
-QList<Component*> PdscParser::findParentsComponent(
-        const QMap<QString, Component>& coComponentMap,
-        const PackDescriptionParser::ParentComponentInfo& parent)
+QList<Component*> PdscParser::findParentsComponent(const QMap<QString, Component>& coComponentMap,
+                                                   const PackDescriptionParser::ParentComponentInfo& parent,
+                                                   const Component& child)
 {
     QList<Component*> foundComponents;
 
@@ -1483,13 +1482,25 @@ QList<Component*> PdscParser::findParentsComponent(
                                                           parent.Cversion,
                                                           parent.Cvariant).makeName();
 
-            if(parent.Cversion.isEmpty() && baseName.startsWith(validName))
+            if((parent.Cversion.isEmpty() && baseName.startsWith(validName)) ||
+               (!parent.Cversion.isEmpty() && validName == c.getName()))
             {
-                foundComponents.append(&const_cast<Component&>(c));
-            }
-            else if(!parent.Cversion.isEmpty() && validName == c.getName())
-            {
-                foundComponents.append(&const_cast<Component&>(c));
+                // Считаем родителями только те Device/Compile, которые имеют
+                // общий набор устройств
+                if((parent.Cversion.isEmpty() && baseName.startsWith("Compile_", Qt::CaseInsensitive)) ||
+                   (!parent.Cversion.isEmpty() && validName == c.getName()))
+                {
+                    QSet<QString> parentSupportDevices = c.supportedMcuList().toSet();
+                    QSet<QString> childSupportDevices = child.supportedMcuList().toSet();
+
+                    if(!parentSupportDevices.isEmpty() &&
+                       !parentSupportDevices.intersect(childSupportDevices).isEmpty())
+                    {
+                        foundComponents.append(&const_cast<Component&>(c));
+                    }
+                }
+                else
+                    foundComponents.append(&const_cast<Component&>(c));
             }
         }
     }

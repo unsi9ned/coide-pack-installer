@@ -332,10 +332,12 @@ void JdscParser::loadComponents(QMap<QString, Component>& coComponentMap,
 //------------------------------------------------------------------------------
 // Ищет компонент в карте по косвенным признакам
 //------------------------------------------------------------------------------
-QList<Component*> JdscParser::findParentsComponent(
-        const QMap<QString, Component>& coComponentMap,
-        const PackDescriptionParser::ParentComponentInfo& parent)
+QList<Component*> JdscParser::findParentsComponent(const QMap<QString, Component>& coComponentMap,
+                                                   const PackDescriptionParser::ParentComponentInfo& parent,
+                                                   const Component& child)
 {
+    Q_UNUSED(child);
+
     QList<Component*> foundComponents;
 
     for(auto it = coComponentMap.begin(); it != coComponentMap.end(); ++it)

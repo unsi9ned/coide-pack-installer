@@ -30,7 +30,8 @@ private:
     QStringList addMetaDataToFiles(const QStringList& files);
 
     QList<Component*> findParentsComponent(const QMap<QString, Component>& coComponentMap,
-                                           const PackDescriptionParser::ParentComponentInfo& parent);
+                                           const PackDescriptionParser::ParentComponentInfo& parent,
+                                           const Component& child);
 };
 
 #endif // JDSCPARSER_H

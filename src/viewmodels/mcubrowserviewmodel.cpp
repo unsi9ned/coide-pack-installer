@@ -479,6 +479,7 @@ ComponentNode McuBrowserViewModel::buildComponentNode(const Component &component
     node.description = component.getDescription();
     node.level = parent ? parent->level + 1 : 0;
     node.hierarchyNode = &component;
+    node.external = component.isExternal();
 
     if(node.level < 5)
     {
@@ -919,6 +920,22 @@ QStringList McuBrowserViewModel::componentDevices() const
     }
 
     return devices;
+}
+
+//------------------------------------------------------------------------------
+// Компонент является внешним (не из загруженного pdsc)
+//------------------------------------------------------------------------------
+bool McuBrowserViewModel::componentIsExternal() const
+{
+    bool isExternal = false;
+
+    if(m_selectedComponentNode.hierarchyNode->getUniqueId() != -1)
+    {
+        const Component * component = reinterpret_cast<const Component*>(m_selectedComponentNode.hierarchyNode);
+        isExternal = component->isExternal();
+    }
+
+    return isExternal;
 }
 
 

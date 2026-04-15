@@ -61,10 +61,11 @@ struct ComponentNode
     int level;
     QString name;
     QString description;
+    bool external;
     QList<ComponentNode> children;
     const DeviceHierarchyNode* hierarchyNode;
 
-    ComponentNode() : level(0)
+    ComponentNode() : level(0), external(false)
     {
         static DeviceHierarchyNode nullHierarchyNode;
         hierarchyNode = &nullHierarchyNode;
@@ -171,6 +172,7 @@ public:
     bool componentHasFiles() const;
     QStringList componentFiles() const;
     QStringList componentDevices() const;
+    bool componentIsExternal() const;
 
 private:
     void printDeviceTree(const DeviceNode& childNode) const;
