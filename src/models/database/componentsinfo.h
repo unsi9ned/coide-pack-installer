@@ -17,6 +17,14 @@
 class ComponentsInfo : public QObject, public Loggable
 {
     Q_OBJECT
+private:
+    enum RequestStatus
+    {
+        Success = 0,
+        Failure,
+        NotFound,
+        WrongParameters
+    };
 
 protected:
 
@@ -82,6 +90,7 @@ public:
     bool createComponent(Component& component, QString *errorString = nullptr);
     bool updateComponent(Component& component, QString *errorString = nullptr);
     bool createComponentPdscAttrTable(QString * errorString = nullptr);
+    bool createExamplePdscAttrTable(QString * errorString = nullptr);
 
     bool createExample(Example& example, QString *errorString = nullptr);
 
@@ -111,9 +120,20 @@ private:
     bool hasComponentsLink(int parentId, int childId, bool * status = nullptr, QString * errorString = nullptr);
     bool createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
 
+    RequestStatus hasExampleLink(int exampleId, int componentId, QString * errorString = nullptr);
+    RequestStatus createExampleLinks(int exampleId, int componentId, QString * errorString = nullptr);
+    RequestStatus createExampleLinks(const Example& example, QString * errorString = nullptr);
+    RequestStatus componentHasExample(qint32 componentId, qint32 exampleId, QString * errorString = nullptr);
+    RequestStatus attachExampleToComponent(qint32 exampleId, qint32 componentId, QString * errorString = nullptr);
+    RequestStatus attachExampleToComponents(const Example& example, QString * errorString = nullptr);
+
     bool addComponentPdscAttributes(const Component& component, QString * errorString = nullptr);
     bool requestComponentPdscAttributes(qint32 componentId, PdscComponentAttributesEx& attributes, bool * found, QString * errorString = nullptr);
     bool requestComponentPdscAttributes(QMap<qint32, PdscComponentAttributesEx>& attributes, QString * errorString = nullptr);
+
+    bool addExamplePdscAttributes(const Example& example, QString * errorString = nullptr);
+    bool requestExamplePdscAttributes(qint32 exampleId, PdscComponentAttributesEx& attributes, bool * found, QString * errorString = nullptr);
+    bool requestExamplePdscAttributes(QMap<qint32, PdscComponentAttributesEx>& attributes, QString * errorString = nullptr);
 
 signals:
 

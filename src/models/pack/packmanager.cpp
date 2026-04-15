@@ -513,6 +513,50 @@ bool PackManager::examplesInstall(PackDescription& pack, QString& errorString)
         pack.coExampleMap().insert(example.getUuid(), example);
     }
 
+    //
+    // Создание вспомогательной таблицы, хранящей аттрибуты из pdsc
+    //
+    RequestManager * reqManager = RequestManager::instance();
+
+    logInfo("Creating a table of examples attributes");
+
+    if(!reqManager->createExamplePdscAttrTable(&errorString))
+    {
+        if(errorString.isEmpty())
+            logError(QString("Error when creating the examples attribute table"));
+        else
+            logError(QString("Error when creating the examples attribute table: %1").
+                     arg(errorString));
+
+        return false;
+    }
+
+    //
+    // Создаем примеры в базе данных
+    //
+
+    logInfo("Adding examples to the database");
+
+    for(Example& example : pack.coExampleMap())
+    {
+        logInfo(QString("Creating example '%1/%2'").
+                arg(example.getUniqueId()).
+                arg(example.getName()));
+
+        if(!reqManager->createExample(example, &errorString))
+        {
+            if(errorString.isEmpty())
+                logError(QString("An error occurred while adding the '%1' example").
+                         arg(example.getName()));
+            else
+                logError(QString("An error occurred while adding the '%1' example: %2").
+                         arg(example.getName()).
+                         arg(errorString));
+
+            return false;
+        }
+    }
+
     return false;
 }
 

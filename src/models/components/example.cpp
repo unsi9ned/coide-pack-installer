@@ -207,6 +207,23 @@ void Example::addSupportComponent(const Component* component)
         m_supportComponents.append(component);
 }
 
+bool Example::hasParents() const
+{
+    auto parents = m_parentComponents;
+    return !parents.isEmpty();
+}
+
+QList<const Component *> Example::getConsumerComponents() const
+{
+    return m_supportComponents;
+}
+
+bool Example::hasConsumer() const
+{
+    auto consumers = m_supportComponents;
+    return !consumers.isEmpty();
+}
+
 Component::ComponentStatus Example::getStatus() const
 {
     return m_status;
@@ -220,6 +237,11 @@ void Example::setStatus(const Component::ComponentStatus &value)
 bool Example::isDownloaded()
 {
     return m_status.hasDownloaded;
+}
+
+bool Example::isNull() const
+{
+    return id == -1 || name.isEmpty();
 }
 
 QString Example::getPath() const

@@ -67,11 +67,16 @@ public:
     void setParentComponents(const QList<const Component*>& value);
     void addParentComponent(Component * component);
     void addSupportComponent(const Component * component);
+    bool hasParents() const;
+
+    QList<const Component*> getConsumerComponents() const;
+    bool hasConsumer() const;
 
     Component::ComponentStatus getStatus() const;
     void setStatus(const Component::ComponentStatus &value);
 
     bool isDownloaded();
+    bool isNull() const;
 
     QString getPath() const;
     PdscComponentAttributesEx pdscAttributes() const;
