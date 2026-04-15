@@ -149,7 +149,7 @@ void McuBrowserViewModel::onLoadResult(bool success, QString errorString)
 //------------------------------------------------------------------------------
 // Установка пакета
 //------------------------------------------------------------------------------
-void McuBrowserViewModel::installCurrentPack()
+void McuBrowserViewModel::installCurrentPack(bool isExample)
 {
     if (m_pack.pathToArchive().isEmpty())
     {
@@ -160,13 +160,15 @@ void McuBrowserViewModel::installCurrentPack()
     emit installStarted();
 
     // Асинхронная установка
-    QtConcurrent::run([this]()
+    QtConcurrent::run([this, isExample]()
     {
         QString errorString;
         PackDescription localPack = m_pack;
         PackManager localManager;
 
-        bool success = localManager.packInstall(localPack, errorString);
+        bool success = isExample ?
+                       localManager.examplesInstall(localPack, errorString) :
+                       localManager.packInstall(localPack, errorString);
         emit installResult(success, errorString);
     });
 }

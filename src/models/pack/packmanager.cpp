@@ -469,6 +469,25 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
     return true;
 }
 
+//------------------------------------------------------------------------------
+// Установка пакета как набора примеров
+//------------------------------------------------------------------------------
+bool PackManager::examplesInstall(PackDescription& pack, QString& errorString)
+{
+    //
+    // Проверка валидности устанавливаемого пакета
+    //
+    if(!pack.isValid())
+    {
+        logError(QString("The '%1' package is not valid").arg(pack.name()));
+        return false;
+    }
+
+    logInfo(QString("The '%1' package is being installed").arg(pack.name()));
+
+    return false;
+}
+
 void PackManager::logError(const QString& error)
 {
     m_lastError = error;

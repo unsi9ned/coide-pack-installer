@@ -19,6 +19,7 @@ public:
 
     void readPackDescription(PackDescription& pack);
     bool packInstall(PackDescription& pack, QString &errorString);
+    bool examplesInstall(PackDescription& pack, QString &errorString);
     QString lastError() const {return m_lastError;}
 
 private:

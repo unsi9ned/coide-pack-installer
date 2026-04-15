@@ -110,7 +110,7 @@ public:
     bool loadPack(const QString& path);
     void loadPackAsync();
     void loadPackAsync(const QString& path);
-    void installCurrentPack();
+    void installCurrentPack(bool isExample = false);
     void optimizeDatabase();
 
     void printDeviceTree() const;
