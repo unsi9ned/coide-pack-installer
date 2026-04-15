@@ -83,6 +83,8 @@ public:
     bool updateComponent(Component& component, QString *errorString = nullptr);
     bool createComponentPdscAttrTable(QString * errorString = nullptr);
 
+    bool createExample(Example& example, QString *errorString = nullptr);
+
 private:
 
     bool deleteManufacturerList(int componentId, QString& errorString);
@@ -91,6 +93,7 @@ private:
     Component findComponent(const Component component, QString* errorString = nullptr);
     Category findCategory(const Category category, QString* errorString = nullptr);
     Category findSubCategory(const Category category, QString* errorString = nullptr);
+    Example findExample(const Example& example, QString* errorString = nullptr);
 
     bool createComponentStatus(Component::ComponentStatus& status, QString *errorString = nullptr);
     bool createCategory(Category& category, QString *errorString = nullptr);

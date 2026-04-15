@@ -1303,6 +1303,267 @@ bool ComponentsInfo::createComponentPdscAttrTable(QString * errorString)
 }
 
 //------------------------------------------------------------------------------
+// Добавление примера в базу данных
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createExample(Example& example, QString* errorString)
+{
+#if 0
+    Component foundComponent = findComponent(component);
+
+    // Создаем новый
+    if(foundComponent.isNull())
+    {
+        //Поиск последнего айди
+        bool status = false;
+#if !USE_UNIQUE_ID
+        int lastId = -1;
+        QString queryStr = QString("SELECT MAX(id) FROM component");
+        QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+        if(!status || !result.next())
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            lastId = result.value(0).toInt();
+            component.setId(lastId + 1);
+#else
+        QString queryStr;
+        QSqlQuery result;
+
+        {
+#endif
+            // Создаем положительный статус компонента
+            Component::ComponentStatus costatus = component.getStatus();
+
+            if(!createComponentStatus(costatus, errorString))
+                return false;
+            else
+                component.setStatus(costatus);
+
+            queryStr = QString("INSERT INTO component "
+                               "(id, authorId, Layer_id, Component_Status_id, Share_Document_id,"
+                               "type, name, description, advertisingWord, advertisingURL, uuid,"
+                               "timeuuid, repo_user, repo_password, micro, cox, version, publish_status,"
+                               "hits, create_date, update_date, tags) "
+                               "VALUES ('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12',"
+                               "'%13','%14','%15','%16','%17','%18','%19','%20','%21','%22')").
+#if USE_UNIQUE_ID
+                               arg(component.getUniqueId()).
+#else
+                               arg(component.getId()).
+#endif
+                               arg(component.getAuthorId()).
+                               arg(component.getLayerId()).
+                               arg(component.getComponentStatusId()).
+                               arg(component.getShareDocumentId()).
+                               arg(component.getType()).
+                               arg(component.getName()).
+                               arg(component.getDescription()).
+                               arg(component.getAdvertisingWord()).
+                               arg(component.getAdvertisingURL()).
+                               arg(component.getUuid()).
+                               arg(component.getTimeuuid()).
+                               arg(component.getRepoUser()).
+                               arg(component.getRepoPass()).
+                               arg(component.defSym2coMicro()).
+                               arg(component.getCox()).
+                               arg(component.getVersion()).
+                               arg(component.getPublishStatus()).
+                               arg(component.getHits()).
+                               arg(component.getCreationDate()).
+                               arg(component.getUpdateDate()).
+                               arg(component.getTags());
+
+            result = DataBase::instance()->sendQuery(queryStr, &status);
+
+            if(!status)
+            {
+                if(errorString)
+                    *errorString = result.lastError().text();
+                return false;
+            }
+#if USE_UNIQUE_ID
+            else
+            {
+                component.setId(component.getUniqueId());
+            }
+#endif
+
+            // Создаем категорию или находим ее, если она создана
+            Category newCategory = findCategory(component.getCategory(), errorString);
+
+            if(newCategory.isNull())
+            {
+                newCategory.setName(component.getCategory().getName());
+
+                if(!createCategory(newCategory, errorString))
+                    return false;
+            }
+            newCategory.setSubCategoryName(component.getCategory().getSubCategoryName());
+            component.setCategory(newCategory);
+
+            // Создаем подкатегорию (у нас она всегда есть)
+            Category newSubCategory = findSubCategory(component.getCategory(), errorString);
+
+            if(newSubCategory.getSubCategoryName().isEmpty())
+            {
+                newSubCategory.setId(newCategory.getId());
+                newSubCategory.setSubCategoryName(component.getCategory().getSubCategoryName());
+
+                if(!createSubCategory(newSubCategory, errorString))
+                    return false;
+
+                newCategory.setSubCategoryId(newSubCategory.getSubCategoryId());
+            }
+            else
+            {
+                newCategory.setSubCategoryId(newSubCategory.getSubCategoryId());
+                newCategory.setSubCategoryName(newSubCategory.getSubCategoryName());
+            }
+
+            component.setCategory(newCategory);
+
+            // Создаем связь между компонентом и устройствами
+            foreach(QString dev, component.supportedMcuList())
+            {
+                int mcuId = -1;
+
+                if(hasComponentMcuLink(component.getId(), dev, &mcuId, &status, errorString))
+                {
+                    continue;
+                }
+                else if(!status)
+                {
+                    return false;
+                }
+                else if(!createComponentMcuLink(component.getId(), dev, errorString))
+                    return false;
+            }
+
+            // Создаем связь между компонентом и категорией
+            int catId = -1;
+
+            if(!hasComponentCategoryLink(component.getId(), component.getCategory().getName(), &catId, &status, errorString))
+            {
+                if(!createComponentCategoryLink(component.getId(), component.getCategory().getName(), errorString))
+                    return false;
+            }
+            else if(!status)
+                return false;
+
+            // Создаем связь между компонентом и подкатегорией
+            if(!hasComponentSubCategoryLink(component.getId(),
+                                            component.getCategory().getName(),
+                                            component.getCategory().getSubCategoryName(),
+                                            &status,
+                                            errorString))
+            {
+                if(!createComponentSubCategoryLink(component.getId(),
+                                                   component.getCategory().getName(),
+                                                   component.getCategory().getSubCategoryName(),
+                                                   errorString))
+                {
+                    return false;
+                }
+            }
+            else if(!status)
+                return false;
+
+            // Создаем связь между компонентами
+            if(component.hasChildren())
+            {
+                foreach (Component* child, component.getChildren())
+                {
+#if RECURSIVE_CREATION
+                    int childId = child->getId();
+#else
+                    int childId = child->getUniqueId();
+#endif
+                    bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
+
+                    if(status && !hasLink)
+                    {
+                        if(!createComponentsLink(childId, component.getId(), errorString))
+                            return false;
+                    }
+                    else if(!status)
+                        return false;
+                }
+            }
+
+            // Добавляем атрибуты компонента в БД
+            if(!addComponentPdscAttributes(component, errorString))
+                return false;
+        }
+    }
+#if 0
+    // Обновляем существующий
+    else if(!updateComponent(component, errorString))
+    {
+        return false;
+    }
+#else
+    else
+    {
+        bool status = false;
+
+        // Обновляем ID существующего в БД компонента
+        if(component.isNull())
+            component.setId(foundComponent.getId());
+
+        // Создаем связь между компонентом и устройствами
+        foreach(QString dev, component.supportedMcuList())
+        {
+            int mcuId = -1;
+
+            if(hasComponentMcuLink(component.getId(), dev, &mcuId, &status, errorString))
+            {
+                continue;
+            }
+            else if(!status)
+            {
+                return false;
+            }
+            else if(!createComponentMcuLink(component.getId(), dev, errorString))
+                return false;
+        }
+
+        // Создаем связи между существующими и новыми компонентами
+        foreach (Component* child, component.getChildren())
+        {
+#if RECURSIVE_CREATION
+            int childId = child->getId();
+#else
+            int childId = child->getUniqueId();
+#endif
+            bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
+
+            if(status && !hasLink)
+            {
+                if(!createComponentsLink(childId, component.getId(), errorString))
+                    return false;
+            }
+            else if(!status)
+                return false;
+        }
+
+        // Добавляем атрибуты компонента в БД
+        if(!addComponentPdscAttributes(component, errorString))
+            return false;
+
+        // Помечаем, что компонент не требует установки
+        component.setPersisted(true);
+    }
+#endif
+#endif
+    return true;
+}
+
+//------------------------------------------------------------------------------
 // Создать или проверить существование таблицы component_pdsc_attributes
 //------------------------------------------------------------------------------
 bool ComponentsInfo::addComponentPdscAttributes(const Component& component, QString* errorString)
@@ -1811,6 +2072,102 @@ Category ComponentsInfo::findSubCategory(const Category category,
     }
 
     return foundSubCategory;
+}
+
+//------------------------------------------------------------------------------
+// Поиск примера в базе данных
+//------------------------------------------------------------------------------
+Example ComponentsInfo::findExample(const Example& example, QString* errorString)
+{
+    bool status = true;
+    Example foundExample;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "example.id, "
+                  "example.userId, "
+                  "example.statusId, "
+                  "example.name, "
+                  "example.description, "
+                  "example.type, "
+                  "example.uuid, "
+                  "example.timeuuid, "
+                  "example.repo_user, "
+                  "example.repo_password, "
+                  "example.create_date, "
+                  "example.update_date, "
+                  "example.hits, "
+                  "status.shouldupdate, "
+                  "status.hasdownloaded, "
+                  "status.hasdeleted, "
+                  "status.auditstatus "
+                  "FROM example, status "
+                  "WHERE example.statusId = status.id "
+                  "AND example.id = %1 "
+                  "AND example.name = '%2' "
+                  "LIMIT 1;"
+                ).
+            arg(example.getUniqueId()).
+            arg(example.getName());
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return foundExample;
+    }
+    else
+    {
+        while (result.next())
+        {
+            qint32 exampleId = result.value("id").toInt();
+            qint32 userId = result.value("userId").toInt();
+            qint32 statusId = result.value("statusId").toInt();
+            QString name = result.value("name").toString();
+            QString description = result.value("description").toString();
+            qint32 type = result.value("type").toInt();
+            QString uuid = result.value("uuid").toString();
+            QString timeuuid = result.value("timeuuid").toString();
+            QString repoUser = result.value("repo_user").toString();
+            QString repoPassword = result.value("repo_password").toString();
+            QString createDate = result.value("create_date").toString();
+            QString updateDate = result.value("update_date").toString();
+            qint32 hits = result.value("hits").toInt();
+            int shouldupdate = result.value("shouldupdate").toInt();
+            int hasdownloaded = result.value("hasdownloaded").toInt();
+            int hasdeleted = result.value("hasdeleted").toInt();
+            int auditstatus = result.value("auditstatus").toInt();
+
+            Component::ComponentStatus exStatus;
+            exStatus.statusId = statusId;
+            exStatus.shouldUpdate = shouldupdate;
+            exStatus.hasDownloaded = hasdownloaded;
+            exStatus.hasDeleted = hasdeleted;
+            exStatus.auditStatus = auditstatus;
+
+            Example example;
+            example.setId(exampleId);
+            example.setUserId(userId);
+            example.setStatus(exStatus);
+            example.setName(name);
+            example.setDescription(description);
+            example.setType(type);
+            example.setUuid(uuid);
+            example.setTimeuuid(timeuuid);
+            example.setRepoUser(repoUser);
+            example.setRepoPassword(repoPassword);
+            example.setCreateDate(createDate);
+            example.setUpdateDate(updateDate);
+            example.setHits(hits);
+
+            foundExample = example;
+            break;
+        }
+    }
+
+    return foundExample;
 }
 
 //------------------------------------------------------------------------------
