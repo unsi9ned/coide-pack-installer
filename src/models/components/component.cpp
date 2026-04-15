@@ -721,7 +721,7 @@ PdscComponent Component::toPdscComponent() const
                 pFile.setCategory(FileCategory("linkerScript"));
             }
 
-            pFile.setName(f.fileName());
+            pFile.setName(f.filePath());
             pdscComponent.files().append(pFile);
         }
     }

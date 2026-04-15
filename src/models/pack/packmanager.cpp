@@ -1052,6 +1052,8 @@ void PackManager::loadCoComponents(PackDescription &pack)
 
     foreach(Component c, pack.coComponentMap())
     {
+        if(c.isExternal()) continue;
+
         coMap.insert(c.getUuid(), QStringList());
 
         QStringList& list = coMap[c.getUuid()];
@@ -1149,6 +1151,7 @@ void PackManager::loadCoComponents(PackDescription &pack)
     // потому что появляется много ненужного мусора
     //
     if(!compileUuid.isEmpty() &&
+       !componentMap[compileUuid].isExternal() &&
        (pack.packVendor() == "NordicSemiconductor" ||
         pack.packVendor() == "Nordic Semiconductor"))
     {

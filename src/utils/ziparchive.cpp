@@ -129,7 +129,7 @@ bool ZipArchive::extractFile(const QString &pathToArchive,
         }
         else if(line.startsWith("Extracting"))
         {
-            QString filePath = (line.split(' ', QString::SkipEmptyParts) << "").at(1).trimmed();
+            QString filePath = line.mid(QString("Extracting").length()).trimmed();
             QString validPath = pathToFile;
 
             if(filePath.replace('\\', '/') != validPath.replace('\\', '/') || stage != PROCESSING_ARCHIVE)
