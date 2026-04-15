@@ -1,6 +1,6 @@
 ## CoIDE Pack Installer
 
-**Version:** 0.1.1
+**Version:** 0.2.0
 
 Утилита для установки и управления CMSIS-пакетами (Device Family Pack, Software Pack) в среде разработки CoIDE. Позволяет автоматизировать процесс загрузки и установки пакетов для ARM-микроконтроллеров.
 
@@ -19,7 +19,8 @@
 
 - `NordicSemiconductor.nRF_DeviceFamilyPack` (версии 8.11.1, 8.15.4, 8.28.0)
 - `Microchip.SAMD21_DFP.3.7.262-unsi9ned.1.pack`
-- `Milandr.MDR32FxQI_DFP.1.3.2-unsi9ned.1.pack`
+- `Milandr.MDR32FxQI_DFP.1.3.2-unsi9ned.2.pack`
+- `Milandr.MDR32FxQI_Examples.1.3.2-unsi9ned.2.pack`
 
 > **Примечание:** Для пакетов других производителей работа не гарантируется. Возможны ошибки при разборе `.pdsc` или интеграции компонентов.
 
