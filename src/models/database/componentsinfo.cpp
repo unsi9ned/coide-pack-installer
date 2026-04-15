@@ -2161,9 +2161,9 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
 //------------------------------------------------------------------------------
 // Загрузить данные о примерах из базы данных
 //------------------------------------------------------------------------------
-QMap<int, Example> ComponentsInfo::requestExampleMap()
+QMap<QString, Example> ComponentsInfo::requestExampleMap()
 {
-    QMap<int, Example> exampleMap;
+    QMap<QString, Example> exampleMap;
     QString sql = QString("SELECT example.*, "
                           "status.shouldupdate, "
                           "status.hasdownloaded, "
@@ -2202,23 +2202,39 @@ QMap<int, Example> ComponentsInfo::requestExampleMap()
         status.auditStatus = result.value("auditstatus").toInt();
         newExample.setStatus(status);
 
-        exampleMap.insert(newExample.getId(), newExample);
+        exampleMap.insert(newExample.getUuid(), newExample);
     }
 
+#if 0
     //Установка связи между компонентами и примерами
-    result = DataBase::instance()->sendQuery("SELECT * FROM example_depends_component");
+    result = DataBase::instance()->sendQuery("SELECT "
+                                             "example_depends_component.exampleId, "
+                                             "example.uuid AS exampleUuid, "
+                                             "example_depends_component.componentId, "
+                                             "component.uuid AS componentUuid "
+                                             "FROM "
+                                             "example_depends_component, "
+                                             "example, "
+                                             "component "
+                                             "WHERE "
+                                             "example_depends_component.exampleId = example.id "
+                                             "AND "
+                                             "example_depends_component.componentId = component.id;");
 
     while(result.next())
     {
-        int exampleId = result.value(0).toInt();
-        int componentId = result.value(1).toInt();
+        qint32 exampleId = result.value("exampleId").toInt();
+        QString exampleUuid = result.value("exampleUuid").toString();
+        qint32 componentId = result.value("componentId").toInt();
+        QString componentUuid = result.value("componentUuid").toString();
 
         // В таблице могут быть ID не существующих примеров
-        if(exampleMap.contains(exampleId))
+        if(exampleMap.contains(exampleUuid))
         {
-            exampleMap[exampleId].addParentComponent(componentId);
+            exampleMap[exampleUuid].addParentComponent(nullptr);
         }
     }
+#endif
 
     return exampleMap;
 }

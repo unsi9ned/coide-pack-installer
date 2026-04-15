@@ -229,6 +229,11 @@ QMap<QString, Component> &PackDescription::coComponentMap()
     return _componentMap;
 }
 
+QMap<QString, Example>&PackDescription::coExampleMap()
+{
+    return _exampleMap;
+}
+
 QMap<QString, QStringList> &PackDescription::componentFilesMap()
 {
     return _coComponentFilesMap;
@@ -274,6 +279,7 @@ void PackDescription::clear()
     _pdscComponentList.clear();
     _jdscComponentList.clear();
     _externalComponentList.clear();
+    _exampleMap.clear();
 }
 
 //------------------------------------------------------------------------------

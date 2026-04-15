@@ -5,14 +5,17 @@
 #include <QList>
 #include <QVector>
 #include <QMap>
-#include "component.h"
+#include <QDateTime>
 
-class Example
+#include "component.h"
+#include "models/pdsc/pdsccomponentattrex.h"
+#include "models/mcu/devicehierarchynode.h"
+
+class Example : public DeviceHierarchyNode
 {
 private:
     int id;
     int userId;
-    int statusId;
     QString name;
     QString description;
     int type;
@@ -20,22 +23,25 @@ private:
     QString timeuuid;
     QString repo_user;
     QString repo_password;
-    QString createDate;
-    QString updateDate;
+    QDateTime createDate;
+    QDateTime updateDate;
     int hits;
 
-    QMap<int, Component*> parentComponents;
-
-    Component::ComponentStatus status;
+    QList<const Component*> m_parentComponents;
+    QList<const Component*> m_supportComponents;
+    Component::ComponentStatus m_status;
+    PdscComponentAttributesEx m_pdscAttributes;
 
 public:
     Example();
+    Example(const Component& component);
     int getId() const;
     void setId(int value);
+    qint32 getCoMaxId() const;
     int getUserId() const;
     void setUserId(int value);
-    int getStatusId() const;
-    void setStatusId(int value);
+    qint32 getStatusId() const;
+    void setStatusId(qint32 value);
     QString getName() const;
     void setName(const QString &value);
     QString getDescription() const;
@@ -50,20 +56,25 @@ public:
     void setRepoUser(const QString &value);
     QString getRepo_password() const;
     void setRepoPassword(const QString &value);
-    QString getCreateDate() const;
+    QString getCreationDate(QString dtFormat = QString("yyyy-MM-dd HH:mm:ss")) const;
     void setCreateDate(const QString &value);
-    QString getUpdateDate() const;
+    QString getUpdateDate(QString dtFormat = QString("yyyy-MM-dd HH:mm:ss")) const;
     void setUpdateDate(const QString &value);
     int getHits() const;
     void setHits(int value);
-    QMap<int, Component*> getParentComponents() const;
-    void setParentComponents(const QMap<int, Component*> &value);
-    void addParentComponent(int componentId);
+
+    QList<const Component*> getParentComponents() const;
+    void setParentComponents(const QList<const Component*>& value);
     void addParentComponent(Component * component);
+    void addSupportComponent(const Component * component);
+
     Component::ComponentStatus getStatus() const;
     void setStatus(const Component::ComponentStatus &value);
 
     bool isDownloaded();
+
+    QString getPath() const;
+    PdscComponentAttributesEx pdscAttributes() const;
 };
 
 #endif // EXAMPLE_H

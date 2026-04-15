@@ -485,6 +485,34 @@ bool PackManager::examplesInstall(PackDescription& pack, QString& errorString)
 
     logInfo(QString("The '%1' package is being installed").arg(pack.name()));
 
+    //
+    // Преобразование компонентов в примеры
+    //
+    for(const Component& component : pack.coComponentMap())
+    {
+        // Эти компоненты уже установлены (не входят в pdsc)
+        if(component.isExternal()) continue;
+
+        Example example(component);
+
+        // Находим компоненты, для которых созданы примеры
+        QString cgroup = example.pdscAttributes().getCgroup();
+
+        if(!cgroup.isEmpty())
+        {
+            for(const Component& child : pack.coComponentMap())
+            {
+                if(!child.isExternal()) continue;
+                if(child.getName().startsWith(cgroup + "_", Qt::CaseSensitive))
+                {
+                    example.addSupportComponent(&child);
+                }
+            }
+        }
+
+        pack.coExampleMap().insert(example.getUuid(), example);
+    }
+
     return false;
 }
 

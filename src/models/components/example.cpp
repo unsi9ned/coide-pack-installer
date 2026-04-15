@@ -1,4 +1,44 @@
 #include "example.h"
+#include "common/constants.h"
+
+Example::Example() :
+    id(-1),
+    userId(CoUser::USER_COOCOX),
+    type(Component::EXAMPLE),
+    uuid(Example::generateTimeUUID()),
+    timeuuid(Example::generateTimeUUID()),
+    repo_user("admin"),
+    repo_password("C9NOPZXdgT8="),
+    createDate(QDateTime::currentDateTime()),
+    updateDate(QDateTime::currentDateTime()),
+    hits(0),
+    m_status(Component::ComponentStatus::ok())
+{
+
+}
+
+Example::Example(const Component& component) :
+    userId(CoUser::USER_COOCOX),
+    type(Component::EXAMPLE)
+{
+    id = component.getId();
+    uuid = component.getUuid();
+    name = component.getName();
+    description = component.getDescription();
+    timeuuid = component.getTimeuuid();
+    repo_user = component.getRepoUser();
+    repo_password = component.getRepoPass();
+    setCreateDate(component.getCreationDate());
+    setUpdateDate(component.getUpdateDate());
+    hits = component.getHits();
+    m_status = component.getStatus();
+    m_pdscAttributes = component.pdscAttributes();
+
+    for(const Component* parent : component.getParents())
+    {
+        m_parentComponents.insert(parent->getId(), parent);
+    }
+}
 
 int Example::getId() const
 {
@@ -8,6 +48,11 @@ int Example::getId() const
 void Example::setId(int value)
 {
     id = value;
+}
+
+qint32 Example::getCoMaxId() const
+{
+    return CoIds::ID_EXAMPLE_LAST;
 }
 
 int Example::getUserId() const
@@ -20,14 +65,14 @@ void Example::setUserId(int value)
     userId = value;
 }
 
-int Example::getStatusId() const
+qint32 Example::getStatusId() const
 {
-    return statusId;
+    return m_status.statusId;
 }
 
-void Example::setStatusId(int value)
+void Example::setStatusId(qint32 value)
 {
-    statusId = value;
+    m_status.statusId = value;
 }
 
 QString Example::getName() const
@@ -100,24 +145,34 @@ void Example::setRepoPassword(const QString &value)
     repo_password = value;
 }
 
-QString Example::getCreateDate() const
+QString Example::getCreationDate(QString dtFormat) const
 {
-    return createDate;
+    QDateTime dt = this->createDate;
+
+    if(!dt.isValid())
+        dt = QDateTime::currentDateTime();
+
+    return dt.toString(dtFormat);
 }
 
 void Example::setCreateDate(const QString &value)
 {
-    createDate = value;
+    this->createDate = QDateTime::fromString(value, "yyyy-MM-dd HH:mm:ss");
 }
 
-QString Example::getUpdateDate() const
+QString Example::getUpdateDate(QString dtFormat) const
 {
-    return updateDate;
+    QDateTime dt = this->updateDate;
+
+    if(!dt.isValid())
+        dt = QDateTime::currentDateTime();
+
+    return dt.toString(dtFormat);
 }
 
 void Example::setUpdateDate(const QString &value)
 {
-    updateDate = value;
+    this->updateDate = QDateTime::fromString(value, "yyyy-MM-dd HH:mm:ss");
 }
 
 int Example::getHits() const
@@ -130,51 +185,51 @@ void Example::setHits(int value)
     hits = value;
 }
 
-QMap<int, Component *> Example::getParentComponents() const
+QList<const Component*> Example::getParentComponents() const
 {
-    return parentComponents;
+    return m_parentComponents;
 }
 
-void Example::setParentComponents(const QMap<int, Component *> &value)
+void Example::setParentComponents(const QList<const Component*>& value)
 {
-    parentComponents = value;
-}
-
-void Example::addParentComponent(int componentId)
-{
-    if(parentComponents.contains(componentId))
-        return;
-    else
-        parentComponents.insert(componentId, nullptr);
+    m_parentComponents = value;
 }
 
 void Example::addParentComponent(Component *component)
 {
-    if(component)
-    {
-        if(parentComponents.contains(component->getId()))
-            parentComponents[component->getId()] = component;
-        else
-            parentComponents.insert(component->getId(), component);
-    }
+    if(component && !m_parentComponents.contains(component))
+        m_parentComponents.append(component);
+}
+
+void Example::addSupportComponent(const Component* component)
+{
+    if(component && !m_supportComponents.contains(component))
+        m_supportComponents.append(component);
 }
 
 Component::ComponentStatus Example::getStatus() const
 {
-    return status;
+    return m_status;
 }
 
 void Example::setStatus(const Component::ComponentStatus &value)
 {
-    status = value;
+    m_status = value;
 }
 
 bool Example::isDownloaded()
 {
-    return status.hasDownloaded;
+    return m_status.hasDownloaded;
 }
 
-Example::Example()
+QString Example::getPath() const
 {
-
+    return m_pdscAttributes.makePath();
 }
+
+PdscComponentAttributesEx Example::pdscAttributes() const
+{
+    return m_pdscAttributes;
+}
+
+

@@ -7,6 +7,7 @@
 #include "models/mcu/manufacturer.h"
 #include "models/pdsc/pdsccomponent.h"
 #include "models/jdsc/jdsccomponent.h"
+#include "models/components/example.h"
 
 //------------------------------------------------------------------------------
 // Структура, содержащая инфомарцию о загружаемом архиве
@@ -76,6 +77,7 @@ private:
 
     QMap<QString, Manufacturer> _vendorMap;
     QMap<QString, Component> _componentMap;
+    QMap<QString, Example> _exampleMap;
 
     // Карта компонентов CoIDE. Ключ - UUID компонента, значение - список файлов
     QMap<QString, QStringList> _coComponentFilesMap;
@@ -123,6 +125,7 @@ public:
     bool hasComponents() const;
 
     QMap<QString, Component>& coComponentMap();
+    QMap<QString, Example>& coExampleMap();
     QMap<QString, QStringList>& componentFilesMap();
     QMap<QString, Component*>& cmsisComponents();
     QList<PdscComponent>& pdscComponentList();

@@ -535,7 +535,7 @@ QStringList Component::supportedMcuList() const
     return _supportsMcuList;
 }
 
-Component::ComponentStatus Component::getStatus()
+Component::ComponentStatus Component::getStatus() const
 {
     return _status;
 }
@@ -633,20 +633,10 @@ Component::operator==(const Component &component)
 
 QString Component::getPath() const
 {
-    if(!m_jdscPath.isEmpty()) return m_jdscPath;
-
-    QString path = m_pdscAttributes.getCvendor().isEmpty() ? "" : m_pdscAttributes.getCvendor() + "/";
-    path += m_pdscAttributes.getCclass().isEmpty() ? "" : m_pdscAttributes.getCclass() + "/";
-    path += m_pdscAttributes.getCgroup().isEmpty() ? "" : m_pdscAttributes.getCgroup() + "/";
-    path += m_pdscAttributes.getCsub().isEmpty() ? "" : m_pdscAttributes.getCsub() + "/";
-    path += m_pdscAttributes.getCvariant().isEmpty() ? "" : m_pdscAttributes.getCvariant() + "/";
-    path += m_pdscAttributes.getCversion().isEmpty() ? "" : m_pdscAttributes.getCversion() + "/";
-    path += m_pdscAttributes.getPdscCondition().isEmpty() ? "" : m_pdscAttributes.getPdscCondition() + "/";
-
-    if(path.endsWith('/'))
-        path.chop(1);
-
-    return path;
+    if(!m_jdscPath.isEmpty())
+        return m_jdscPath;
+    else
+        return m_pdscAttributes.makePath();
 }
 
 //------------------------------------------------------------------------------
@@ -697,15 +687,7 @@ PdscComponent Component::toPdscComponent() const
         QString deviceVendor = Manufacturer::makeKeilVendor(m_pdscAttributes.getCvendor());
 
         // Искусственно создает атрибут condition
-        QStringList mcuList = _supportsMcuList;
-        std::sort(mcuList.begin(), mcuList.end());
-
-        QString conditionId = mcuList.join("+") + "/";
-
-        if(conditionId.endsWith('/'))
-            conditionId.chop(1);
-
-        acceptDevicesCond.setId(conditionId);
+        acceptDevicesCond.setId(makeCondition());
 
         for(QString mcu : _supportsMcuList)
         {
@@ -759,6 +741,23 @@ PdscComponent Component::toPdscComponent() const
     }
 
     return pdscComponent;
+}
+
+//------------------------------------------------------------------------------
+// Если компонент не содержит поля condition, то можно сгенерировать его
+// на основе списка поддерживаемых устройств
+//------------------------------------------------------------------------------
+QString Component::makeCondition() const
+{
+    QStringList mcuList = _supportsMcuList;
+    std::sort(mcuList.begin(), mcuList.end());
+
+    QString conditionId = mcuList.join("+") + "/";
+
+    if(conditionId.endsWith('/'))
+        conditionId.chop(1);
+
+    return conditionId;
 }
 
 Category Component::getCategory() const

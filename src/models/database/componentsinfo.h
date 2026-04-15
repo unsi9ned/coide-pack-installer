@@ -56,7 +56,7 @@ public:
     QMap<int, Category> requestCategoryMap();
     QMap<int, Category> requestSubcategoryMap();
 
-    QMap<int, Example> requestExampleMap();
+    QMap<QString, Example> requestExampleMap();
 
     bool fixComponentManufacturerTable(QString * errorString = nullptr);
     bool fixComponentManufacturerTable(QString& errorString);

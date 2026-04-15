@@ -110,7 +110,8 @@ HEADERS  += \
     src/models/jdsc/jdsccondition.h \
     src/models/jdsc/jdsccomponent.h \
     src/common/loglevels.h \
-    src/common/loggable.h
+    src/common/loggable.h \
+    src/models/pdsc/pdsccomponentattrex.h
 
 FORMS    += \
     src/views/mainform.ui \

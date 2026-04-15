@@ -71,7 +71,7 @@ MainForm::MainForm(QWidget *parent) :
     //--------------------------------------------------------------------------
     connect(m_mcuBrowserViewModel, &McuBrowserViewModel::loadStarted, [this]()
     {
-        ui->statusBar->showMessage("Загрузка...");
+        ui->statusBar->showMessage("Package Loading...");
         clearForm();
         lockUI(true);
     });
