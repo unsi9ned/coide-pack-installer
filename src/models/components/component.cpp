@@ -339,7 +339,7 @@ void Component::addParent(Component *parent)
         m_parents.append(parent);
 }
 
-bool Component::hasParents()
+bool Component::hasParents() const
 {
     return !m_parents.isEmpty();
 }
@@ -556,7 +556,7 @@ bool Component::isDriver()
     return type == ComponentType::DRIVER;
 }
 
-bool Component::isNull()
+bool Component::isNull() const
 {
     return id == -1;
 }

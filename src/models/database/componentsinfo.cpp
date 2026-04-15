@@ -714,26 +714,8 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                 return false;
 
             // Создаем связь между компонентами
-            if(component.hasChildren())
-            {
-                foreach (Component* child, component.getChildren())
-                {
-#if RECURSIVE_CREATION
-                    int childId = child->getId();
-#else
-                    int childId = child->getUniqueId();
-#endif
-                    bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
-
-                    if(status && !hasLink)
-                    {
-                        if(!createComponentsLink(childId, component.getId(), errorString))
-                            return false;
-                    }
-                    else if(!status)
-                        return false;
-                }
-            }
+            if(createComponentsLinks(component, errorString) != Success)
+                return false;
 
             // Добавляем атрибуты компонента в БД
             if(!addComponentPdscAttributes(component, errorString))
@@ -773,23 +755,8 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
         }
 
         // Создаем связи между существующими и новыми компонентами
-        foreach (Component* child, component.getChildren())
-        {
-#if RECURSIVE_CREATION
-            int childId = child->getId();
-#else
-            int childId = child->getUniqueId();
-#endif
-            bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
-
-            if(status && !hasLink)
-            {
-                if(!createComponentsLink(childId, component.getId(), errorString))
-                    return false;
-            }
-            else if(!status)
-                return false;
-        }
+        if(createComponentsLinks(component, errorString) != Success)
+            return false;
 
         // Добавляем атрибуты компонента в БД
         if(!addComponentPdscAttributes(component, errorString))
@@ -1198,12 +1165,12 @@ bool ComponentsInfo::createComponentSubCategoryLink(int componentId,
 //------------------------------------------------------------------------------
 // Проверить наличие связи между компонентами
 //------------------------------------------------------------------------------
-bool ComponentsInfo::hasComponentsLink(int parentId,
-                                       int childId,
-                                       bool *status,
-                                       QString *errorString)
+ComponentsInfo::RequestStatus ComponentsInfo::hasComponentsLink(int parentId,
+                                                                int childId,
+                                                                QString *errorString)
 {
-    bool opstatus = false;
+    ComponentsInfo::RequestStatus reqStatus = NotFound;
+    bool status;
     QString sql;
 
     sql = QString("SELECT "
@@ -1212,43 +1179,75 @@ bool ComponentsInfo::hasComponentsLink(int parentId,
                   "FROM component_depends_component "
                   "WHERE component_depends_component.parentComponentId = '%1' "
                   "AND component_depends_component.childComponentId = '%2';").
-                  arg(parentId).
-                  arg(childId);
+                  arg(childId).
+                  arg(parentId);
 
-    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
 
-    if(!opstatus)
+    if(!status)
     {
         if(errorString)
             *errorString = result.lastError().text();
-        if(status)
-            *status = false;
-        return false;
+        return Failure;
     }
     else
     {
-        opstatus = false;
-
-        if(status)
-            *status = true;
-
         while (result.next())
         {
-            opstatus = true;
+            reqStatus = Success;
             break;
         }
     }
 
-    return opstatus;
+    return reqStatus;
+}
+
+//------------------------------------------------------------------------------
+// Создать связь с родительскими компонентами
+//------------------------------------------------------------------------------
+ComponentsInfo::RequestStatus ComponentsInfo::createComponentsLinks(const Component &component,
+                                                                    QString *errorString)
+{
+    if(component.isNull()) return WrongParameters;
+
+    // Создаем связь между компонентами
+    if(component.hasParents())
+    {
+        foreach (Component* parent, component.getParents())
+        {
+            qint32 parentId = parent->getUniqueId();
+            qint32 childId = component.getUniqueId();
+
+            qDebug() << QString("%1(%2)").arg(component.getName()).arg(component.getUniqueId()) <<
+                        QString("%1(%2)").arg(parent->getName()).arg(parent->getUniqueId());
+            RequestStatus hasLink = hasComponentsLink(parentId, childId, errorString);
+
+            if(hasLink == NotFound)
+            {
+                hasLink = createComponentsLink(parentId, childId, errorString);
+
+                if(hasLink != Success)
+                    return hasLink;
+            }
+            else if(hasLink != Success)
+            {
+                return hasLink;
+            }
+        }
+    }
+
+    return Success;
 }
 
 //------------------------------------------------------------------------------
 // Связать компоненты между собой
 //------------------------------------------------------------------------------
-bool ComponentsInfo::createComponentsLink(int parentId,
-                                          int childId,
-                                          QString *errorString)
+ComponentsInfo::RequestStatus ComponentsInfo::createComponentsLink(int parentId,
+                                                                   int childId,
+                                                                   QString *errorString)
 {
+    if(parentId == -1 || childId == -1) return WrongParameters;
+
     //Поиск последнего айди
     bool opstatus = false;
     QString queryStr = QString("INSERT INTO component_depends_component ("
@@ -1256,8 +1255,8 @@ bool ComponentsInfo::createComponentsLink(int parentId,
                                ") VALUES ("
                                "'%1', '%2'"
                                ");").
-                       arg(parentId).
-                       arg(childId);
+                       arg(childId).
+                       arg(parentId);
 
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
 
@@ -1265,10 +1264,10 @@ bool ComponentsInfo::createComponentsLink(int parentId,
     {
         if(errorString)
             *errorString = result.lastError().text();
-        return false;
+        return Failure;
     }
 
-    return true;
+    return Success;
 }
 
 //------------------------------------------------------------------------------

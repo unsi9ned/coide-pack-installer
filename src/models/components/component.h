@@ -182,7 +182,7 @@ public:
     QList<Component *> getParents() const;
     void setParents(const QList<Component *> &value);
     void addParent(Component * parent);
-    bool hasParents();
+    bool hasParents() const;
 
 
     QList<int> getMcuListId() const;
@@ -219,7 +219,7 @@ public:
 
     bool isDownloaded();
     bool isDriver();
-    bool isNull();
+    bool isNull() const;
     bool isPersisted() const;
     void setPersisted(bool state);
 

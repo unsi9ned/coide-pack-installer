@@ -117,8 +117,9 @@ private:
     bool hasComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, bool * status = nullptr, QString * errorString = nullptr);
     bool createComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, QString * errorString = nullptr);
 
-    bool hasComponentsLink(int parentId, int childId, bool * status = nullptr, QString * errorString = nullptr);
-    bool createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+    RequestStatus hasComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+    RequestStatus createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+    RequestStatus createComponentsLinks(const Component& component, QString * errorString = nullptr);
 
     RequestStatus hasExampleLink(int exampleId, int componentId, QString * errorString = nullptr);
     RequestStatus createExampleLinks(int exampleId, int componentId, QString * errorString = nullptr);
