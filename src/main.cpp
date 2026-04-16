@@ -93,6 +93,12 @@ int runConsole(int argc, char *argv[])
     );
     parser.addOption(installOption);
 
+    QCommandLineOption exampleOption(
+        QStringList() << "e",
+        "Install as Package of Examples"
+    );
+    parser.addOption(exampleOption);
+
     QCommandLineOption optimizeDbOption(
         QStringList() << "optimize-db",
         "Optimize database (clean unused tables and obsolete data)"
@@ -119,6 +125,7 @@ int runConsole(int argc, char *argv[])
     bool showComponentList = parser.isSet(listCompOption);
     bool optimizeDb = parser.isSet(optimizeDbOption);
     bool install = parser.isSet(installOption);
+    bool isExample = parser.isSet(exampleOption);
 
     // Путь к CoIDE
     if (parser.isSet(ideOption))
@@ -244,7 +251,7 @@ int runConsole(int argc, char *argv[])
             loop.quit();
         });
 
-        viewModel.installCurrentPack();
+        viewModel.installCurrentPack(isExample);
 
         loop.exec();
 
