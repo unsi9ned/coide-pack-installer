@@ -1218,8 +1218,6 @@ ComponentsInfo::RequestStatus ComponentsInfo::createComponentsLinks(const Compon
             qint32 parentId = parent->getUniqueId();
             qint32 childId = component.getUniqueId();
 
-            qDebug() << QString("%1(%2)").arg(component.getName()).arg(component.getUniqueId()) <<
-                        QString("%1(%2)").arg(parent->getName()).arg(parent->getUniqueId());
             RequestStatus hasLink = hasComponentsLink(parentId, childId, errorString);
 
             if(hasLink == NotFound)
@@ -1360,8 +1358,13 @@ ComponentsInfo::RequestStatus ComponentsInfo::createExampleLinks(const Example &
             RequestStatus status = hasExampleLink(exampleId, componentId, errorString);
 
             if(status == NotFound)
-                return createExampleLinks(exampleId, componentId, errorString);
-            else
+            {
+                status = createExampleLinks(exampleId, componentId, errorString);
+
+                if(status != Success)
+                    return status;
+            }
+            else if(status != Success)
                 return status;
         }
     }
@@ -1576,7 +1579,7 @@ bool ComponentsInfo::createExample(Example& example, QString* errorString)
                            arg(example.getUserId()).
                            arg(example.getStatusId()).
                            arg(example.getName()).
-                           arg(example.getDescription()).
+                           arg(example.getCoDescription()).
                            arg(example.getType()).
                            arg(example.getUuid()).
                            arg(example.getTimeuuid()).

@@ -1,3 +1,4 @@
+#include <QFileInfo>
 #include "example.h"
 #include "common/constants.h"
 
@@ -37,6 +38,11 @@ Example::Example(const Component& component) :
     for(const Component* parent : component.getParents())
     {
         m_parentComponents.insert(parent->getId(), parent);
+    }
+
+    for(QString f : component.fileListConst())
+    {
+        m_files.append(f);
     }
 }
 
@@ -88,6 +94,31 @@ void Example::setName(const QString &value)
 QString Example::getDescription() const
 {
     return description;
+}
+
+QString Example::getCoDescription() const
+{
+    QString dscr = this->description;
+
+    for(QString f : m_files)
+    {
+        //<type>=<path>
+        QStringList attr = f.split('=', QString::SkipEmptyParts) << "" << "";
+        QString path = attr.at(1);
+        QFileInfo file(path);
+        CoFileType coType = ANY_FILE;
+
+        if(file.suffix().toLower() == "c" || file.suffix().toLower() == "s")
+            coType = SOURCE_FILE;
+        else if(file.suffix().toLower() == "h")
+            coType = HEADER_FILE;
+        else
+            coType = ANY_FILE;
+
+        dscr += QString("[%1:%2:%3:%4]").arg(path).arg("").arg(coType).arg("");
+    }
+
+    return dscr;
 }
 
 void Example::setDescription(const QString &value)

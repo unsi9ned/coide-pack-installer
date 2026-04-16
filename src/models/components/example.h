@@ -14,6 +14,14 @@
 class Example : public DeviceHierarchyNode
 {
 private:
+    enum CoFileType
+    {
+        ANY_FILE = 0,
+        HEADER_FILE = 0,
+        SOURCE_FILE = 1
+    };
+
+private:
     int id;
     int userId;
     QString name;
@@ -32,6 +40,8 @@ private:
     Component::ComponentStatus m_status;
     PdscComponentAttributesEx m_pdscAttributes;
 
+    QStringList m_files;
+
 public:
     Example();
     Example(const Component& component);
@@ -45,6 +55,7 @@ public:
     QString getName() const;
     void setName(const QString &value);
     QString getDescription() const;
+    QString getCoDescription() const;
     void setDescription(const QString &value);
     int getType() const;
     void setType(int value);
