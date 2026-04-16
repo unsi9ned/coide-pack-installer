@@ -504,6 +504,7 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(int algId)
         fa.setCreateDate(createDate);
         fa.setUpdateDate(updateDate);
         fa.setDescription(description);
+        fa.setInstalled(true);
         break;
     }
 
@@ -549,6 +550,7 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
         fa.setCreateDate(createDate);
         fa.setUpdateDate(updateDate);
         fa.setDescription(description);
+        fa.setInstalled(true);
         break;
     }
 
@@ -594,6 +596,7 @@ QList<ProgAlgorithm> RequestManager::requestFlashAlgorithmList()
         fa.setCreateDate(createDate);
         fa.setUpdateDate(updateDate);
         fa.setDescription(description);
+        fa.setInstalled(true);
 
         faList.append(fa);
     }

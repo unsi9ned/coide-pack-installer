@@ -868,7 +868,7 @@ bool PackManager::extractFLM(PackDescription& pack, QString& errorString)
                 {
                     QString faLocalPath = fa.name();
 
-                    if(faLocalPath.isEmpty()) continue;
+                    if(fa.isInstalled() || faLocalPath.isEmpty()) continue;
 
                     if(!vendor.flmList().contains(Manufacturer::FlmInfo(faLocalPath)))
                     {

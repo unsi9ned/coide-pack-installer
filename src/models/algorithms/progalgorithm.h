@@ -31,6 +31,7 @@ private:
 
     QString m_vendor;
     QString m_version;
+    bool m_installed;
 
 public:
     ProgAlgorithm(const QString& name = QString());
@@ -48,6 +49,7 @@ public:
     void setUpdateDate(const QString& dt);
     void setDescription(const QString& dscr);
     void parseCoName(const QString& coName);
+    void setInstalled(bool state) { m_installed = state; }
 
     void setVendor(const QString& vendor) {m_vendor = vendor;}
     void setVersion(const QString& version) {m_version = version;}
@@ -73,6 +75,7 @@ public:
     bool isRamDefined() const { return _RAMsize != -1; }
     bool isRomDefined() const { return _size != -1; }
     bool isValid(QString* errorString = nullptr) const;
+    bool isInstalled() const {return m_installed;}
 private:
     bool isValid(QString& errorString) const;
 };

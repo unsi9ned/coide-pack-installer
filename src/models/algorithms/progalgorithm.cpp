@@ -100,6 +100,7 @@ ProgAlgorithm::ProgAlgorithm(const QString &name)
     this->_createDate = QDateTime::currentDateTime();
     this->_updateDate = QDateTime::currentDateTime();
     this->_documentId = static_cast<int>(CoDocument::DOC_FLASH_ALGO);
+    this->m_installed = false;
 }
 
 void ProgAlgorithm::setCoId(int id)
