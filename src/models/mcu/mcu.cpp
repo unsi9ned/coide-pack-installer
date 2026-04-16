@@ -1,3 +1,6 @@
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 #include "mcu.h"
 #include "series.h"
 #include "common/constants.h"
@@ -57,6 +60,43 @@ Mcu &Mcu::setName(QString s)
 {
     this->name = s;
     return *this;
+}
+
+//------------------------------------------------------------------------------
+// Парсинг поля memInfo из таблицы mcu
+//------------------------------------------------------------------------------
+void Mcu::setMemInfoFromJson(const QString &memInfo)
+{
+    Memory * memoryBlock = nullptr;
+    QString jsonStr = memInfo;
+
+    // Парсим внешний массив
+    QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
+    QJsonArray outerArray = doc.array();
+
+    for (const QJsonValue& item : outerArray)
+    {
+        // Каждый элемент — это JSON строка, которую нужно распарсить ещё раз
+        QString innerJsonStr = item.toString();
+        QJsonDocument innerDoc = QJsonDocument::fromJson(innerJsonStr.toUtf8());
+        QJsonObject obj = innerDoc.object();
+
+        if(obj["type"].toString().toUpper() == "FLASH")
+        {
+            memoryBlock = &addMemoryRegion("FLASH");
+            memoryBlock->setStartAddr(obj["start"].toString().toUInt(nullptr, 0));
+            memoryBlock->setSize(obj["size"].toString().toUInt(nullptr, 0));
+            memoryBlock->setStartup(true);
+            memoryBlock->setDefault(true);
+        }
+        else if(obj["type"].toString().toUpper() == "RAM")
+        {
+            memoryBlock = &addMemoryRegion("RAM");
+            memoryBlock->setStartAddr(obj["start"].toString().toUInt(nullptr, 0));
+            memoryBlock->setSize(obj["size"].toString().toUInt(nullptr, 0));
+            memoryBlock->setDefault(true);
+        }
+    }
 }
 
 Mcu &Mcu::setCoreDebugAlgorithm(const QString &coreName)

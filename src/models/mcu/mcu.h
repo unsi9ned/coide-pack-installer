@@ -41,7 +41,6 @@ private:
     QString _svd;
 
     DebugAlgorithm debugAlgorithm;
-    ProgAlgorithm flashAlgorithm;
 
     QMap<QString, Memory> _memoryMap;
     QStringList _definedSymbols;
@@ -82,7 +81,10 @@ public:
     void setDescription(QString s){this->description = s;}
     void setKeyParameter(const QString s){this->keyParameter = s;}
     void setWebPageURL(const QString url){this->webPageURL = url;}
+    void fromCoWebPageURL(QString url){this->webPageURL = url.remove("[\"").remove("\"]");}
     void setDatasheetURL(const QString& url){this->datasheetURL = url;}
+    void fromCoDatasheetURL(QString url){this->datasheetURL = url.remove("[\"").remove("\"]");}
+    void setMemInfoFromJson(const QString& memInfo);
     void setMemInfo(const QString& info){this->memInfo = info;}
     void setMicro(QString s){this->micro = s;}
     void setAdvertising(QString s){this->advertising = s;}
@@ -91,7 +93,6 @@ public:
     void setHits(int hits){this->hits = hits;}
     void setSvd(const QString& path){this->_svd = path;}
     void setDebugAlgorithm(DebugAlgorithm da){this->debugAlgorithm = da;}
-    void setFlashAlgorithm(ProgAlgorithm da){this->flashAlgorithm = da;}
 
     Mcu& setCoreDebugAlgorithm(const QString& coreName);
 

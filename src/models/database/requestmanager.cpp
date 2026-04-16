@@ -279,18 +279,6 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
         QString timeuuid = result.value(13).toString();
         int hits = result.value(14).toInt();
 
-        memInfo = memInfo.replace("\\", "");
-        memInfo = memInfo.replace("\"{", "{");
-        memInfo = memInfo.replace("}\"", "}");
-
-        QByteArray ba;
-        ba.append("{\"memInfo\" : ");
-        ba.append(memInfo);
-        ba.append("}");
-
-        memInfo = ba;
-
-
         Mcu mcu;
         mcu.setId(id);
         mcu.setSeriesId(seriesId);
@@ -299,9 +287,9 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
         mcu.setName(name);
         mcu.setDescription(description);
         mcu.setKeyParameter(keyParameter);
-        mcu.setWebPageURL(webPageURL);
-        mcu.setDatasheetURL(datasheetURL);
-        mcu.setMemInfo(memInfo);
+        mcu.fromCoWebPageURL(webPageURL);
+        mcu.fromCoDatasheetURL(datasheetURL);
+        mcu.setMemInfoFromJson(memInfo);
         mcu.setMicro(micro);
         mcu.setAdvertising(advertising);
         mcu.setPrice(price);
@@ -312,7 +300,7 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
         mcu.setDebugAlgorithm(da);
 
         ProgAlgorithm fa = getMcuFlashAlgorithm(id);
-        mcu.setFlashAlgorithm(fa);
+        mcu.addAlgorithm(fa);
 
         microcontrollers.append(mcu);
     }
@@ -346,17 +334,6 @@ Mcu RequestManager::requestMcu(const QString& name)
         QString timeuuid = result.value(13).toString();
         int hits = result.value(14).toInt();
 
-        memInfo = memInfo.replace("\\", "");
-        memInfo = memInfo.replace("\"{", "{");
-        memInfo = memInfo.replace("}\"", "}");
-
-        QByteArray ba;
-        ba.append("{\"memInfo\" : ");
-        ba.append(memInfo);
-        ba.append("}");
-
-        memInfo = ba;
-
         mcu.setId(id);
         mcu.setSeriesId(seriesId);
         mcu.setUserId(userId);
@@ -364,9 +341,9 @@ Mcu RequestManager::requestMcu(const QString& name)
         mcu.setName(name);
         mcu.setDescription(description);
         mcu.setKeyParameter(keyParameter);
-        mcu.setWebPageURL(webPageURL);
-        mcu.setDatasheetURL(datasheetURL);
-        mcu.setMemInfo(memInfo);
+        mcu.fromCoWebPageURL(webPageURL);
+        mcu.fromCoDatasheetURL(datasheetURL);
+        mcu.setMemInfoFromJson(memInfo);
         mcu.setMicro(micro);
         mcu.setAdvertising(advertising);
         mcu.setPrice(price);
@@ -377,7 +354,7 @@ Mcu RequestManager::requestMcu(const QString& name)
         mcu.setDebugAlgorithm(da);
 
         ProgAlgorithm fa = getMcuFlashAlgorithm(id);
-        mcu.setFlashAlgorithm(fa);
+        mcu.addAlgorithm(fa);
 
         break;
     }
