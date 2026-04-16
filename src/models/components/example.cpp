@@ -115,6 +115,8 @@ QString Example::getCoDescription() const
         else
             coType = ANY_FILE;
 
+        // [<path>:<description>:<type>:<unknown>]
+        path = file.filePath();
         dscr += QString("[%1:%2:%3:%4]").arg(path).arg("").arg(coType).arg("");
     }
 

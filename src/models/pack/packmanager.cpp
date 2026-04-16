@@ -486,6 +486,57 @@ bool PackManager::examplesInstall(PackDescription& pack, QString& errorString)
     logInfo(QString("The '%1' package is being installed").arg(pack.name()));
 
     //
+    // Подготовка каталога пакета
+    //
+    QDir packInstallDir;
+    Manufacturer vendor = pack.vendors().first();
+    QString path = Paths::instance()->coIdePackDir(vendor.getName(), pack.release());
+
+    packInstallDir.setPath(path);
+    pack.setInstallDir(path);
+
+    //
+    // Создание каталога установки
+    //
+    logInfo(QString("Creating an installation directory"));
+
+    if(!packInstallDir.exists() && !packInstallDir.mkpath(packInstallDir.path()))
+    {
+        logError("The package directory cannot be created");
+        return false;
+    }
+
+    //
+    // Распаковка файла описание аппаратуры в каталог установки
+    //
+    logInfo(QString("Extracting a pdsc file"));
+
+    if(!extractPackDescriptionFile(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            logError("Couldn't extract pdsc file");
+        else
+            logError(QString("Couldn't extract pdsc file: %1").arg(errorString));
+
+        return false;
+    }
+
+    //
+    // Распаковка исходников
+    //
+    logInfo("Unpacking sources");
+
+    if(!extractSources(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            logError("Couldn't extract sources files");
+        else
+            logError(QString("Couldn't extract sources files: %1").arg(errorString));
+
+        return false;
+    }
+
+    //
     // Преобразование компонентов в примеры
     //
     for(const Component& component : pack.coComponentMap())
@@ -557,7 +608,27 @@ bool PackManager::examplesInstall(PackDescription& pack, QString& errorString)
         }
     }
 
-    return false;
+    //
+    // Создание примеров в файловой структуре CoIDE
+    //
+    logInfo("Creating mirrors of examples");
+
+    if(!createExampleMirrors(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            logError("Couldn't create example mirror");
+        else
+            logError(QString("Couldn't create example mirror: %1").arg(errorString));
+
+        return false;
+    }
+
+    //
+    // Завершение установки
+    //
+    logInfo(QString("Package installation '%1' completed").arg(pack.name()));
+
+    return true;
 }
 
 void PackManager::logError(const QString& error)
@@ -1419,6 +1490,87 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
             int beginPos = (component.getType() == Component::DRIVER) ?
                            Paths::instance()->coIdeDriversDir().length() :
                            Paths::instance()->coIdeComponentsDir().length();
+
+            relativePath.remove(0, beginPos + 1);
+
+            logInfo(QString("Create symbolic link '%1'").arg(relativePath));
+
+            if(!QFile(linkPath).exists() && !MakeLink::createLink(linkPath, targetPath))
+            {
+                errorString = QString("Failed to create symbolic link to %1 file").arg(f);
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создает файловую структуру примера в системе CoIDE.
+// Фактически создает ссылки на файлы, которые распакованы в каталог установки пакета
+//------------------------------------------------------------------------------
+bool PackManager::createExampleMirrors(PackDescription& pack, QString& errorString)
+{
+    if(!pack.isValid())
+    {
+        errorString = QString("The '%1' package is not valid").arg(pack.name());
+        return false;
+    }
+    else if(pack.installDir().isEmpty())
+    {
+        errorString = QString("The installation directory is not defined or does not exist");
+        return false;
+    }
+
+    if(pack.componentFilesMap().isEmpty())
+        loadCoComponents(pack);
+
+    QMap<QString, QStringList>& fileMap = pack.componentFilesMap();
+    QMap<QString, Example>& exampleMap = pack.coExampleMap();
+
+    for(auto it = fileMap.begin(); it != fileMap.end(); ++it)
+    {
+        QStringList coList = it.value();
+        Example& example = exampleMap[it.key()];
+        QDir rootDir;
+
+        rootDir.setPath(Paths::instance()->coIdeExamplesDir() +
+                        "/" + QString::number(example.getId()) +
+                        "_" + example.getName() +
+                        "/src");
+
+        if(!rootDir.exists() && !rootDir.mkpath(rootDir.path()))
+        {
+            errorString = QString("The mirror directory %1 cannot be created").arg(rootDir.path());
+            return false;
+        }
+
+        foreach(QString f, coList)
+        {
+            QFileInfo info(f);
+            QDir subDir;
+            QString targetPath = pack.installDir() + "/" + f;
+            QString linkPath = rootDir.path() + "/" + f;
+
+            // CoIDE не импортирует ld-файлы
+            if(info.suffix().toLower() == "ld")
+            {
+                linkPath = rootDir.path() + "/" +
+                           info.path() + "/" +
+                           info.completeBaseName() + "." + "ls";
+            }
+
+            subDir.setPath(rootDir.path() + "/" + info.path());
+
+            if(!subDir.exists() && !subDir.mkpath(subDir.path()))
+            {
+                errorString = QString("The %1 directory cannot be created").arg(rootDir.path());
+                return false;
+            }
+
+            QString relativePath = linkPath;
+            int beginPos = Paths::instance()->coIdeExamplesDir().length();
 
             relativePath.remove(0, beginPos + 1);
 
