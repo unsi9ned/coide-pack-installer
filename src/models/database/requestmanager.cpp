@@ -498,8 +498,7 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(int algId)
         int documentId = result.value("documentId").toInt();
 
         fa.setCoId(id);
-        fa.setName(name);
-        fa.setInstallPath(name);
+        fa.parseCoName(name);
         fa.setDocumentId(documentId);
         fa.setTimeUUID(timeUuid);
         fa.setCreateDate(createDate);
@@ -544,8 +543,7 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
         int documentId = result.value("documentId").toInt();
 
         fa.setCoId(id);
-        fa.setName(name);
-        fa.setInstallPath(name);
+        fa.parseCoName(name);
         fa.setDocumentId(documentId);
         fa.setTimeUUID(timeUuid);
         fa.setCreateDate(createDate);
@@ -590,8 +588,7 @@ QList<ProgAlgorithm> RequestManager::requestFlashAlgorithmList()
         int documentId = result.value("documentId").toInt();
 
         fa.setCoId(id);
-        fa.setName(name);
-        fa.setInstallPath(name);
+        fa.parseCoName(name);
         fa.setDocumentId(documentId);
         fa.setTimeUUID(timeUuid);
         fa.setCreateDate(createDate);

@@ -18,14 +18,7 @@ void AlgorithmContainer::addAlgorithm(const QString &name)
 
 void AlgorithmContainer::addAlgorithm(const ProgAlgorithm &algorithm)
 {
-    ProgAlgorithm algo(algorithm.name());
-    algo.setCoId(algorithm.coId());
-    algo.setDefault(algorithm.isDefault());
-    algo.setRAMsize(algorithm.RAMsize());
-    algo.setRAMstart(algorithm.RAMstart());
-    algo.setSize(algorithm.size());
-    algo.setStart(algorithm.start());
-    this->_algorithmList.append(algo);
+    this->_algorithmList.append(algorithm);
 }
 
 ProgAlgorithm *AlgorithmContainer::getFlashAlgorithm(qint32 flashStartAddr)

@@ -327,7 +327,7 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
                     else if(nodeName == "algorithm")
                     {
                         QString coreName;
-                        ProgAlgorithm subFamilyAlgorithm = parseAlgorithm(node.toElement());
+                        ProgAlgorithm subFamilyAlgorithm = parseAlgorithm(node.toElement(), pack);
 
                         coreName = subFamilyProcessor.isEmpty() ? familyProcessor : subFamilyProcessor;
                         subFamilyAlgorithms.append(subFamilyAlgorithm);
@@ -414,7 +414,7 @@ void PdscParser::parseDevFamilies(const QDomNode &node, PackDescription &pack)
             }
             else if(nodeName == "algorithm")
             {
-                ProgAlgorithm familyAlgorithm = parseAlgorithm(node.toElement());
+                ProgAlgorithm familyAlgorithm = parseAlgorithm(node.toElement(), pack);
                 coreAlgorithms.append(familyAlgorithm);
             }
             else if(nodeName == "debug")
@@ -546,7 +546,7 @@ Mcu &PdscParser::parseDevice(const QDomNode &deviceNode,
         for (int i = 0; i < algorithms.count(); i++)
         {
             QDomElement algoElem = algorithms.at(i).toElement();
-            ProgAlgorithm flashAlgo = parseAlgorithm(algoElem);
+            ProgAlgorithm flashAlgo = parseAlgorithm(algoElem, pack);
 
             if(!flashAlgo.name().isEmpty())
             {
@@ -594,7 +594,8 @@ DeviceFeature PdscParser::parseFeature(const QDomElement &featureElem)
 //------------------------------------------------------------------------------
 // Парсинг блока algorithm
 //------------------------------------------------------------------------------
-ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
+ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement,
+                                         const PackDescription &pack)
 {
     ProgAlgorithm algo;
 
@@ -606,6 +607,8 @@ ProgAlgorithm PdscParser::parseAlgorithm(const QDomElement &algorithmElement)
     QString isDefault = algorithmElement.attribute("default");
 
     algo.setName(name);
+    algo.setVendor(pack.packVendor());
+    algo.setVersion(pack.release());
 
     if(start.contains("0x", Qt::CaseInsensitive))
         algo.setStart(start.toUInt(nullptr, 16));

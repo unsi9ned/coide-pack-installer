@@ -26,7 +26,7 @@ private:
                      const QString& series,
                      PackDescription& pack);
     DeviceFeature parseFeature(const QDomElement &featureElem);
-    ProgAlgorithm parseAlgorithm(const QDomElement &algorithmElement);
+    ProgAlgorithm parseAlgorithm(const QDomElement &algorithmElement, const PackDescription& pack);
     PdscCondition parseCondition(const QDomNode &condition);
     PdscRequirement parseRequirement(const QDomNode &requireNode);
     PdscComponent parseComponent(const QDomNode& componentNode,

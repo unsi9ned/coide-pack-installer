@@ -59,6 +59,10 @@ public:
     QString coIdeDataDir();
     QString coIdePacketsDir();
     QString coIdePackDir(const QString& vendor, const QString& release);
+    QString coIdePackDirRelative(const QString& vendor, const QString& release, const QString& fromDir);
+    QString getVendorFromPackDir(const QString& packDir);
+    QString getVersionFromPackDir(const QString& packDir);
+    QString getRelativePathInPack(const QString& fullPath);
     QString coIdeCmsisDir(QString version = QString());
     QString coIdeTempDir();
     QString coIdeRepositoryDir();

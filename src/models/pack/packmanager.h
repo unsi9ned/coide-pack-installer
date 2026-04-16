@@ -35,7 +35,6 @@ private:
     bool extractSources(PackDescription& pack, QString& errorString);
     bool createComponentMirrors(PackDescription& pack, QString& errorString);
     bool createExampleMirrors(PackDescription& pack, QString& errorString);
-    void updatePaths(PackDescription& pack);
 
 signals:
 

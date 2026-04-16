@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QString>
 #include <QDateTime>
 #include <QDirIterator>
@@ -202,6 +203,125 @@ QString Paths::coIdePackDir(const QString &vendor,
                             const QString &release)
 {
     return coIdePacketsDir() + "/" + vendor + "/" + release;
+}
+
+//------------------------------------------------------------------------------
+// Возвращает относительный путь к папке установки пакета из папки fromDir
+//------------------------------------------------------------------------------
+QString Paths::coIdePackDirRelative(const QString &vendor,
+                                    const QString &release,
+                                    const QString &fromDir)
+{
+    if(vendor.isEmpty() || release.isEmpty() || fromDir.isEmpty()) return QString();
+
+    QString packDir = coIdePackDir(vendor, release).replace('\\', '/');
+    QString from = fromDir;
+    QString ideDir = coIdeDir();
+
+    from.replace('\\', '/');
+
+    if(from.endsWith('/'))
+        from.chop(1);
+
+    // Находимся в самом каталоге установки
+    if(from == packDir)
+    {
+        return QString();
+    }
+    // Находимся на уровне выше или уровне ниже
+    else
+    {
+        QString path;
+
+        // Поиск общего префикса
+        int maxLen = qMin(from.length(), packDir.length());
+        int i = 0;
+        for(i = 0; i < maxLen && from[i] == packDir[i]; i++);
+
+        if(i == 0) return QString();
+
+        QString prefix = from.left(i);
+
+        if(prefix.length() < ideDir.length())
+        {
+            path = packDir.remove(prefix) + "/";
+            return path;
+        }
+
+        int level = from.remove(prefix).toLatin1().count('/');
+
+        if(!fromDir.startsWith(packDir))
+            level++;
+
+        path = packDir.replace(prefix, QString("../").repeated(level));
+
+        return path;
+    }
+
+    return QString();
+}
+
+//------------------------------------------------------------------------------
+// Извлечь из пути к папке установки компонентов имя вендора
+//------------------------------------------------------------------------------
+QString Paths::getVendorFromPackDir(const QString &packDir)
+{
+    QString path = packDir;
+    QString prefix = coIdePacketsDir() + "/";
+
+    path.replace('\\', '/');
+
+    if(path.endsWith('/'))
+        path.chop(1);
+
+    if(path.contains("..")) path = QDir::cleanPath(path);
+    if(!path.startsWith(prefix)) return QString();
+
+    QStringList dirs = path.remove(prefix).split('/') << "";
+    return dirs.first();
+}
+
+//------------------------------------------------------------------------------
+// Извлечь из пути к папке установки компонентов версию пакета
+//------------------------------------------------------------------------------
+QString Paths::getVersionFromPackDir(const QString &packDir)
+{
+    QString path = packDir;
+    QString prefix = coIdePacketsDir() + "/";
+
+    path.replace('\\', '/');
+
+    if(path.endsWith('/'))
+        path.chop(1);
+
+    if(path.contains("..")) path = QDir::cleanPath(path);
+    if(!path.startsWith(prefix)) return QString();
+
+    QStringList dirs = path.remove(prefix).split('/') << "" << "";
+    return dirs.at(1);
+}
+
+//------------------------------------------------------------------------------
+// Возвращает относительный путь к файлу или папке внутри папки установки пакета
+//------------------------------------------------------------------------------
+QString Paths::getRelativePathInPack(const QString &fullPath)
+{
+    QString path = fullPath;
+    QString prefix = coIdePacketsDir() + "/";
+
+    path.replace('\\', '/');
+
+    if(path.endsWith('/'))
+        path.chop(1);
+
+    if(path.contains("..")) path = QDir::cleanPath(path);
+    if(!path.startsWith(prefix)) return QString();
+
+    QStringList dirs = path.remove(prefix).split('/') << "" << "";
+    path.remove(dirs.at(0) + "/");
+    path.remove(dirs.at(1) + "/");
+
+    return path;
 }
 
 //------------------------------------------------------------------------------

@@ -171,7 +171,6 @@ void PackManager::readPackDescription(PackDescription &pack)
             parser->reloadComponents(pack);
         }
 
-        updatePaths(pack);
         logInfo("The package description file has been parsed");
     }
     else
@@ -1585,38 +1584,5 @@ bool PackManager::createExampleMirrors(PackDescription& pack, QString& errorStri
     }
 
     return true;
-}
-
-//------------------------------------------------------------------------------
-// Обновление путей к алгоритмам программировани после загрузки pdsc
-//------------------------------------------------------------------------------
-void PackManager::updatePaths(PackDescription& pack)
-{
-    //
-    // Формирование списка файлов для распаковки
-    //
-    Manufacturer& vendor = pack.vendors().first();
-
-    foreach(QString familyName, vendor.families().keys())
-    {
-        Family& family = vendor.family(familyName);
-
-        foreach(QString seriesName, family.seriesMap().keys())
-        {
-            Series& series = vendor.family(familyName).series(seriesName);
-
-            foreach (QString mcuName, series.mcuMap().keys())
-            {
-                Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
-
-                for(ProgAlgorithm& a : mcu.algorithms())
-                {
-                    QString path = Paths::instance()->coIdePackDir(vendor.toKeilName(), pack.release());
-                    path = QString(path + "/" + a.name()).replace(Paths::instance()->coIdeDir(), "..");
-                    a.setInstallPath(path);
-                }
-            }
-        }
-    }
 }
 
