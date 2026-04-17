@@ -63,6 +63,7 @@ public:
     QString getVendorFromPackDir(const QString& packDir);
     QString getVersionFromPackDir(const QString& packDir);
     QString getRelativePathInPack(const QString& fullPath);
+    QString cleanPath(QString path);
     QString coIdeCmsisDir(QString version = QString());
     QString coIdeTempDir();
     QString coIdeRepositoryDir();

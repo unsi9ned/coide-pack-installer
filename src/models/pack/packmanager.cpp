@@ -320,7 +320,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
         logInfo(QString("Adding the manufacturer %1").arg(m.getName()));
 
         if(!reqManager->createManufacturer(m))
-            break;
+        {
+            return false;
+        }
 
         for(auto f = m.families().begin(); f != m.families().end(); ++f)
         {
@@ -329,7 +331,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
             logInfo(QString("Adding the family %1").arg(fam.getName()));
 
             if(!reqManager->createFamily(fam))
-                break;
+            {
+                return false;
+            }
 
             for(auto s = fam.seriesMap().begin(); s!= fam.seriesMap().end(); ++s)
             {
@@ -338,7 +342,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                 logInfo(QString("Adding the series %1").arg(series.getName()));
 
                 if(!reqManager->createSeries(series))
-                    break;
+                {
+                    return false;
+                }
 
                 for(auto dev = series.mcuMap().begin(); dev != series.mcuMap().end(); ++dev)
                 {
@@ -349,7 +355,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                     logInfo(QString("Adding the Debug algorithm '%1'").arg(mcu.getDebugAlgorithm().name()));
 
                     if(!reqManager->createDebugAlgorithm(algorithm))
-                        break;
+                    {
+                        return false;
+                    }
                     else
                     {
                         mcu.setDebugAlgorithmId(algorithm.coId());
@@ -361,7 +369,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                         logInfo(QString("Adding the Flash algorithm '%1'").arg(flashAlgorithm->name()));
 
                         if(!reqManager->createFlashAlgorithm(*flashAlgorithm))
-                            break;
+                        {
+                            return false;
+                        }
                     }
                     else
                         logWarning("The default programming algorithm was not found");
@@ -369,13 +379,22 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                     logInfo(QString("Adding the MCU = %1").arg(mcu.getName()));
 
                     if(!reqManager->createMcu(mcu))
-                        break;
+                    {
+                        return false;
+                    }
                     else if(flashAlgorithm)
                     {
                         logInfo(QString("Creating a link to the Flash Algorithm '%1'").arg(flashAlgorithm->name()));
 
-                        if(!reqManager->createFlashAlgorithmLink(mcu, *flashAlgorithm))
-                            break;
+                        if(!reqManager->createFlashAlgorithmLink(mcu, *flashAlgorithm, &errorString))
+                        {
+                            if(errorString.isEmpty())
+                                logError("An error occurred when creating the link");
+                            else
+                                logError(QString("An error occurred when creating the link: %1").arg(errorString));
+
+                            return false;
+                        }
                     }
                 }
             }

@@ -231,6 +231,7 @@ int runConsole(int argc, char *argv[])
 
         LOG_INFO("Main", "Pack loaded successfully");
 
+#if 0
         // Сигнал завершения
         QEventLoop loop;
         bool success = false;
@@ -254,6 +255,13 @@ int runConsole(int argc, char *argv[])
         viewModel.installCurrentPack(isExample);
 
         loop.exec();
+#else
+        bool success = false;
+        QString resultMessage;
+
+        LOG_INFO("Main", "Installation started");
+        success = viewModel.installCurrentPackSync(isExample, &resultMessage);
+#endif
 
         if (success)
         {

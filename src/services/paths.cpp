@@ -270,11 +270,12 @@ QString Paths::getVendorFromPackDir(const QString &packDir)
     QString prefix = coIdePacketsDir() + "/";
 
     path.replace('\\', '/');
+    prefix.replace('\\', '/');
 
     if(path.endsWith('/'))
         path.chop(1);
 
-    if(path.contains("..")) path = QDir::cleanPath(path);
+    if(path.contains("..")) path = cleanPath(path);
     if(!path.startsWith(prefix)) return QString();
 
     QStringList dirs = path.remove(prefix).split('/') << "";
@@ -290,11 +291,12 @@ QString Paths::getVersionFromPackDir(const QString &packDir)
     QString prefix = coIdePacketsDir() + "/";
 
     path.replace('\\', '/');
+    prefix.replace('\\', '/');
 
     if(path.endsWith('/'))
         path.chop(1);
 
-    if(path.contains("..")) path = QDir::cleanPath(path);
+    if(path.contains("..")) path = cleanPath(path);
     if(!path.startsWith(prefix)) return QString();
 
     QStringList dirs = path.remove(prefix).split('/') << "" << "";
@@ -310,16 +312,54 @@ QString Paths::getRelativePathInPack(const QString &fullPath)
     QString prefix = coIdePacketsDir() + "/";
 
     path.replace('\\', '/');
+    prefix.replace('\\', '/');
 
     if(path.endsWith('/'))
         path.chop(1);
 
-    if(path.contains("..")) path = QDir::cleanPath(path);
+    if(path.contains("..")) path = cleanPath(path);
     if(!path.startsWith(prefix)) return QString();
 
     QStringList dirs = path.remove(prefix).split('/') << "" << "";
     path.remove(dirs.at(0) + "/");
     path.remove(dirs.at(1) + "/");
+
+    return path;
+}
+
+//------------------------------------------------------------------------------
+// Удаляет из пути директории ../ и приводит к абсолютному виду
+//------------------------------------------------------------------------------
+QString Paths::cleanPath(QString path)
+{
+    int index = -1;
+    int slashPos;
+
+    if(path.contains('\\'))
+        path.replace('\\', '/');
+
+    if(path.endsWith('/'))
+        path.chop(1);
+
+    index = path.indexOf("/..");
+
+    while(index != -1)
+    {
+        QString subStr = path.mid(index + 3);
+        slashPos = path.mid(0, index).lastIndexOf('/');
+
+        if(slashPos == -1)
+        {
+            return QString();
+        }
+        else
+        {
+            path = path.mid(0, slashPos);
+            path += subStr;
+        }
+
+        index = path.indexOf("/..");
+    };
 
     return path;
 }

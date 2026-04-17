@@ -111,6 +111,7 @@ public:
     void loadPackAsync();
     void loadPackAsync(const QString& path);
     void installCurrentPack(bool isExample = false);
+    bool installCurrentPackSync(bool isExample = false, QString * errorString = nullptr);
     void optimizeDatabase();
 
     void printDeviceTree() const;

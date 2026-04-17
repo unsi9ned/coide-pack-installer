@@ -173,6 +173,18 @@ void McuBrowserViewModel::installCurrentPack(bool isExample)
     });
 }
 
+//------------------------------------------------------------------------------
+// Установка пакета в главном потоке
+//------------------------------------------------------------------------------
+bool McuBrowserViewModel::installCurrentPackSync(bool isExample, QString* errorString)
+{
+    QString e;
+    bool success = isExample ?
+                   m_packManager.examplesInstall(m_pack, errorString ? *errorString : e) :
+                   m_packManager.packInstall(m_pack, errorString ? *errorString : e);
+    return success;
+}
+
 void McuBrowserViewModel::onInstallResult(bool success, QString errorString)
 {
     if (success)

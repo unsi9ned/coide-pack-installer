@@ -17,7 +17,6 @@ private:
     int      _coId;
 
     QString  _name;
-    //QString  _installDir;
     QString  _description;
     QString  _timeUuid;
     uint32_t _start;

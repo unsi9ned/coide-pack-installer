@@ -2,7 +2,8 @@
 #include "componentsinfo.h"
 #include "services/logger.h"
 
-#define USE_UNIQUE_ID 1
+#define USE_UNIQUE_ID   1
+#define VERBOSE_DEBUG   0
 
 RequestManager* RequestManager::_m_instance = nullptr;
 
@@ -514,8 +515,10 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(int algId)
 //------------------------------------------------------------------------------
 // Загрузить из базы алгоритм программирования
 //------------------------------------------------------------------------------
-ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
+ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name,
+                                                    QString* errorString)
 {
+    bool status;
     ProgAlgorithm fa;
 
     QString queryStr = QString("SELECT "
@@ -529,9 +532,37 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
                                "flash_algorithm.timeuuid, "
                                "flash_algorithm.documentId "
                                "FROM flash_algorithm "
-                               "WHERE name = '%1' LIMIT 1").arg(name);
+                               "WHERE name = '%1' LIMIT 1;").arg(name);
 
-    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
+#if VERBOSE_DEBUG
+    logDebug(QString("FLASH Algorithm Request:"));
+    logDebug(QString("---------------------"));
+    logDebug(QString("SELECT"));
+    logDebug(QString("\tflash_algorithm.id,"));
+    logDebug(QString("\tflash_algorithm.name,"));
+    logDebug(QString("\tflash_algorithm.description,"));
+    logDebug(QString("\tflash_algorithm.deviceType,"));
+    logDebug(QString("\tflash_algorithm.deviceSize,"));
+    logDebug(QString("\tflash_algorithm.create_date,"));
+    logDebug(QString("\tflash_algorithm.update_date,"));
+    logDebug(QString("\tflash_algorithm.timeuuid,"));
+    logDebug(QString("\tflash_algorithm.documentId"));
+    logDebug(QString("FROM"));
+    logDebug(QString("\tflash_algorithm"));
+    logDebug(QString("WHERE"));
+    logDebug(QString("\tname = '%1'").arg(name));
+    logDebug(QString("LIMIT 1;"));
+    logDebug(QString("---------------------"));
+#endif
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return ProgAlgorithm();
+    }
 
     while(result.next())
     {
@@ -542,6 +573,19 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
         QString updateDate = result.value("update_date").toString();
         QString timeUuid = result.value("timeuuid").toString();
         int documentId = result.value("documentId").toInt();
+
+#if VERBOSE_DEBUG
+        logDebug(QString("Request result:"));
+        logDebug(QString("---------------------"));
+        logDebug(QString("ID: %1").arg(id));
+        logDebug(QString("Name: %1").arg(name));
+        logDebug(QString("Description: %1").arg(description));
+        logDebug(QString("Create Date: %1").arg(createDate));
+        logDebug(QString("Update Date: %1").arg(updateDate));
+        logDebug(QString("UUID: %1").arg(timeUuid));
+        logDebug(QString("DocumentId: %1").arg(documentId));
+        logDebug(QString("---------------------"));
+#endif
 
         fa.setCoId(id);
         fa.parseCoName(name);
@@ -1189,7 +1233,8 @@ bool RequestManager::createFlashAlgorithm(ProgAlgorithm& algo)
 // Создание связи между алгоритмом и устройством
 //------------------------------------------------------------------------------
 bool RequestManager::createFlashAlgorithmLink(const Mcu& device,
-                                              const ProgAlgorithm& algo)
+                                              const ProgAlgorithm& algo,
+                                              QString* errorString)
 {
     QString errorStr;
     bool status = true;
@@ -1200,11 +1245,25 @@ bool RequestManager::createFlashAlgorithmLink(const Mcu& device,
     }
     else
     {
-        auto foundAlg = requestFlashAlgorithm(algo.getPath());
+        auto foundAlg = requestFlashAlgorithm(algo.getPath(), errorString);
         auto foundDevice = requestMcu(device.getCoName());
 
         if(foundAlg.isNull())
         {
+#if VERBOSE_DEBUG
+            logDebug(QString("FLASH Algorithm Info:"));
+            logDebug(QString("---------------------"));
+            logDebug(QString("ID: %1").arg(foundAlg.coId()));
+            logDebug(QString("Name: %1").arg(foundAlg.name()));
+            logDebug(QString("Description: %1").arg(foundAlg.description()));
+            logDebug(QString("UUID: %1").arg(foundAlg.timeUUID()));
+            logDebug(QString("Create Date: %1").arg(foundAlg.creationDate()));
+            logDebug(QString("Update Date: %1").arg(foundAlg.updateDate()));
+            logDebug(QString("Vendor: %1").arg(foundAlg.getVendor()));
+            logDebug(QString("Version: %1").arg(foundAlg.getVersion()));
+            logDebug(QString("---------------------"));
+#endif
+
             errorStr = QString("The Flash Algorithm '%1' is not found").arg(algo.getPath());
             status = false;
         }
