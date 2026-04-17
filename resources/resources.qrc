@@ -13,5 +13,6 @@
         <file>img/package_24x24.png</file>
         <file>img/folder_24x24.png</file>
         <file>img/memory_24x24.png</file>
+        <file>img/link_24x24.png</file>
     </qresource>
 </RCC>

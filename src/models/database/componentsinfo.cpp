@@ -714,26 +714,12 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
                 return false;
 
             // Создаем связь между компонентами
-            if(component.hasChildren())
-            {
-                foreach (Component* child, component.getChildren())
-                {
-#if RECURSIVE_CREATION
-                    int childId = child->getId();
-#else
-                    int childId = child->getUniqueId();
-#endif
-                    bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
+            if(createComponentsLinks(component, errorString) != Success)
+                return false;
 
-                    if(status && !hasLink)
-                    {
-                        if(!createComponentsLink(childId, component.getId(), errorString))
-                            return false;
-                    }
-                    else if(!status)
-                        return false;
-                }
-            }
+            // Добавляем атрибуты компонента в БД
+            if(!addComponentPdscAttributes(component, errorString))
+                return false;
         }
     }
 #if 0
@@ -769,23 +755,12 @@ bool ComponentsInfo::createComponent(Component &component, QString *errorString)
         }
 
         // Создаем связи между существующими и новыми компонентами
-        foreach (Component* child, component.getChildren())
-        {
-#if RECURSIVE_CREATION
-            int childId = child->getId();
-#else
-            int childId = child->getUniqueId();
-#endif
-            bool hasLink = hasComponentsLink(childId, component.getId(), &status, errorString);
+        if(createComponentsLinks(component, errorString) != Success)
+            return false;
 
-            if(status && !hasLink)
-            {
-                if(!createComponentsLink(childId, component.getId(), errorString))
-                    return false;
-            }
-            else if(!status)
-                return false;
-        }
+        // Добавляем атрибуты компонента в БД
+        if(!addComponentPdscAttributes(component, errorString))
+            return false;
 
         // Помечаем, что компонент не требует установки
         component.setPersisted(true);
@@ -1190,12 +1165,12 @@ bool ComponentsInfo::createComponentSubCategoryLink(int componentId,
 //------------------------------------------------------------------------------
 // Проверить наличие связи между компонентами
 //------------------------------------------------------------------------------
-bool ComponentsInfo::hasComponentsLink(int parentId,
-                                       int childId,
-                                       bool *status,
-                                       QString *errorString)
+ComponentsInfo::RequestStatus ComponentsInfo::hasComponentsLink(int parentId,
+                                                                int childId,
+                                                                QString *errorString)
 {
-    bool opstatus = false;
+    ComponentsInfo::RequestStatus reqStatus = NotFound;
+    bool status;
     QString sql;
 
     sql = QString("SELECT "
@@ -1204,43 +1179,73 @@ bool ComponentsInfo::hasComponentsLink(int parentId,
                   "FROM component_depends_component "
                   "WHERE component_depends_component.parentComponentId = '%1' "
                   "AND component_depends_component.childComponentId = '%2';").
-                  arg(parentId).
-                  arg(childId);
+                  arg(childId).
+                  arg(parentId);
 
-    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
 
-    if(!opstatus)
+    if(!status)
     {
         if(errorString)
             *errorString = result.lastError().text();
-        if(status)
-            *status = false;
-        return false;
+        return Failure;
     }
     else
     {
-        opstatus = false;
-
-        if(status)
-            *status = true;
-
         while (result.next())
         {
-            opstatus = true;
+            reqStatus = Success;
             break;
         }
     }
 
-    return opstatus;
+    return reqStatus;
+}
+
+//------------------------------------------------------------------------------
+// Создать связь с родительскими компонентами
+//------------------------------------------------------------------------------
+ComponentsInfo::RequestStatus ComponentsInfo::createComponentsLinks(const Component &component,
+                                                                    QString *errorString)
+{
+    if(component.isNull()) return WrongParameters;
+
+    // Создаем связь между компонентами
+    if(component.hasParents())
+    {
+        foreach (Component* parent, component.getParents())
+        {
+            qint32 parentId = parent->getUniqueId();
+            qint32 childId = component.getUniqueId();
+
+            RequestStatus hasLink = hasComponentsLink(parentId, childId, errorString);
+
+            if(hasLink == NotFound)
+            {
+                hasLink = createComponentsLink(parentId, childId, errorString);
+
+                if(hasLink != Success)
+                    return hasLink;
+            }
+            else if(hasLink != Success)
+            {
+                return hasLink;
+            }
+        }
+    }
+
+    return Success;
 }
 
 //------------------------------------------------------------------------------
 // Связать компоненты между собой
 //------------------------------------------------------------------------------
-bool ComponentsInfo::createComponentsLink(int parentId,
-                                          int childId,
-                                          QString *errorString)
+ComponentsInfo::RequestStatus ComponentsInfo::createComponentsLink(int parentId,
+                                                                   int childId,
+                                                                   QString *errorString)
 {
+    if(parentId == -1 || childId == -1) return WrongParameters;
+
     //Поиск последнего айди
     bool opstatus = false;
     QString queryStr = QString("INSERT INTO component_depends_component ("
@@ -1248,8 +1253,246 @@ bool ComponentsInfo::createComponentsLink(int parentId,
                                ") VALUES ("
                                "'%1', '%2'"
                                ");").
-                       arg(parentId).
-                       arg(childId);
+                       arg(childId).
+                       arg(parentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return Failure;
+    }
+
+    return Success;
+}
+
+//------------------------------------------------------------------------------
+// Проверка связи между примером и компонентом
+//------------------------------------------------------------------------------
+ComponentsInfo::RequestStatus ComponentsInfo::hasExampleLink(int exampleId,
+                                                             int componentId,
+                                                             QString *errorString)
+{
+    bool opstatus = false;
+    ComponentsInfo::RequestStatus reqStatus = NotFound;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "example_depends_component.exampleId, "
+                  "example_depends_component.componentId "
+                  "FROM "
+                  "example_depends_component "
+                  "WHERE "
+                  "exampleId = %1 "
+                  "AND "
+                  "componentId = %2 LIMIT 1;").
+                  arg(exampleId).
+                  arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return Failure;
+    }
+    else
+    {
+        while (result.next())
+        {
+            reqStatus = Success;
+            break;
+        }
+    }
+
+    return reqStatus;
+}
+
+//------------------------------------------------------------------------------
+// Создание связи между примером и компонентом
+//------------------------------------------------------------------------------
+ComponentsInfo::RequestStatus ComponentsInfo::createExampleLinks(int exampleId,
+                                                                int componentId,
+                                                                QString *errorString)
+{
+    //Поиск последнего айди
+    bool opstatus = false;
+    QString queryStr = QString("INSERT INTO example_depends_component ("
+                               "exampleId, componentId "
+                               ") VALUES ("
+                               "'%1', '%2'"
+                               ");").
+                       arg(exampleId).
+                       arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return Failure;
+    }
+
+    return Success;
+}
+
+ComponentsInfo::RequestStatus ComponentsInfo::createExampleLinks(const Example &example,
+                                                                 QString *errorString)
+{
+    if(example.isNull()) return WrongParameters;
+
+    // Создаем зависимости между компонентами и примером
+    if(example.hasParents())
+    {
+        foreach (const Component* parent, example.getParentComponents())
+        {
+            if(!parent) continue;
+
+            qint32 exampleId = example.getUniqueId();
+            qint32 componentId = parent->getUniqueId();
+
+            RequestStatus status = hasExampleLink(exampleId, componentId, errorString);
+
+            if(status == NotFound)
+            {
+                status = createExampleLinks(exampleId, componentId, errorString);
+
+                if(status != Success)
+                    return status;
+            }
+            else if(status != Success)
+                return status;
+        }
+    }
+
+    return Success;
+}
+
+//------------------------------------------------------------------------------
+// Проверка принадлежности примера компоненту
+//------------------------------------------------------------------------------
+ComponentsInfo::RequestStatus ComponentsInfo::componentHasExample(qint32 componentId,
+                                                                  qint32 exampleId,
+                                                                  QString *errorString)
+{
+    if(componentId == -1 || exampleId == -1) return WrongParameters;
+
+    bool opstatus = false;
+    ComponentsInfo::RequestStatus reqStatus = NotFound;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "component_has_example.componentId, "
+                  "component_has_example.exampleId "
+                  "FROM "
+                  "component_has_example "
+                  "WHERE "
+                  "componentId = %1 "
+                  "AND "
+                  "exampleId = %2 LIMIT 1;").
+                  arg(componentId).
+                  arg(exampleId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return Failure;
+    }
+    else
+    {
+        while (result.next())
+        {
+            reqStatus = Success;
+            break;
+        }
+    }
+
+    return reqStatus;
+}
+
+//------------------------------------------------------------------------------
+// Закрепление примера за компонентом
+//------------------------------------------------------------------------------
+ComponentsInfo::RequestStatus ComponentsInfo::attachExampleToComponent(qint32 exampleId,
+                                                                       qint32 componentId,
+                                                                       QString * errorString)
+{
+    if(componentId == -1 || exampleId == -1) return WrongParameters;
+
+    //Поиск последнего айди
+    bool opstatus = false;
+    QString queryStr = QString("INSERT INTO component_has_example ("
+                               "componentId, exampleId "
+                               ") VALUES ("
+                               "'%1', '%2'"
+                               ");").
+                       arg(componentId).
+                       arg(exampleId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return Failure;
+    }
+
+    return Success;
+}
+
+ComponentsInfo::RequestStatus ComponentsInfo::attachExampleToComponents(const Example &example,
+                                                                        QString *errorString)
+{
+    if(example.isNull()) return WrongParameters;
+
+    // Связываем пример с компонентом
+    if(example.hasConsumer())
+    {
+        foreach (const Component* consumer, example.getConsumerComponents())
+        {
+            if(!consumer) continue;
+
+            qint32 exampleId = example.getUniqueId();
+            qint32 componentId = consumer->getUniqueId();
+
+            RequestStatus status = componentHasExample(componentId, exampleId, errorString);
+
+            if(status == NotFound)
+                return attachExampleToComponent(exampleId, componentId, errorString);
+            else
+                return status;
+        }
+    }
+
+    return Success;
+}
+
+//------------------------------------------------------------------------------
+// Создать или проверить существование таблицы component_pdsc_attributes
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createComponentPdscAttrTable(QString * errorString)
+{
+    bool opstatus = false;
+    QString queryStr = QString("CREATE TABLE IF NOT EXISTS component_pdsc_attributes ( "
+                               "componentId INTEGER PRIMARY KEY, "
+                               "Cvendor TEXT NOT NULL, "
+                               "Cclass TEXT NOT NULL, "
+                               "Cgroup TEXT NOT NULL, "
+                               "Csub TEXT, "
+                               "Cversion TEXT NOT NULL, "
+                               "Capiversion TEXT, "
+                               "Cvariant TEXT, "
+                               "condition TEXT, "
+                               "FOREIGN KEY (componentId) REFERENCES component(id)"
+                               ");");
 
     QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
 
@@ -1258,6 +1501,502 @@ bool ComponentsInfo::createComponentsLink(int parentId,
         if(errorString)
             *errorString = result.lastError().text();
         return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создать или проверить существование таблицы example_pdsc_attributes
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createExamplePdscAttrTable(QString *errorString)
+{
+    bool opstatus = false;
+    QString queryStr = QString("CREATE TABLE IF NOT EXISTS example_pdsc_attributes ( "
+                               "exampleId INTEGER PRIMARY KEY, "
+                               "Cvendor TEXT NOT NULL, "
+                               "Cclass TEXT NOT NULL, "
+                               "Cgroup TEXT NOT NULL, "
+                               "Csub TEXT, "
+                               "Cversion TEXT NOT NULL, "
+                               "Capiversion TEXT, "
+                               "Cvariant TEXT, "
+                               "condition TEXT, "
+                               "FOREIGN KEY (exampleId) REFERENCES example(id)"
+                               ");");
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Добавление примера в базу данных
+//------------------------------------------------------------------------------
+bool ComponentsInfo::createExample(Example& example, QString* errorString)
+{
+    Example foundExample = findExample(example, errorString);
+
+    // Создаем пример, т.к. его еще нет в базе данных
+    if(foundExample.isNull())
+    {
+        bool status = false;
+        QString queryStr;
+        QSqlQuery result;
+
+        // Создаем положительный статус примера
+        Component::ComponentStatus costatus = example.getStatus();
+
+        if(!createComponentStatus(costatus, errorString))
+            return false;
+        else
+            example.setStatus(costatus);
+
+        // Создаем сам пример
+        queryStr = QString("INSERT INTO example "
+                           "(id, "
+                           "userId, "
+                           "statusId, "
+                           "name, "
+                           "description, "
+                           "type, "
+                           "uuid, "
+                           "timeuuid, "
+                           "repo_user, "
+                           "repo_password, "
+                           "create_date, "
+                           "update_date, "
+                           "hits) "
+                           "VALUES ('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12','%13')").
+                           arg(example.getUniqueId()).
+                           arg(example.getUserId()).
+                           arg(example.getStatusId()).
+                           arg(example.getName()).
+                           arg(example.getCoDescription()).
+                           arg(example.getType()).
+                           arg(example.getUuid()).
+                           arg(example.getTimeuuid()).
+                           arg(example.getRepo_user()).
+                           arg(example.getRepo_password()).
+                           arg(example.getCreationDate()).
+                           arg(example.getUpdateDate()).
+                           arg(example.getHits());
+
+        result = DataBase::instance()->sendQuery(queryStr, &status);
+
+        if(!status)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+        else
+        {
+            example.setId(example.getUniqueId());
+        }
+    }
+    // Обновляем данные примера
+    else
+    {
+        // Обновляем ID существующего в БД компонента
+        example.setId(foundExample.getId());
+    }
+
+    // Создаем зависимости между компонентами и примером
+    if(createExampleLinks(example, errorString) != Success)
+        return false;
+
+    // Закрепление примера за компонентом
+    if(attachExampleToComponents(example, errorString))
+        return false;
+
+    // Добавляем атрибуты компонента в БД
+    if(!addExamplePdscAttributes(example, errorString))
+        return false;
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создать или проверить существование таблицы component_pdsc_attributes
+//------------------------------------------------------------------------------
+bool ComponentsInfo::addComponentPdscAttributes(const Component& component, QString* errorString)
+{
+    bool foundAttr = false, opstatus = false;
+    PdscComponentAttributesEx attributes;
+    QString queryStr;
+    QSqlQuery result;
+
+    if(!requestComponentPdscAttributes(component.getUniqueId(), attributes, &foundAttr, errorString))
+    {
+        return false;
+    }
+
+    // Обновляем аттрибуты компонента
+    if(foundAttr && component.pdscAttributes() != attributes)
+    {
+        queryStr = QString("UPDATE component_pdsc_attributes SET "
+                           "Cvendor = '%2', "
+                           "Cclass = '%3', "
+                           "Cgroup = '%4', "
+                           "Csub = '%5', "
+                           "Cversion = '%6', "
+                           "Capiversion = '%7', "
+                           "Cvariant = '%8', "
+                           "condition = '%9' "
+                           "WHERE componentId = %1;").
+                           arg(component.getUniqueId()).
+                           arg(component.pdscAttributes().getCvendor()).
+                           arg(component.pdscAttributes().getCclass()).
+                           arg(component.pdscAttributes().getCgroup()).
+                           arg(component.pdscAttributes().getCsub()).
+                           arg(component.pdscAttributes().getCversion()).
+                           arg(component.pdscAttributes().getCapiversion()).
+                           arg(component.pdscAttributes().getCvariant()).
+                           arg(component.pdscAttributes().getPdscCondition());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+    // Добавляем аттрибуты компонента
+    else if(!foundAttr)
+    {
+        queryStr = QString("INSERT INTO component_pdsc_attributes ("
+                           "componentId, Cvendor, Cclass, Cgroup, Csub, Cversion, Capiversion, Cvariant, condition "
+                           ") VALUES ("
+                           "'%1', '%2', '%3', '%4', '%5', '%6', '%7', '%8', '%9'"
+                           ");").
+                           arg(component.getUniqueId()).
+                           arg(component.pdscAttributes().getCvendor()).
+                           arg(component.pdscAttributes().getCclass()).
+                           arg(component.pdscAttributes().getCgroup()).
+                           arg(component.pdscAttributes().getCsub()).
+                           arg(component.pdscAttributes().getCversion()).
+                           arg(component.pdscAttributes().getCapiversion()).
+                           arg(component.pdscAttributes().getCvariant()).
+                           arg(component.pdscAttributes().getPdscCondition());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Запрос из БД аттрибутов компонента
+//------------------------------------------------------------------------------
+bool ComponentsInfo::requestComponentPdscAttributes(qint32 componentId,
+                                                    PdscComponentAttributesEx& attributes,
+                                                    bool* found,
+                                                    QString* errorString)
+{
+    bool opstatus = false;
+
+    if(found) *found = false;
+
+    if(!DataBase::instance()->tables().contains("component_pdsc_attributes"))
+        return true;
+
+    QString queryStr = QString("SELECT "
+                               "component_pdsc_attributes.componentId, "
+                               "component_pdsc_attributes.Cvendor, "
+                               "component_pdsc_attributes.Cclass, "
+                               "component_pdsc_attributes.Cgroup, "
+                               "component_pdsc_attributes.Csub, "
+                               "component_pdsc_attributes.Cversion, "
+                               "component_pdsc_attributes.Capiversion, "
+                               "component_pdsc_attributes.Cvariant, "
+                               "component_pdsc_attributes.condition "
+                               "FROM component_pdsc_attributes "
+                               "WHERE componentId = '%1' LIMIT 1;").
+                       arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        //qint32 id = result.value("componentId").toInt();
+
+        attributes.setCvendor(result.value("Cvendor").toString());
+        attributes.setCclass(result.value("Cclass").toString());
+        attributes.setCgroup(result.value("Cgroup").toString());
+        attributes.setCsub(result.value("Csub").toString());
+        attributes.setCversion(result.value("Cversion").toString());
+        attributes.setCapiversion(result.value("Capiversion").toString());
+        attributes.setCvariant(result.value("Cvariant").toString());
+        attributes.setPdscCondition(result.value("condition").toString());
+
+        if(found) *found = true;
+
+        break;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Запрос из БД аттрибутов компонентов
+//------------------------------------------------------------------------------
+bool ComponentsInfo::requestComponentPdscAttributes(QMap<qint32, PdscComponentAttributesEx>& attributes,
+                                                    QString* errorString)
+{
+    bool opstatus = false;
+
+    if(!DataBase::instance()->tables().contains("component_pdsc_attributes"))
+        return true;
+
+    QString queryStr = QString("SELECT "
+                               "component_pdsc_attributes.componentId, "
+                               "component_pdsc_attributes.Cvendor, "
+                               "component_pdsc_attributes.Cclass, "
+                               "component_pdsc_attributes.Cgroup, "
+                               "component_pdsc_attributes.Csub, "
+                               "component_pdsc_attributes.Cversion, "
+                               "component_pdsc_attributes.Capiversion, "
+                               "component_pdsc_attributes.Cvariant, "
+                               "component_pdsc_attributes.condition "
+                               "FROM component_pdsc_attributes;");
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        PdscComponentAttributesEx attr;
+        qint32 id = result.value("componentId").toInt();
+
+        attr.setCvendor(result.value("Cvendor").toString());
+        attr.setCclass(result.value("Cclass").toString());
+        attr.setCgroup(result.value("Cgroup").toString());
+        attr.setCsub(result.value("Csub").toString());
+        attr.setCversion(result.value("Cversion").toString());
+        attr.setCapiversion(result.value("Capiversion").toString());
+        attr.setCvariant(result.value("Cvariant").toString());
+        attr.setPdscCondition(result.value("condition").toString());
+
+        attributes.insert(id, attr);
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Создать или проверить существование таблицы example_pdsc_attributes
+//------------------------------------------------------------------------------
+bool ComponentsInfo::addExamplePdscAttributes(const Example &example, QString *errorString)
+{
+    bool foundAttr = false, opstatus = false;
+    PdscComponentAttributesEx attributes;
+    QString queryStr;
+    QSqlQuery result;
+
+    if(!requestExamplePdscAttributes(example.getUniqueId(), attributes, &foundAttr, errorString))
+    {
+        return false;
+    }
+
+    // Обновляем аттрибуты компонента
+    if(foundAttr && example.pdscAttributes() != attributes)
+    {
+        queryStr = QString("UPDATE example_pdsc_attributes SET "
+                           "Cvendor = '%2', "
+                           "Cclass = '%3', "
+                           "Cgroup = '%4', "
+                           "Csub = '%5', "
+                           "Cversion = '%6', "
+                           "Capiversion = '%7', "
+                           "Cvariant = '%8', "
+                           "condition = '%9' "
+                           "WHERE componentId = %1;").
+                           arg(example.getUniqueId()).
+                           arg(example.pdscAttributes().getCvendor()).
+                           arg(example.pdscAttributes().getCclass()).
+                           arg(example.pdscAttributes().getCgroup()).
+                           arg(example.pdscAttributes().getCsub()).
+                           arg(example.pdscAttributes().getCversion()).
+                           arg(example.pdscAttributes().getCapiversion()).
+                           arg(example.pdscAttributes().getCvariant()).
+                           arg(example.pdscAttributes().getPdscCondition());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+    // Добавляем аттрибуты компонента
+    else if(!foundAttr)
+    {
+        queryStr = QString("INSERT INTO example_pdsc_attributes ("
+                           "exampleId, Cvendor, Cclass, Cgroup, Csub, Cversion, Capiversion, Cvariant, condition "
+                           ") VALUES ("
+                           "'%1', '%2', '%3', '%4', '%5', '%6', '%7', '%8', '%9'"
+                           ");").
+                           arg(example.getUniqueId()).
+                           arg(example.pdscAttributes().getCvendor()).
+                           arg(example.pdscAttributes().getCclass()).
+                           arg(example.pdscAttributes().getCgroup()).
+                           arg(example.pdscAttributes().getCsub()).
+                           arg(example.pdscAttributes().getCversion()).
+                           arg(example.pdscAttributes().getCapiversion()).
+                           arg(example.pdscAttributes().getCvariant()).
+                           arg(example.pdscAttributes().getPdscCondition());
+
+        result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+        if(!opstatus)
+        {
+            if(errorString)
+                *errorString = result.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Запрос из БД аттрибутов примера
+//------------------------------------------------------------------------------
+bool ComponentsInfo::requestExamplePdscAttributes(qint32 exampleId,
+                                                  PdscComponentAttributesEx &attributes,
+                                                  bool *found,
+                                                  QString *errorString)
+{
+    bool opstatus = false;
+
+    if(found) *found = false;
+
+    if(!DataBase::instance()->tables().contains("example_pdsc_attributes"))
+        return true;
+
+    QString queryStr = QString("SELECT "
+                               "example_pdsc_attributes.exampleId, "
+                               "example_pdsc_attributes.Cvendor, "
+                               "example_pdsc_attributes.Cclass, "
+                               "example_pdsc_attributes.Cgroup, "
+                               "example_pdsc_attributes.Csub, "
+                               "example_pdsc_attributes.Cversion, "
+                               "example_pdsc_attributes.Capiversion, "
+                               "example_pdsc_attributes.Cvariant, "
+                               "example_pdsc_attributes.condition "
+                               "FROM example_pdsc_attributes "
+                               "WHERE exampleId = '%1' LIMIT 1;").
+                       arg(exampleId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        //qint32 id = result.value("componentId").toInt();
+
+        attributes.setCvendor(result.value("Cvendor").toString());
+        attributes.setCclass(result.value("Cclass").toString());
+        attributes.setCgroup(result.value("Cgroup").toString());
+        attributes.setCsub(result.value("Csub").toString());
+        attributes.setCversion(result.value("Cversion").toString());
+        attributes.setCapiversion(result.value("Capiversion").toString());
+        attributes.setCvariant(result.value("Cvariant").toString());
+        attributes.setPdscCondition(result.value("condition").toString());
+
+        if(found) *found = true;
+
+        break;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Запрос из БД аттрибутов примеров
+//------------------------------------------------------------------------------
+bool ComponentsInfo::requestExamplePdscAttributes(QMap<qint32, PdscComponentAttributesEx> &attributes,
+                                                  QString *errorString)
+{
+    bool opstatus = false;
+
+    if(!DataBase::instance()->tables().contains("example_pdsc_attributes"))
+        return true;
+
+    QString queryStr = QString("SELECT "
+                               "example_pdsc_attributes.exampleId, "
+                               "example_pdsc_attributes.Cvendor, "
+                               "example_pdsc_attributes.Cclass, "
+                               "example_pdsc_attributes.Cgroup, "
+                               "example_pdsc_attributes.Csub, "
+                               "example_pdsc_attributes.Cversion, "
+                               "example_pdsc_attributes.Capiversion, "
+                               "example_pdsc_attributes.Cvariant, "
+                               "example_pdsc_attributes.condition "
+                               "FROM example_pdsc_attributes;");
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &opstatus);
+
+    if(!opstatus)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return false;
+    }
+
+    while(result.next())
+    {
+        PdscComponentAttributesEx attr;
+        qint32 id = result.value("exampleId").toInt();
+
+        attr.setCvendor(result.value("Cvendor").toString());
+        attr.setCclass(result.value("Cclass").toString());
+        attr.setCgroup(result.value("Cgroup").toString());
+        attr.setCsub(result.value("Csub").toString());
+        attr.setCversion(result.value("Cversion").toString());
+        attr.setCapiversion(result.value("Capiversion").toString());
+        attr.setCvariant(result.value("Cvariant").toString());
+        attr.setPdscCondition(result.value("condition").toString());
+
+        attributes.insert(id, attr);
     }
 
     return true;
@@ -1586,6 +2325,309 @@ Category ComponentsInfo::findSubCategory(const Category category,
 }
 
 //------------------------------------------------------------------------------
+// Поиск примера в базе данных
+//------------------------------------------------------------------------------
+Example ComponentsInfo::findExample(const Example& example, QString* errorString)
+{
+    bool status = true;
+    Example foundExample;
+    QString sql;
+
+    sql = QString("SELECT "
+                  "example.id, "
+                  "example.userId, "
+                  "example.statusId, "
+                  "example.name, "
+                  "example.description, "
+                  "example.type, "
+                  "example.uuid, "
+                  "example.timeuuid, "
+                  "example.repo_user, "
+                  "example.repo_password, "
+                  "example.create_date, "
+                  "example.update_date, "
+                  "example.hits, "
+                  "status.shouldupdate, "
+                  "status.hasdownloaded, "
+                  "status.hasdeleted, "
+                  "status.auditstatus "
+                  "FROM example, status "
+                  "WHERE example.statusId = status.id "
+                  "AND example.id = %1 "
+                  "AND example.name = '%2' "
+                  "LIMIT 1;"
+                ).
+            arg(example.getUniqueId()).
+            arg(example.getName());
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return foundExample;
+    }
+    else
+    {
+        while (result.next())
+        {
+            qint32 exampleId = result.value("id").toInt();
+            qint32 userId = result.value("userId").toInt();
+            qint32 statusId = result.value("statusId").toInt();
+            QString name = result.value("name").toString();
+            QString description = result.value("description").toString();
+            qint32 type = result.value("type").toInt();
+            QString uuid = result.value("uuid").toString();
+            QString timeuuid = result.value("timeuuid").toString();
+            QString repoUser = result.value("repo_user").toString();
+            QString repoPassword = result.value("repo_password").toString();
+            QString createDate = result.value("create_date").toString();
+            QString updateDate = result.value("update_date").toString();
+            qint32 hits = result.value("hits").toInt();
+            int shouldupdate = result.value("shouldupdate").toInt();
+            int hasdownloaded = result.value("hasdownloaded").toInt();
+            int hasdeleted = result.value("hasdeleted").toInt();
+            int auditstatus = result.value("auditstatus").toInt();
+
+            Component::ComponentStatus exStatus;
+            exStatus.statusId = statusId;
+            exStatus.shouldUpdate = shouldupdate;
+            exStatus.hasDownloaded = hasdownloaded;
+            exStatus.hasDeleted = hasdeleted;
+            exStatus.auditStatus = auditstatus;
+
+            Example example;
+            example.setId(exampleId);
+            example.setUserId(userId);
+            example.setStatus(exStatus);
+            example.setName(name);
+            example.setDescription(description);
+            example.setType(type);
+            example.setUuid(uuid);
+            example.setTimeuuid(timeuuid);
+            example.setRepoUser(repoUser);
+            example.setRepoPassword(repoPassword);
+            example.setCreateDate(createDate);
+            example.setUpdateDate(updateDate);
+            example.setHits(hits);
+
+            foundExample = example;
+            break;
+        }
+    }
+
+    return foundExample;
+}
+
+//------------------------------------------------------------------------------
+// Запрос компонента из БД
+//------------------------------------------------------------------------------
+Component ComponentsInfo::requestComponent(qint32 componentId, QString* errorString)
+{
+    bool status = true;
+    QString sql = QString("SELECT component.*, "
+                          "status.shouldupdate, "
+                          "status.hasdownloaded, "
+                          "status.hasdeleted, "
+                          "status.auditstatus "
+                          "FROM component, status "
+                          "WHERE component.Component_Status_id = status.id "
+                          "AND component.id = %1 LIMIT 1;").arg(componentId);
+
+    QSqlQuery result = DataBase::instance()->sendQuery(sql, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return Component();
+    }
+    else
+    {
+        if (result.next())
+        {
+            Component newComponent;
+
+            newComponent.setId(result.value(0).toInt());
+            newComponent.setAuthorId(result.value(1).toInt());
+            newComponent.setLayerId(result.value(2).toInt());
+            newComponent.setComponentStatusId(result.value(3).toInt());
+            newComponent.setShareDocumentId(result.value(4).toInt());
+            newComponent.setType(result.value(5).toInt());
+            newComponent.setName(result.value(6).toString());
+            newComponent.setDescription(result.value(7).toString());
+            newComponent.setAdvertisingWord(result.value(8).toString());
+            newComponent.setAdvertisingURL(result.value(9).toString());
+            newComponent.setUuid(result.value(10).toString());
+            newComponent.setTimeuuid(result.value(11).toString());
+            newComponent.setRepoUser(result.value(12).toString());
+            newComponent.setRepoPass(result.value(13).toString());
+            newComponent.setMicro(result.value(14).toString());
+            newComponent.setCox(result.value(15).toInt());
+            newComponent.setVersion(result.value(16).toString());
+            newComponent.setPublishStatus(result.value(17).toString());
+            newComponent.setHits(result.value(18).toInt());
+            newComponent.setCreationDate(result.value(19).toString());
+            newComponent.setUpdateDate(result.value(20).toString());
+            newComponent.setTags(result.value(21).toString());
+
+            //Чтение статуса компонента
+            Component::ComponentStatus status;
+
+            status.statusId = result.value(3).toInt();
+            status.shouldUpdate = result.value(22).toInt();
+            status.hasDownloaded = result.value(23).toInt();
+            status.hasDeleted = result.value(24).toInt();
+            status.auditStatus = result.value(25).toInt();
+            newComponent.setStatus(status);
+
+            return newComponent;
+        }
+    }
+
+    return Component();
+}
+
+//------------------------------------------------------------------------------
+// Загрузить данные о компонентах из базы данных
+//------------------------------------------------------------------------------
+void ComponentsInfo::requestComponentMap(const QMap<QString, Manufacturer>& vendorMap,
+                                         QMap<QString, Component>& componentMap)
+{
+    QMap<QString, Component> mcuComponents;
+    QMap<QString, Component> thirdPartyComponents;
+    QMap<QString, QStringList> componentParents;
+    QString sql;
+    QSqlQuery result;
+
+    for(const auto& vendor : vendorMap)
+    {
+        for(const auto& family : vendor.familiesConst())
+        {
+            for(const auto& series : family.seriesMapConst())
+            {
+                for(const auto& device : series.mcuMapConst())
+                {
+                    sql = QString("SELECT component_supports_mcu.componentId, "
+                                  "component_supports_mcu.mcuId "
+                                  "FROM component_supports_mcu "
+                                  "WHERE mcuId = %1;").arg(device.getId());
+
+                    result = DataBase::instance()->sendQuery(sql);
+
+                    while(result.next())
+                    {
+                        qint32 componentId = result.value("componentId").toInt();
+                        Component component = requestComponent(componentId);
+
+                        if(!component.isNull() && !component.getUuid().isEmpty())
+                        {
+                            // Компонент уже находится в списке
+                            if(mcuComponents.contains(component.getUuid()))
+                            {
+                                Component& c = mcuComponents[component.getUuid()];
+                                c.addSupportedMcu(device.getName());
+                            }
+                            // Впервые найденный компонент
+                            else
+                            {
+                                bool found = false;
+                                PdscComponentAttributesEx attributes;
+
+                                if(requestComponentPdscAttributes(componentId, attributes, &found) &&
+                                   found)
+                                {
+                                    component.setPdscAttributes(attributes);
+                                }
+
+                                component.addSupportedMcu(device.getName());
+                                mcuComponents.insert(component.getUuid(), component);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Ищем внешние зависимости
+    for(auto& component : mcuComponents)
+    {
+        sql = QString("SELECT component_depends_component.parentComponentId, "
+                      "component_depends_component.childComponentId, "
+                      "component.uuid "
+                      "FROM component_depends_component, component "
+                      "WHERE parentComponentId = %1 "
+                      "AND component.id = component_depends_component.childComponentId;").
+                      arg(component.getId());
+
+        result = DataBase::instance()->sendQuery(sql);
+
+        while(result.next())
+        {
+            qint32 parentId = result.value("childComponentId").toInt();
+            QString parentUuid = result.value("uuid").toString();
+
+            if(!mcuComponents.contains(parentUuid) && !thirdPartyComponents.contains(parentUuid))
+            {
+                Component parentComponent;
+                parentComponent.setId(parentId);
+                parentComponent.setUuid(parentUuid);
+                thirdPartyComponents.insert(parentUuid, parentComponent);
+            }
+
+            if(!componentParents.contains(component.getUuid()))
+            {
+                componentParents.insert(component.getUuid(), QStringList());
+            }
+
+            QStringList& parentList = componentParents[component.getUuid()];
+            parentList.append(parentUuid);
+        }
+    }
+
+    // Запрашиваем внешние компоненты
+    for(auto it = thirdPartyComponents.begin(); it != thirdPartyComponents.end(); ++it)
+    {
+        Component& c = it.value();
+        Component component = requestComponent(c.getId());
+
+        if(!component.isNull() && !component.getUuid().isEmpty())
+        {
+            bool found = false;
+            PdscComponentAttributesEx attributes;
+
+            if(requestComponentPdscAttributes(c.getId(), attributes, &found) &&
+               found)
+            {
+                component.setPdscAttributes(attributes);
+            }
+
+            c = component;
+        }
+    }
+
+    // Связывает компоненты с их родителями
+    for(auto& component : mcuComponents)
+    {
+        for(QString uuid : componentParents[component.getUuid()])
+        {
+            if(mcuComponents.contains(uuid))
+            {
+                component.addParent(&mcuComponents[uuid]);
+            }
+            else if(thirdPartyComponents.contains(uuid))
+            {
+                component.addParent(&thirdPartyComponents[uuid]);
+            }
+        }
+    }
+
+    componentMap = mcuComponents;
+}
+
+//------------------------------------------------------------------------------
 // Загрузить данные о компонентах из базы данных
 //------------------------------------------------------------------------------
 QMap<int, Component> ComponentsInfo::requestComponentMap()
@@ -1639,6 +2681,19 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
         newComponent.setStatus(status);
 
         componentsMap.insert(newComponent.getId(), newComponent);
+    }
+
+    // Запрос атрибутов компонента
+    QMap<qint32, PdscComponentAttributesEx> attributes;
+    requestComponentPdscAttributes(attributes, nullptr);
+
+    for(auto it = attributes.begin(); it != attributes.end(); ++it)
+    {
+        qint32 id = it.key();
+        auto attr = it.value();
+
+        Component * component = &componentsMap[id];
+        component->setPdscAttributes(attr);
     }
 
     //Установка связи между компонентами
@@ -1713,9 +2768,9 @@ QMap<int, Component> ComponentsInfo::requestComponentMap()
 //------------------------------------------------------------------------------
 // Загрузить данные о примерах из базы данных
 //------------------------------------------------------------------------------
-QMap<int, Example> ComponentsInfo::requestExampleMap()
+QMap<QString, Example> ComponentsInfo::requestExampleMap()
 {
-    QMap<int, Example> exampleMap;
+    QMap<QString, Example> exampleMap;
     QString sql = QString("SELECT example.*, "
                           "status.shouldupdate, "
                           "status.hasdownloaded, "
@@ -1754,23 +2809,39 @@ QMap<int, Example> ComponentsInfo::requestExampleMap()
         status.auditStatus = result.value("auditstatus").toInt();
         newExample.setStatus(status);
 
-        exampleMap.insert(newExample.getId(), newExample);
+        exampleMap.insert(newExample.getUuid(), newExample);
     }
 
+#if 0
     //Установка связи между компонентами и примерами
-    result = DataBase::instance()->sendQuery("SELECT * FROM example_depends_component");
+    result = DataBase::instance()->sendQuery("SELECT "
+                                             "example_depends_component.exampleId, "
+                                             "example.uuid AS exampleUuid, "
+                                             "example_depends_component.componentId, "
+                                             "component.uuid AS componentUuid "
+                                             "FROM "
+                                             "example_depends_component, "
+                                             "example, "
+                                             "component "
+                                             "WHERE "
+                                             "example_depends_component.exampleId = example.id "
+                                             "AND "
+                                             "example_depends_component.componentId = component.id;");
 
     while(result.next())
     {
-        int exampleId = result.value(0).toInt();
-        int componentId = result.value(1).toInt();
+        qint32 exampleId = result.value("exampleId").toInt();
+        QString exampleUuid = result.value("exampleUuid").toString();
+        qint32 componentId = result.value("componentId").toInt();
+        QString componentUuid = result.value("componentUuid").toString();
 
         // В таблице могут быть ID не существующих примеров
-        if(exampleMap.contains(exampleId))
+        if(exampleMap.contains(exampleUuid))
         {
-            exampleMap[exampleId].addParentComponent(componentId);
+            exampleMap[exampleUuid].addParentComponent(nullptr);
         }
     }
+#endif
 
     return exampleMap;
 }

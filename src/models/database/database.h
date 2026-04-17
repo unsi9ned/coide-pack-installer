@@ -36,6 +36,7 @@ public:
 
     QSqlQuery sendQuery(QString queryString, bool * result = nullptr);
     QString lastError() const { return DataBase::m_errorString; }
+    QStringList tables() const { return db.tables(); }
 
 private:
     bool isOpen();

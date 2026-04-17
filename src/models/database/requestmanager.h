@@ -49,7 +49,7 @@ public:
 
     bool createDebugAlgorithm(DebugAlgorithm& algo);
     bool createFlashAlgorithm(ProgAlgorithm& algo);
-    bool createFlashAlgorithmLink(const Mcu& device, const ProgAlgorithm& algo);
+    bool createFlashAlgorithmLink(const Mcu& device, const ProgAlgorithm& algo, QString * errorString = nullptr);
 
     bool removeMcu(Mcu mcu);
     bool removeSerie(Series serie);
@@ -86,7 +86,7 @@ private:
     DebugAlgorithm requestDebugAlgorithm(const QString& name);
     QList<DebugAlgorithm> requestDebugAlgorithmList();
     ProgAlgorithm requestFlashAlgorithm(int algId);
-    ProgAlgorithm requestFlashAlgorithm(const QString& name);
+    ProgAlgorithm requestFlashAlgorithm(const QString& name, QString * errorString = nullptr);
     QList<ProgAlgorithm> requestFlashAlgorithmList();
     ProgAlgorithm getMcuFlashAlgorithm(int mcuId);
 

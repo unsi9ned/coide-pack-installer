@@ -93,6 +93,12 @@ int runConsole(int argc, char *argv[])
     );
     parser.addOption(installOption);
 
+    QCommandLineOption exampleOption(
+        QStringList() << "e" << "examples",
+        "Install as Package of Examples"
+    );
+    parser.addOption(exampleOption);
+
     QCommandLineOption optimizeDbOption(
         QStringList() << "optimize-db",
         "Optimize database (clean unused tables and obsolete data)"
@@ -119,6 +125,7 @@ int runConsole(int argc, char *argv[])
     bool showComponentList = parser.isSet(listCompOption);
     bool optimizeDb = parser.isSet(optimizeDbOption);
     bool install = parser.isSet(installOption);
+    bool isExample = parser.isSet(exampleOption);
 
     // Путь к CoIDE
     if (parser.isSet(ideOption))
@@ -224,6 +231,7 @@ int runConsole(int argc, char *argv[])
 
         LOG_INFO("Main", "Pack loaded successfully");
 
+#if 0
         // Сигнал завершения
         QEventLoop loop;
         bool success = false;
@@ -244,9 +252,16 @@ int runConsole(int argc, char *argv[])
             loop.quit();
         });
 
-        viewModel.installCurrentPack();
+        viewModel.installCurrentPack(isExample);
 
         loop.exec();
+#else
+        bool success = false;
+        QString resultMessage;
+
+        LOG_INFO("Main", "Installation started");
+        success = viewModel.installCurrentPackSync(isExample, &resultMessage);
+#endif
 
         if (success)
         {

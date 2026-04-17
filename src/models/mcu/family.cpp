@@ -48,6 +48,11 @@ QMap<QString, Series> &Family::seriesMap()
     return this->_seriesMap;
 }
 
+const QMap<QString, Series>&Family::seriesMapConst() const
+{
+    return this->_seriesMap;
+}
+
 bool Family::hasSeries(){return !this->_seriesMap.isEmpty();}
 
 void Family::setId(int id)

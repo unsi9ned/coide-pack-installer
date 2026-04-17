@@ -205,7 +205,7 @@ void JdscParser::loadComponents(QMap<QString, Component>& coComponentMap,
 
     foreach (JdscComponent jComponent, componentList)
     {
-        if(jComponent.name().startsWith("CMSIS_Core", Qt::CaseInsensitive))
+        if(jComponent.name().startsWith("CMSIS_CORE", Qt::CaseInsensitive))
             continue;
 
         QMap<QString, Manufacturer>& vendors = pack.vendors();
@@ -332,17 +332,19 @@ void JdscParser::loadComponents(QMap<QString, Component>& coComponentMap,
 //------------------------------------------------------------------------------
 // Ищет компонент в карте по косвенным признакам
 //------------------------------------------------------------------------------
-QList<Component*> JdscParser::findParentsComponent(
-        const QMap<QString, Component>& coComponentMap,
-        const PackDescriptionParser::ParentComponentInfo& parent)
+QList<Component*> JdscParser::findParentsComponent(const QMap<QString, Component>& coComponentMap,
+                                                   const PackDescriptionParser::ParentComponentInfo& parent,
+                                                   const Component& child)
 {
+    Q_UNUSED(child);
+
     QList<Component*> foundComponents;
 
     for(auto it = coComponentMap.begin(); it != coComponentMap.end(); ++it)
     {
         const Component& c = it.value();
 
-        if(parent.Jname.startsWith("CMSIS_Core", Qt::CaseInsensitive))
+        if(parent.Jname.startsWith("CMSIS_CORE", Qt::CaseInsensitive))
         {
             if(c.getName().toUpper() == QString("%1_%2").arg(parent.Jname).arg(parent.Jversion).toUpper())
             {

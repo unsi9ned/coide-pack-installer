@@ -43,10 +43,15 @@ QStringList FeatureContainer::featuresSummary()
 {
     QStringList summary;
 
-    foreach(auto feat, _featureList)
+    if(!_featureList.isEmpty())
     {
-        summary.append(feat.getFormattedDescription());
+        foreach(auto feat, _featureList)
+        {
+            summary.append(feat.getFormattedDescription());
+        }
     }
+    else
+        summary = keyParameters;
 
     return summary;
 }

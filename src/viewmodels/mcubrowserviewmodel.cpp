@@ -149,7 +149,7 @@ void McuBrowserViewModel::onLoadResult(bool success, QString errorString)
 //------------------------------------------------------------------------------
 // Установка пакета
 //------------------------------------------------------------------------------
-void McuBrowserViewModel::installCurrentPack()
+void McuBrowserViewModel::installCurrentPack(bool isExample)
 {
     if (m_pack.pathToArchive().isEmpty())
     {
@@ -160,15 +160,29 @@ void McuBrowserViewModel::installCurrentPack()
     emit installStarted();
 
     // Асинхронная установка
-    QtConcurrent::run([this]()
+    QtConcurrent::run([this, isExample]()
     {
         QString errorString;
         PackDescription localPack = m_pack;
         PackManager localManager;
 
-        bool success = localManager.packInstall(localPack, errorString);
+        bool success = isExample ?
+                       localManager.examplesInstall(localPack, errorString) :
+                       localManager.packInstall(localPack, errorString);
         emit installResult(success, errorString);
     });
+}
+
+//------------------------------------------------------------------------------
+// Установка пакета в главном потоке
+//------------------------------------------------------------------------------
+bool McuBrowserViewModel::installCurrentPackSync(bool isExample, QString* errorString)
+{
+    QString e;
+    bool success = isExample ?
+                   m_packManager.examplesInstall(m_pack, errorString ? *errorString : e) :
+                   m_packManager.packInstall(m_pack, errorString ? *errorString : e);
+    return success;
 }
 
 void McuBrowserViewModel::onInstallResult(bool success, QString errorString)
@@ -479,6 +493,7 @@ ComponentNode McuBrowserViewModel::buildComponentNode(const Component &component
     node.description = component.getDescription();
     node.level = parent ? parent->level + 1 : 0;
     node.hierarchyNode = &component;
+    node.external = component.isExternal();
 
     if(node.level < 5)
     {
@@ -919,6 +934,22 @@ QStringList McuBrowserViewModel::componentDevices() const
     }
 
     return devices;
+}
+
+//------------------------------------------------------------------------------
+// Компонент является внешним (не из загруженного pdsc)
+//------------------------------------------------------------------------------
+bool McuBrowserViewModel::componentIsExternal() const
+{
+    bool isExternal = false;
+
+    if(m_selectedComponentNode.hierarchyNode->getUniqueId() != -1)
+    {
+        const Component * component = reinterpret_cast<const Component*>(m_selectedComponentNode.hierarchyNode);
+        isExternal = component->isExternal();
+    }
+
+    return isExternal;
 }
 
 

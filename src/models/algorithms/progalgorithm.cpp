@@ -1,5 +1,6 @@
 #include "progalgorithm.h"
 #include "common/constants.h"
+#include "services/paths.h"
 
 uint32_t ProgAlgorithm::size() const
 {
@@ -66,6 +67,15 @@ void ProgAlgorithm::setDescription(const QString& dscr)
     _description = dscr;
 }
 
+void ProgAlgorithm::parseCoName(const QString &coName)
+{
+    QString path = Paths::instance()->coIdeFlashAlgorithmDir() + "/" + coName;
+
+    m_vendor = Paths::instance()->getVendorFromPackDir(path);
+    m_version = Paths::instance()->getVersionFromPackDir(path);
+    _name = Paths::instance()->getRelativePathInPack(path);
+}
+
 uint32_t ProgAlgorithm::start() const
 {
     return _start;
@@ -80,7 +90,6 @@ ProgAlgorithm::ProgAlgorithm(const QString &name)
 {
     this->_coId = -1;
     this->_name = name;
-    this->_installPath = name;
     this->_description = "";
     this->_timeUuid = generateTimeUUID();
     this->_start = 0;
@@ -91,6 +100,7 @@ ProgAlgorithm::ProgAlgorithm(const QString &name)
     this->_createDate = QDateTime::currentDateTime();
     this->_updateDate = QDateTime::currentDateTime();
     this->_documentId = static_cast<int>(CoDocument::DOC_FLASH_ALGO);
+    this->m_installed = false;
 }
 
 void ProgAlgorithm::setCoId(int id)
@@ -103,11 +113,6 @@ void ProgAlgorithm::setName(QString name)
     this->_name = name;
 }
 
-void ProgAlgorithm::setInstallPath(const QString &path)
-{
-    _installPath = path;
-}
-
 int ProgAlgorithm::coId() const
 {
     return this->_coId;
@@ -118,11 +123,6 @@ QString ProgAlgorithm::name() const
     return this->_name;
 }
 
-QString ProgAlgorithm::installPath() const
-{
-    return _installPath;
-}
-
 bool ProgAlgorithm::isNull()
 {
     return this->_coId <= 0 ||
@@ -131,7 +131,12 @@ bool ProgAlgorithm::isNull()
 
 QString ProgAlgorithm::getPath() const
 {
-    QString path = _installPath;
+    QString flashDir = Paths::instance()->coIdeFlashAlgorithmDir();
+    QString path = Paths::instance()->coIdePackDirRelative(m_vendor, m_version, flashDir);
+
+    if(!path.isEmpty() && !path.endsWith('/')) path += "/";
+
+    path += _name;
     return path.replace('\\', '/');
 }
 

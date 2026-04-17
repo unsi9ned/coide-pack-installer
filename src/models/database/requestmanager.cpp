@@ -2,7 +2,8 @@
 #include "componentsinfo.h"
 #include "services/logger.h"
 
-#define USE_UNIQUE_ID 1
+#define USE_UNIQUE_ID   1
+#define VERBOSE_DEBUG   0
 
 RequestManager* RequestManager::_m_instance = nullptr;
 
@@ -65,15 +66,27 @@ void RequestManager::loadDataFromDb(const QString &vendorName, Manufacturer &ven
         Family fam = families.at(f);
         QList<Series> series = requestSeriesList(fam.getId());
 
+        Family& newFamily = vendor.addFamily(fam.getName());
+        newFamily.setId(fam.getId());
+        newFamily.setManufacturerId(fam.getManufacturerId());
+        newFamily.setName(fam.getName());
+
         for(int s = 0 ; s < series.length(); s++)
         {
             Series serie = series.at(s);
             QList<Mcu> mcuList = requestMcuList(serie.getId());
 
+            Series& newSeries = vendor.family(fam.getName()).addSeries(serie.getName());
+            newSeries.setId(serie.getId());
+            newSeries.setFamilyId(fam.getId());
+            newSeries.setName(serie.getName());
+
             for(int m = 0; m < mcuList.length(); m++)
             {
                 Mcu mcu = mcuList.at(m);
-                vendor.family(fam.getName()).series(serie.getName()).addMcu(mcu);
+                Mcu& newMcu = vendor.family(fam.getName()).series(serie.getName()).addMcu(mcu);
+                mcu.setParent(newMcu.getParent());
+                newMcu = mcu;
             }
         }
     }
@@ -267,18 +280,6 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
         QString timeuuid = result.value(13).toString();
         int hits = result.value(14).toInt();
 
-        memInfo = memInfo.replace("\\", "");
-        memInfo = memInfo.replace("\"{", "{");
-        memInfo = memInfo.replace("}\"", "}");
-
-        QByteArray ba;
-        ba.append("{\"memInfo\" : ");
-        ba.append(memInfo);
-        ba.append("}");
-
-        memInfo = ba;
-
-
         Mcu mcu;
         mcu.setId(id);
         mcu.setSeriesId(seriesId);
@@ -286,10 +287,10 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
         mcu.setDebugAlgorithmId(debugAlgorithmId);
         mcu.setName(name);
         mcu.setDescription(description);
-        mcu.setKeyParameter(keyParameter);
-        mcu.setWebPageURL(webPageURL);
-        mcu.setDatasheetURL(datasheetURL);
-        mcu.setMemInfo(memInfo);
+        mcu.setKeyParameterFromJson(keyParameter);
+        mcu.fromCoWebPageURL(webPageURL);
+        mcu.fromCoDatasheetURL(datasheetURL);
+        mcu.setMemInfoFromJson(memInfo);
         mcu.setMicro(micro);
         mcu.setAdvertising(advertising);
         mcu.setPrice(price);
@@ -300,7 +301,7 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
         mcu.setDebugAlgorithm(da);
 
         ProgAlgorithm fa = getMcuFlashAlgorithm(id);
-        mcu.setFlashAlgorithm(fa);
+        mcu.addAlgorithm(fa);
 
         microcontrollers.append(mcu);
     }
@@ -334,27 +335,16 @@ Mcu RequestManager::requestMcu(const QString& name)
         QString timeuuid = result.value(13).toString();
         int hits = result.value(14).toInt();
 
-        memInfo = memInfo.replace("\\", "");
-        memInfo = memInfo.replace("\"{", "{");
-        memInfo = memInfo.replace("}\"", "}");
-
-        QByteArray ba;
-        ba.append("{\"memInfo\" : ");
-        ba.append(memInfo);
-        ba.append("}");
-
-        memInfo = ba;
-
         mcu.setId(id);
         mcu.setSeriesId(seriesId);
         mcu.setUserId(userId);
         mcu.setDebugAlgorithmId(debugAlgorithmId);
         mcu.setName(name);
         mcu.setDescription(description);
-        mcu.setKeyParameter(keyParameter);
-        mcu.setWebPageURL(webPageURL);
-        mcu.setDatasheetURL(datasheetURL);
-        mcu.setMemInfo(memInfo);
+        mcu.setKeyParameterFromJson(keyParameter);
+        mcu.fromCoWebPageURL(webPageURL);
+        mcu.fromCoDatasheetURL(datasheetURL);
+        mcu.setMemInfoFromJson(memInfo);
         mcu.setMicro(micro);
         mcu.setAdvertising(advertising);
         mcu.setPrice(price);
@@ -365,7 +355,7 @@ Mcu RequestManager::requestMcu(const QString& name)
         mcu.setDebugAlgorithm(da);
 
         ProgAlgorithm fa = getMcuFlashAlgorithm(id);
-        mcu.setFlashAlgorithm(fa);
+        mcu.addAlgorithm(fa);
 
         break;
     }
@@ -509,13 +499,13 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(int algId)
         int documentId = result.value("documentId").toInt();
 
         fa.setCoId(id);
-        fa.setName(name);
-        fa.setInstallPath(name);
+        fa.parseCoName(name);
         fa.setDocumentId(documentId);
         fa.setTimeUUID(timeUuid);
         fa.setCreateDate(createDate);
         fa.setUpdateDate(updateDate);
         fa.setDescription(description);
+        fa.setInstalled(true);
         break;
     }
 
@@ -525,8 +515,10 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(int algId)
 //------------------------------------------------------------------------------
 // Загрузить из базы алгоритм программирования
 //------------------------------------------------------------------------------
-ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
+ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name,
+                                                    QString* errorString)
 {
+    bool status;
     ProgAlgorithm fa;
 
     QString queryStr = QString("SELECT "
@@ -540,9 +532,37 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
                                "flash_algorithm.timeuuid, "
                                "flash_algorithm.documentId "
                                "FROM flash_algorithm "
-                               "WHERE name = '%1' LIMIT 1").arg(name);
+                               "WHERE name = '%1' LIMIT 1;").arg(name);
 
-    QSqlQuery result = DataBase::instance()->sendQuery(queryStr);
+#if VERBOSE_DEBUG
+    logDebug(QString("FLASH Algorithm Request:"));
+    logDebug(QString("---------------------"));
+    logDebug(QString("SELECT"));
+    logDebug(QString("\tflash_algorithm.id,"));
+    logDebug(QString("\tflash_algorithm.name,"));
+    logDebug(QString("\tflash_algorithm.description,"));
+    logDebug(QString("\tflash_algorithm.deviceType,"));
+    logDebug(QString("\tflash_algorithm.deviceSize,"));
+    logDebug(QString("\tflash_algorithm.create_date,"));
+    logDebug(QString("\tflash_algorithm.update_date,"));
+    logDebug(QString("\tflash_algorithm.timeuuid,"));
+    logDebug(QString("\tflash_algorithm.documentId"));
+    logDebug(QString("FROM"));
+    logDebug(QString("\tflash_algorithm"));
+    logDebug(QString("WHERE"));
+    logDebug(QString("\tname = '%1'").arg(name));
+    logDebug(QString("LIMIT 1;"));
+    logDebug(QString("---------------------"));
+#endif
+
+    QSqlQuery result = DataBase::instance()->sendQuery(queryStr, &status);
+
+    if(!status)
+    {
+        if(errorString)
+            *errorString = result.lastError().text();
+        return ProgAlgorithm();
+    }
 
     while(result.next())
     {
@@ -554,14 +574,27 @@ ProgAlgorithm RequestManager::requestFlashAlgorithm(const QString& name)
         QString timeUuid = result.value("timeuuid").toString();
         int documentId = result.value("documentId").toInt();
 
+#if VERBOSE_DEBUG
+        logDebug(QString("Request result:"));
+        logDebug(QString("---------------------"));
+        logDebug(QString("ID: %1").arg(id));
+        logDebug(QString("Name: %1").arg(name));
+        logDebug(QString("Description: %1").arg(description));
+        logDebug(QString("Create Date: %1").arg(createDate));
+        logDebug(QString("Update Date: %1").arg(updateDate));
+        logDebug(QString("UUID: %1").arg(timeUuid));
+        logDebug(QString("DocumentId: %1").arg(documentId));
+        logDebug(QString("---------------------"));
+#endif
+
         fa.setCoId(id);
-        fa.setName(name);
-        fa.setInstallPath(name);
+        fa.parseCoName(name);
         fa.setDocumentId(documentId);
         fa.setTimeUUID(timeUuid);
         fa.setCreateDate(createDate);
         fa.setUpdateDate(updateDate);
         fa.setDescription(description);
+        fa.setInstalled(true);
         break;
     }
 
@@ -601,13 +634,13 @@ QList<ProgAlgorithm> RequestManager::requestFlashAlgorithmList()
         int documentId = result.value("documentId").toInt();
 
         fa.setCoId(id);
-        fa.setName(name);
-        fa.setInstallPath(name);
+        fa.parseCoName(name);
         fa.setDocumentId(documentId);
         fa.setTimeUUID(timeUuid);
         fa.setCreateDate(createDate);
         fa.setUpdateDate(updateDate);
         fa.setDescription(description);
+        fa.setInstalled(true);
 
         faList.append(fa);
     }
@@ -1200,7 +1233,8 @@ bool RequestManager::createFlashAlgorithm(ProgAlgorithm& algo)
 // Создание связи между алгоритмом и устройством
 //------------------------------------------------------------------------------
 bool RequestManager::createFlashAlgorithmLink(const Mcu& device,
-                                              const ProgAlgorithm& algo)
+                                              const ProgAlgorithm& algo,
+                                              QString* errorString)
 {
     QString errorStr;
     bool status = true;
@@ -1211,11 +1245,25 @@ bool RequestManager::createFlashAlgorithmLink(const Mcu& device,
     }
     else
     {
-        auto foundAlg = requestFlashAlgorithm(algo.getPath());
+        auto foundAlg = requestFlashAlgorithm(algo.getPath(), errorString);
         auto foundDevice = requestMcu(device.getCoName());
 
         if(foundAlg.isNull())
         {
+#if VERBOSE_DEBUG
+            logDebug(QString("FLASH Algorithm Info:"));
+            logDebug(QString("---------------------"));
+            logDebug(QString("ID: %1").arg(foundAlg.coId()));
+            logDebug(QString("Name: %1").arg(foundAlg.name()));
+            logDebug(QString("Description: %1").arg(foundAlg.description()));
+            logDebug(QString("UUID: %1").arg(foundAlg.timeUUID()));
+            logDebug(QString("Create Date: %1").arg(foundAlg.creationDate()));
+            logDebug(QString("Update Date: %1").arg(foundAlg.updateDate()));
+            logDebug(QString("Vendor: %1").arg(foundAlg.getVendor()));
+            logDebug(QString("Version: %1").arg(foundAlg.getVersion()));
+            logDebug(QString("---------------------"));
+#endif
+
             errorStr = QString("The Flash Algorithm '%1' is not found").arg(algo.getPath());
             status = false;
         }
@@ -1571,7 +1619,7 @@ bool RequestManager::updateMcuInfo(Mcu mcu)
                                    "id = %7;").
                             arg(mcu.getDebugAlgorithm().coId()).
                             arg(mcu.getDescription()).
-                            arg(QString(mcu.getKeyParameter())).
+                            arg(QString("[\"" + mcu.getKeyParameters().join("\",\"") + "\"]")).
                             arg(QString(mcu.getWebPageURL())).
                             arg(QString(mcu.getDatasheetURL())).
                             arg(QString(mcu.getMemInfo())).

@@ -66,6 +66,11 @@ QMap<QString, Mcu> &Series::mcuMap()
     return _mcuMap;
 }
 
+const QMap<QString, Mcu>&Series::mcuMapConst() const
+{
+    return _mcuMap;
+}
+
 bool Series::hasDevices(){return !this->_mcuMap.isEmpty();}
 
 int Series::getMcuCount(){return this->_mcuMap.count();}

@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QPair>
 
+#include "models/mcu/manufacturer.h"
 #include "models/components/component.h"
 #include "models/components/category.h"
 #include "models/components/example.h"
@@ -16,6 +17,14 @@
 class ComponentsInfo : public QObject, public Loggable
 {
     Q_OBJECT
+private:
+    enum RequestStatus
+    {
+        Success = 0,
+        Failure,
+        NotFound,
+        WrongParameters
+    };
 
 protected:
 
@@ -49,11 +58,13 @@ public:
     QMap<int, Category> * categories();
     QMap<int, Category> * subcategories();
 
+    Component requestComponent(qint32 componentId, QString * errorString = nullptr);
+    void requestComponentMap(const QMap<QString, Manufacturer>& vendorMap, QMap<QString, Component>& componentMap);
     QMap<int, Component> requestComponentMap();
     QMap<int, Category> requestCategoryMap();
     QMap<int, Category> requestSubcategoryMap();
 
-    QMap<int, Example> requestExampleMap();
+    QMap<QString, Example> requestExampleMap();
 
     bool fixComponentManufacturerTable(QString * errorString = nullptr);
     bool fixComponentManufacturerTable(QString& errorString);
@@ -78,6 +89,10 @@ public:
 
     bool createComponent(Component& component, QString *errorString = nullptr);
     bool updateComponent(Component& component, QString *errorString = nullptr);
+    bool createComponentPdscAttrTable(QString * errorString = nullptr);
+    bool createExamplePdscAttrTable(QString * errorString = nullptr);
+
+    bool createExample(Example& example, QString *errorString = nullptr);
 
 private:
 
@@ -87,6 +102,7 @@ private:
     Component findComponent(const Component component, QString* errorString = nullptr);
     Category findCategory(const Category category, QString* errorString = nullptr);
     Category findSubCategory(const Category category, QString* errorString = nullptr);
+    Example findExample(const Example& example, QString* errorString = nullptr);
 
     bool createComponentStatus(Component::ComponentStatus& status, QString *errorString = nullptr);
     bool createCategory(Category& category, QString *errorString = nullptr);
@@ -101,8 +117,24 @@ private:
     bool hasComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, bool * status = nullptr, QString * errorString = nullptr);
     bool createComponentSubCategoryLink(int componentId, const QString& categoryName, const QString& subCategoryName, QString * errorString = nullptr);
 
-    bool hasComponentsLink(int parentId, int childId, bool * status = nullptr, QString * errorString = nullptr);
-    bool createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+    RequestStatus hasComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+    RequestStatus createComponentsLink(int parentId, int childId, QString * errorString = nullptr);
+    RequestStatus createComponentsLinks(const Component& component, QString * errorString = nullptr);
+
+    RequestStatus hasExampleLink(int exampleId, int componentId, QString * errorString = nullptr);
+    RequestStatus createExampleLinks(int exampleId, int componentId, QString * errorString = nullptr);
+    RequestStatus createExampleLinks(const Example& example, QString * errorString = nullptr);
+    RequestStatus componentHasExample(qint32 componentId, qint32 exampleId, QString * errorString = nullptr);
+    RequestStatus attachExampleToComponent(qint32 exampleId, qint32 componentId, QString * errorString = nullptr);
+    RequestStatus attachExampleToComponents(const Example& example, QString * errorString = nullptr);
+
+    bool addComponentPdscAttributes(const Component& component, QString * errorString = nullptr);
+    bool requestComponentPdscAttributes(qint32 componentId, PdscComponentAttributesEx& attributes, bool * found, QString * errorString = nullptr);
+    bool requestComponentPdscAttributes(QMap<qint32, PdscComponentAttributesEx>& attributes, QString * errorString = nullptr);
+
+    bool addExamplePdscAttributes(const Example& example, QString * errorString = nullptr);
+    bool requestExamplePdscAttributes(qint32 exampleId, PdscComponentAttributesEx& attributes, bool * found, QString * errorString = nullptr);
+    bool requestExamplePdscAttributes(QMap<qint32, PdscComponentAttributesEx>& attributes, QString * errorString = nullptr);
 
 signals:
 

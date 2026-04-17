@@ -19,6 +19,7 @@ public:
 
     void readPackDescription(PackDescription& pack);
     bool packInstall(PackDescription& pack, QString &errorString);
+    bool examplesInstall(PackDescription& pack, QString &errorString);
     QString lastError() const {return m_lastError;}
 
 private:
@@ -33,7 +34,7 @@ private:
     QStringList getCmsisFileList(PackDescription& pack, const QString version);
     bool extractSources(PackDescription& pack, QString& errorString);
     bool createComponentMirrors(PackDescription& pack, QString& errorString);
-    void updatePaths(PackDescription& pack);
+    bool createExampleMirrors(PackDescription& pack, QString& errorString);
 
 signals:
 

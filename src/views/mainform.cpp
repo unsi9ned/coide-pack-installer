@@ -71,7 +71,7 @@ MainForm::MainForm(QWidget *parent) :
     //--------------------------------------------------------------------------
     connect(m_mcuBrowserViewModel, &McuBrowserViewModel::loadStarted, [this]()
     {
-        ui->statusBar->showMessage("Загрузка...");
+        ui->statusBar->showMessage("Package Loading...");
         clearForm();
         lockUI(true);
     });
@@ -148,7 +148,7 @@ MainForm::MainForm(QWidget *parent) :
     connect(actionDbOptimize, &QAction::triggered, m_mcuBrowserViewModel, &McuBrowserViewModel::optimizeDatabase);
 
     // Подключаем кнопку установки к команде ViewModel
-    connect(actionInstall, &QAction::triggered, m_mcuBrowserViewModel, &McuBrowserViewModel::installCurrentPack);
+    connect(actionInstall, &QAction::triggered, this, &MainForm::showInstallTypeDialog);
 
     // Подключаем кнопку перезагрузки данных к команде ViewModel
     connect(actionReloadDfp, &QAction::triggered, [this]()
@@ -224,6 +224,42 @@ void MainForm::showErrorMessage(QString e)
 void MainForm::showInfoMessage(QString i)
 {
     QMessageBox::information(this, tr("Информация"), i, QMessageBox::Ok);
+}
+
+//------------------------------------------------------------------------------
+// Выбор типа установки
+//------------------------------------------------------------------------------
+void MainForm::showInstallTypeDialog()
+{
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Choosing the installation type");
+    msgBox.setText("What do you want to install?");
+    msgBox.setInformativeText("Select the type of package to install:");
+
+    // Добавляем пользовательские кнопки
+    QPushButton* examplesBtn = msgBox.addButton("Examples", QMessageBox::ActionRole);
+    QPushButton* componentsBtn = msgBox.addButton("Components", QMessageBox::ActionRole);
+    QPushButton* cancelBtn = msgBox.addButton("Cancel", QMessageBox::RejectRole);
+
+    // Устанавливаем иконку вопроса
+    msgBox.setIcon(QMessageBox::Question);
+
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == examplesBtn)
+    {
+        LOG_INFO("MainForm", "Setup Examples");
+        m_mcuBrowserViewModel->installCurrentPack(true);
+    }
+    else if (msgBox.clickedButton() == componentsBtn)
+    {
+        LOG_INFO("MainForm", "Setup Components");
+        m_mcuBrowserViewModel->installCurrentPack();
+    }
+    else if (msgBox.clickedButton() == cancelBtn)
+    {
+        LOG_INFO("MainForm", "Setup Cancel");
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -635,7 +671,16 @@ QTreeWidgetItem *MainForm::createComponentTreeItem(const ComponentNode &node,
     else
         item->setIcon(0, style()->standardIcon(QStyle::SP_FileIcon));
 #else
-    item->setIcon(0, QIcon(":/img/package_24x24.png"));
+    if(node.external)
+    {
+        //item->setIcon(0, QIcon(":/img/link_24x24.png"));
+        item->setIcon(0, style()->standardIcon(QStyle::SP_DirLinkIcon));
+    }
+    else
+    {
+        //item->setIcon(0, QIcon(":/img/package_24x24.png"));
+        item->setIcon(0, style()->standardIcon(QStyle::SP_DirIcon));
+    }
 #endif
 
     for (const auto& child : node.children)

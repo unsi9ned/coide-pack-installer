@@ -26,7 +26,7 @@ private:
                      const QString& series,
                      PackDescription& pack);
     DeviceFeature parseFeature(const QDomElement &featureElem);
-    ProgAlgorithm parseAlgorithm(const QDomElement &algorithmElement);
+    ProgAlgorithm parseAlgorithm(const QDomElement &algorithmElement, const PackDescription& pack);
     PdscCondition parseCondition(const QDomNode &condition);
     PdscRequirement parseRequirement(const QDomNode &requireNode);
     PdscComponent parseComponent(const QDomNode& componentNode,
@@ -56,11 +56,12 @@ private:
                                  const Family& family,
                                  const Series& series,
                                  const Mcu& device,
-                                 PdscComponent& component,
+                                 const PdscComponent& component,
                                  const QList<PdscComponent> &componentList);
 
     QList<Component*> findParentsComponent(const QMap<QString, Component>& coComponentMap,
-                                           const PackDescriptionParser::ParentComponentInfo& parent);
+                                           const PackDescriptionParser::ParentComponentInfo& parent,
+                                           const Component& child);
 
     QString cmsisWildcardToRegex(const QString& pattern);
 };

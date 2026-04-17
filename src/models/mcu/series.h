@@ -43,6 +43,7 @@ public:
     void setFamilyId(int id);
 
     QMap<QString, Mcu>& mcuMap();
+    const QMap<QString, Mcu>& mcuMapConst() const;
 
     bool hasDevices();
 

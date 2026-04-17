@@ -60,7 +60,12 @@ QString PackDescription::pathToSVD(const Mcu &device)
 
 void PackDescription::setVendor(QString vendor)
 {
-   this->_vendor = vendor;
+    QString v = vendor;
+
+    if(v.toLower().trimmed() == "nordicsemiconductor")
+        this->_vendor = "Nordic Semiconductor";
+    else
+        this->_vendor = vendor;
 }
 
 void PackDescription::setName(QString name)
@@ -224,6 +229,11 @@ QMap<QString, Component> &PackDescription::coComponentMap()
     return _componentMap;
 }
 
+QMap<QString, Example>&PackDescription::coExampleMap()
+{
+    return _exampleMap;
+}
+
 QMap<QString, QStringList> &PackDescription::componentFilesMap()
 {
     return _coComponentFilesMap;
@@ -244,6 +254,11 @@ QList<JdscComponent>&PackDescription::jdscComponentList()
     return _jdscComponentList;
 }
 
+QList<const PdscComponent*>& PackDescription::externalComponentList()
+{
+    return _externalComponentList;
+}
+
 //------------------------------------------------------------------------------
 // Очистка содержимого пакета, всех полей и списков
 //------------------------------------------------------------------------------
@@ -262,6 +277,9 @@ void PackDescription::clear()
     _coComponentFilesMap.clear();
     _cmsisComponentMap.clear();
     _pdscComponentList.clear();
+    _jdscComponentList.clear();
+    _externalComponentList.clear();
+    _exampleMap.clear();
 }
 
 //------------------------------------------------------------------------------

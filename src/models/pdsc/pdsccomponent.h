@@ -21,8 +21,10 @@ public:
     QString description() const;
     PdscCondition condition() const;
     PdscComponentAttributes& attributes();
+    const PdscComponentAttributes& attributesConst() const;
     QList<PdscFile>& files();
-    bool hasCondition();
+    const QList<PdscFile> filesConst() const;
+    bool hasCondition() const;
 
     void setDescription(const QString &description);
     void setCondition(const PdscCondition &condition);

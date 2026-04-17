@@ -17,7 +17,6 @@ private:
     int      _coId;
 
     QString  _name;
-    QString  _installPath;
     QString  _description;
     QString  _timeUuid;
     uint32_t _start;
@@ -29,12 +28,15 @@ private:
     QDateTime _createDate;
     QDateTime _updateDate;
 
+    QString m_vendor;
+    QString m_version;
+    bool m_installed;
+
 public:
     ProgAlgorithm(const QString& name = QString());
 
     void setCoId(int id);
     void setName(QString name);
-    void setInstallPath(const QString& path);
     void setStart(const uint32_t &start);
     void setSize(const uint32_t &size);
     void setRAMstart(const uint32_t &RAMstart);
@@ -45,11 +47,17 @@ public:
     void setCreateDate(const QString& dt);
     void setUpdateDate(const QString& dt);
     void setDescription(const QString& dscr);
+    void parseCoName(const QString& coName);
+    void setInstalled(bool state) { m_installed = state; }
+
+    void setVendor(const QString& vendor) {m_vendor = vendor;}
+    void setVersion(const QString& version) {m_version = version;}
+    QString getVendor() const {return m_vendor;}
+    QString getVersion() const {return m_version;}
 
     int coId() const;
     qint32 getCoMaxId() const {return ID_FLASH_ALGO_LAST; }
     QString name() const;
-    QString installPath() const;
     uint32_t start() const;
     uint32_t size() const;
     uint32_t RAMstart() const;
@@ -66,6 +74,7 @@ public:
     bool isRamDefined() const { return _RAMsize != -1; }
     bool isRomDefined() const { return _size != -1; }
     bool isValid(QString* errorString = nullptr) const;
+    bool isInstalled() const {return m_installed;}
 private:
     bool isValid(QString& errorString) const;
 };

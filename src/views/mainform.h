@@ -49,6 +49,7 @@ private:
 
 private slots:
 
+    void showInstallTypeDialog();
     void setupLogging();
     void delayedInit();
     void showErrorMessage(QString e);

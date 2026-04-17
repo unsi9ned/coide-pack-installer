@@ -176,6 +176,11 @@ QMap<QString, Family> &Manufacturer::families()
     return this->familyMap;
 }
 
+const QMap<QString, Family>&Manufacturer::familiesConst() const
+{
+    return this->familyMap;
+}
+
 //------------------------------------------------------------------------------
 // Проверить имеет ли производитель загруженные семейства
 //------------------------------------------------------------------------------
@@ -221,6 +226,19 @@ int Manufacturer::toKeilId() const
         keilId = this->id;
 
     return keilId;
+}
+
+//------------------------------------------------------------------------------
+// Преобразовать обычное имя производителя в пару <vendor>:<id>
+//------------------------------------------------------------------------------
+QString Manufacturer::makeKeilVendor(const QString& vendorName)
+{
+    if(vendorName.contains(":"))
+        return vendorName;
+    else if(_keilVendorMap.contains(vendorName))
+        return QString("%1:%2").arg(vendorName).arg(_keilVendorMap.value(vendorName));
+
+    return vendorName;
 }
 
 //------------------------------------------------------------------------------

@@ -294,7 +294,7 @@ bool DBGarbageCollector::cleanExamples()
     if(!reqManager->removeExamplePhantomRelations(&_errorString))
         return false;
 
-    QMap<int, Example> examples = reqManager->requestExampleMap();
+    QMap<QString, Example> examples = reqManager->requestExampleMap();
 
     for(auto it = examples.begin(); it != examples.end(); ++it)
     {
@@ -311,7 +311,7 @@ bool DBGarbageCollector::cleanExamples()
         // Статус компонента прочитан неверно либо отсутствует в базе данных
         if(ex.getStatus().isNull())
         {
-            logInfo(QString("Example %1 is NULL").arg(it.key()));
+            logInfo(QString("Example %1 is NULL").arg(ex.getName()));
         }
         // Каталог существует, но в базе помечен как не скачанный
         else if(exampleExists && !ex.isDownloaded())

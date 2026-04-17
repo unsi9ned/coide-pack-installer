@@ -61,10 +61,11 @@ struct ComponentNode
     int level;
     QString name;
     QString description;
+    bool external;
     QList<ComponentNode> children;
     const DeviceHierarchyNode* hierarchyNode;
 
-    ComponentNode() : level(0)
+    ComponentNode() : level(0), external(false)
     {
         static DeviceHierarchyNode nullHierarchyNode;
         hierarchyNode = &nullHierarchyNode;
@@ -109,7 +110,8 @@ public:
     bool loadPack(const QString& path);
     void loadPackAsync();
     void loadPackAsync(const QString& path);
-    void installCurrentPack();
+    void installCurrentPack(bool isExample = false);
+    bool installCurrentPackSync(bool isExample = false, QString * errorString = nullptr);
     void optimizeDatabase();
 
     void printDeviceTree() const;
@@ -171,6 +173,7 @@ public:
     bool componentHasFiles() const;
     QStringList componentFiles() const;
     QStringList componentDevices() const;
+    bool componentIsExternal() const;
 
 private:
     void printDeviceTree(const DeviceNode& childNode) const;

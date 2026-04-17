@@ -60,7 +60,7 @@ void PackManager::readPackDescription(PackDescription &pack)
         coComponent.setLayerId(Component::LAYER_MCU);
         coComponent.setType(Component::COMPONENT);
         coComponent.setVersion(it.key());
-        coComponent.setName(QString("CMSIS_Core_%1").arg(coComponent.getVersion()));
+        coComponent.setName(QString("CMSIS_CORE_%1").arg(coComponent.getVersion()));
         coComponent.setCategory(coCategory);
         coComponent.setDescription(it.value());
 
@@ -138,11 +138,39 @@ void PackManager::readPackDescription(PackDescription &pack)
                 supportVendors.append(pack.packVendor());
             }
 
+            QMap<QString, Component> componentMap;
             RequestManager::instance()->loadDataFromDb(supportVendors, pack.vendors());
+            RequestManager::instance()->requestComponentMap(pack.vendors(), componentMap);
+
+            for(auto coComponent : componentMap)
+            {
+                pack.pdscComponentList().append(coComponent.toPdscComponent());
+                PdscComponent& last = pack.pdscComponentList().last();
+                pack.externalComponentList().append(&last);
+            }
+
+            // Удаляем созданные искусственно CMSIS CORE
+            for(PdscComponent c : pack.pdscComponentList())
+            {
+                if(c.attributes().getCclass().toUpper() == "CMSIS" &&
+                   c.attributes().getCgroup().toUpper() == "CORE")
+                {
+                    QString cmVersion = c.attributes().getCversion();
+
+                    if(pack.cmsisComponents().contains(cmVersion))
+                    {
+                        Component* cm = pack.cmsisComponents().value(cmVersion);
+                        QString uuid = cm->getUuid();
+
+                        pack.coComponentMap().remove(uuid);
+                        pack.cmsisComponents().remove(cmVersion);
+                    }
+                }
+            }
+
             parser->reloadComponents(pack);
         }
 
-        updatePaths(pack);
         logInfo("The package description file has been parsed");
     }
     else
@@ -292,7 +320,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
         logInfo(QString("Adding the manufacturer %1").arg(m.getName()));
 
         if(!reqManager->createManufacturer(m))
-            break;
+        {
+            return false;
+        }
 
         for(auto f = m.families().begin(); f != m.families().end(); ++f)
         {
@@ -301,7 +331,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
             logInfo(QString("Adding the family %1").arg(fam.getName()));
 
             if(!reqManager->createFamily(fam))
-                break;
+            {
+                return false;
+            }
 
             for(auto s = fam.seriesMap().begin(); s!= fam.seriesMap().end(); ++s)
             {
@@ -310,7 +342,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                 logInfo(QString("Adding the series %1").arg(series.getName()));
 
                 if(!reqManager->createSeries(series))
-                    break;
+                {
+                    return false;
+                }
 
                 for(auto dev = series.mcuMap().begin(); dev != series.mcuMap().end(); ++dev)
                 {
@@ -321,7 +355,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                     logInfo(QString("Adding the Debug algorithm '%1'").arg(mcu.getDebugAlgorithm().name()));
 
                     if(!reqManager->createDebugAlgorithm(algorithm))
-                        break;
+                    {
+                        return false;
+                    }
                     else
                     {
                         mcu.setDebugAlgorithmId(algorithm.coId());
@@ -333,7 +369,9 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                         logInfo(QString("Adding the Flash algorithm '%1'").arg(flashAlgorithm->name()));
 
                         if(!reqManager->createFlashAlgorithm(*flashAlgorithm))
-                            break;
+                        {
+                            return false;
+                        }
                     }
                     else
                         logWarning("The default programming algorithm was not found");
@@ -341,17 +379,42 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
                     logInfo(QString("Adding the MCU = %1").arg(mcu.getName()));
 
                     if(!reqManager->createMcu(mcu))
-                        break;
+                    {
+                        return false;
+                    }
                     else if(flashAlgorithm)
                     {
                         logInfo(QString("Creating a link to the Flash Algorithm '%1'").arg(flashAlgorithm->name()));
 
-                        if(!reqManager->createFlashAlgorithmLink(mcu, *flashAlgorithm))
-                            break;
+                        if(!reqManager->createFlashAlgorithmLink(mcu, *flashAlgorithm, &errorString))
+                        {
+                            if(errorString.isEmpty())
+                                logError("An error occurred when creating the link");
+                            else
+                                logError(QString("An error occurred when creating the link: %1").arg(errorString));
+
+                            return false;
+                        }
                     }
                 }
             }
         }
+    }
+
+    //
+    // Создание вспомогательной таблицы атрибутов компонента
+    //
+    logInfo("Creating a table of component attributes");
+
+    if(!reqManager->createComponentPdscAttrTable(&errorString))
+    {
+        if(errorString.isEmpty())
+            logError(QString("Error when creating the components attribute table"));
+        else
+            logError(QString("Error when creating the components attribute table: %1").
+                     arg(errorString));
+
+        return false;
     }
 
     //
@@ -412,6 +475,168 @@ bool PackManager::packInstall(PackDescription &pack, QString& errorString)
             logError("Couldn't create component mirror");
         else
             logError(QString("Couldn't create component mirror: %1").arg(errorString));
+
+        return false;
+    }
+
+    //
+    // Завершение установки
+    //
+    logInfo(QString("Package installation '%1' completed").arg(pack.name()));
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+// Установка пакета как набора примеров
+//------------------------------------------------------------------------------
+bool PackManager::examplesInstall(PackDescription& pack, QString& errorString)
+{
+    //
+    // Проверка валидности устанавливаемого пакета
+    //
+    if(!pack.isValid())
+    {
+        logError(QString("The '%1' package is not valid").arg(pack.name()));
+        return false;
+    }
+
+    logInfo(QString("The '%1' package is being installed").arg(pack.name()));
+
+    //
+    // Подготовка каталога пакета
+    //
+    QDir packInstallDir;
+    Manufacturer vendor = pack.vendors().first();
+    QString path = Paths::instance()->coIdePackDir(vendor.getName(), pack.release());
+
+    packInstallDir.setPath(path);
+    pack.setInstallDir(path);
+
+    //
+    // Создание каталога установки
+    //
+    logInfo(QString("Creating an installation directory"));
+
+    if(!packInstallDir.exists() && !packInstallDir.mkpath(packInstallDir.path()))
+    {
+        logError("The package directory cannot be created");
+        return false;
+    }
+
+    //
+    // Распаковка файла описание аппаратуры в каталог установки
+    //
+    logInfo(QString("Extracting a pdsc file"));
+
+    if(!extractPackDescriptionFile(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            logError("Couldn't extract pdsc file");
+        else
+            logError(QString("Couldn't extract pdsc file: %1").arg(errorString));
+
+        return false;
+    }
+
+    //
+    // Распаковка исходников
+    //
+    logInfo("Unpacking sources");
+
+    if(!extractSources(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            logError("Couldn't extract sources files");
+        else
+            logError(QString("Couldn't extract sources files: %1").arg(errorString));
+
+        return false;
+    }
+
+    //
+    // Преобразование компонентов в примеры
+    //
+    for(const Component& component : pack.coComponentMap())
+    {
+        // Эти компоненты уже установлены (не входят в pdsc)
+        if(component.isExternal()) continue;
+
+        Example example(component);
+
+        // Находим компоненты, для которых созданы примеры
+        QString cgroup = example.pdscAttributes().getCgroup();
+
+        if(!cgroup.isEmpty())
+        {
+            for(const Component& child : pack.coComponentMap())
+            {
+                if(!child.isExternal()) continue;
+                if(child.getName().startsWith(cgroup + "_", Qt::CaseSensitive))
+                {
+                    example.addSupportComponent(&child);
+                }
+            }
+        }
+
+        pack.coExampleMap().insert(example.getUuid(), example);
+    }
+
+    //
+    // Создание вспомогательной таблицы, хранящей аттрибуты из pdsc
+    //
+    RequestManager * reqManager = RequestManager::instance();
+
+    logInfo("Creating a table of examples attributes");
+
+    if(!reqManager->createExamplePdscAttrTable(&errorString))
+    {
+        if(errorString.isEmpty())
+            logError(QString("Error when creating the examples attribute table"));
+        else
+            logError(QString("Error when creating the examples attribute table: %1").
+                     arg(errorString));
+
+        return false;
+    }
+
+    //
+    // Создаем примеры в базе данных
+    //
+
+    logInfo("Adding examples to the database");
+
+    for(Example& example : pack.coExampleMap())
+    {
+        logInfo(QString("Creating example '%1/%2'").
+                arg(example.getUniqueId()).
+                arg(example.getName()));
+
+        if(!reqManager->createExample(example, &errorString))
+        {
+            if(errorString.isEmpty())
+                logError(QString("An error occurred while adding the '%1' example").
+                         arg(example.getName()));
+            else
+                logError(QString("An error occurred while adding the '%1' example: %2").
+                         arg(example.getName()).
+                         arg(errorString));
+
+            return false;
+        }
+    }
+
+    //
+    // Создание примеров в файловой структуре CoIDE
+    //
+    logInfo("Creating mirrors of examples");
+
+    if(!createExampleMirrors(pack, errorString))
+    {
+        if(errorString.isEmpty())
+            logError("Couldn't create example mirror");
+        else
+            logError(QString("Couldn't create example mirror: %1").arg(errorString));
 
         return false;
     }
@@ -662,7 +887,7 @@ bool PackManager::extractFLM(PackDescription& pack, QString& errorString)
                 {
                     QString faLocalPath = fa.name();
 
-                    if(faLocalPath.isEmpty()) continue;
+                    if(fa.isInstalled() || faLocalPath.isEmpty()) continue;
 
                     if(!vendor.flmList().contains(Manufacturer::FlmInfo(faLocalPath)))
                     {
@@ -916,6 +1141,8 @@ void PackManager::loadCoComponents(PackDescription &pack)
 
     foreach(Component c, pack.coComponentMap())
     {
+        if(c.isExternal()) continue;
+
         coMap.insert(c.getUuid(), QStringList());
 
         QStringList& list = coMap[c.getUuid()];
@@ -1013,6 +1240,7 @@ void PackManager::loadCoComponents(PackDescription &pack)
     // потому что появляется много ненужного мусора
     //
     if(!compileUuid.isEmpty() &&
+       !componentMap[compileUuid].isExternal() &&
        (pack.packVendor() == "NordicSemiconductor" ||
         pack.packVendor() == "Nordic Semiconductor"))
     {
@@ -1070,7 +1298,7 @@ QStringList PackManager::getFullFileList(PackDescription &pack)
         Component& component = pack.coComponentMap()[it.key()];
         QStringList coList = it.value();
 
-        if(component.getName().startsWith("CMSIS_Core_"))
+        if(component.getName().startsWith("CMSIS_CORE_", Qt::CaseInsensitive))
             continue;
 
         foreach(QString f, coList)
@@ -1103,7 +1331,7 @@ QStringList PackManager::getCmsisFileList(PackDescription &pack, const QString v
         Component& component = pack.coComponentMap()[it.key()];
         QStringList coList = it.value();
 
-        if(component.getName() == QString("CMSIS_Core_%1").arg(version))
+        if(component.getName() == QString("CMSIS_CORE_%1").arg(version))
         {
             foreach(QString f, coList)
             {
@@ -1263,7 +1491,7 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
                            info.completeBaseName() + "." + "ls";
             }
 
-            if(component.getName().startsWith("CMSIS_Core_"))
+            if(component.getName().startsWith("CMSIS_CORE_", Qt::CaseInsensitive))
             {
                 targetPath = Paths::instance()->coIdeCmsisDir(component.getVersion()) + "/" + f;
             }
@@ -1297,35 +1525,83 @@ bool PackManager::createComponentMirrors(PackDescription &pack, QString &errorSt
 }
 
 //------------------------------------------------------------------------------
-// Обновление путей к алгоритмам программировани после загрузки pdsc
+// Создает файловую структуру примера в системе CoIDE.
+// Фактически создает ссылки на файлы, которые распакованы в каталог установки пакета
 //------------------------------------------------------------------------------
-void PackManager::updatePaths(PackDescription& pack)
+bool PackManager::createExampleMirrors(PackDescription& pack, QString& errorString)
 {
-    //
-    // Формирование списка файлов для распаковки
-    //
-    Manufacturer& vendor = pack.vendors().first();
-
-    foreach(QString familyName, vendor.families().keys())
+    if(!pack.isValid())
     {
-        Family& family = vendor.family(familyName);
+        errorString = QString("The '%1' package is not valid").arg(pack.name());
+        return false;
+    }
+    else if(pack.installDir().isEmpty())
+    {
+        errorString = QString("The installation directory is not defined or does not exist");
+        return false;
+    }
 
-        foreach(QString seriesName, family.seriesMap().keys())
+    if(pack.componentFilesMap().isEmpty())
+        loadCoComponents(pack);
+
+    QMap<QString, QStringList>& fileMap = pack.componentFilesMap();
+    QMap<QString, Example>& exampleMap = pack.coExampleMap();
+
+    for(auto it = fileMap.begin(); it != fileMap.end(); ++it)
+    {
+        QStringList coList = it.value();
+        Example& example = exampleMap[it.key()];
+        QDir rootDir;
+
+        rootDir.setPath(Paths::instance()->coIdeExamplesDir() +
+                        "/" + QString::number(example.getId()) +
+                        "_" + example.getName() +
+                        "/src");
+
+        if(!rootDir.exists() && !rootDir.mkpath(rootDir.path()))
         {
-            Series& series = vendor.family(familyName).series(seriesName);
+            errorString = QString("The mirror directory %1 cannot be created").arg(rootDir.path());
+            return false;
+        }
 
-            foreach (QString mcuName, series.mcuMap().keys())
+        foreach(QString f, coList)
+        {
+            QFileInfo info(f);
+            QDir subDir;
+            QString targetPath = pack.installDir() + "/" + f;
+            QString linkPath = rootDir.path() + "/" + f;
+
+            // CoIDE не импортирует ld-файлы
+            if(info.suffix().toLower() == "ld")
             {
-                Mcu& mcu = vendor.family(familyName).series(seriesName).mcu(mcuName);
+                linkPath = rootDir.path() + "/" +
+                           info.path() + "/" +
+                           info.completeBaseName() + "." + "ls";
+            }
 
-                for(ProgAlgorithm& a : mcu.algorithms())
-                {
-                    QString path = Paths::instance()->coIdePackDir(vendor.toKeilName(), pack.release());
-                    path = QString(path + "/" + a.name()).replace(Paths::instance()->coIdeDir(), "..");
-                    a.setInstallPath(path);
-                }
+            subDir.setPath(rootDir.path() + "/" + info.path());
+
+            if(!subDir.exists() && !subDir.mkpath(subDir.path()))
+            {
+                errorString = QString("The %1 directory cannot be created").arg(rootDir.path());
+                return false;
+            }
+
+            QString relativePath = linkPath;
+            int beginPos = Paths::instance()->coIdeExamplesDir().length();
+
+            relativePath.remove(0, beginPos + 1);
+
+            logInfo(QString("Create symbolic link '%1'").arg(relativePath));
+
+            if(!QFile(linkPath).exists() && !MakeLink::createLink(linkPath, targetPath))
+            {
+                errorString = QString("Failed to create symbolic link to %1 file").arg(f);
+                return false;
             }
         }
     }
+
+    return true;
 }
 

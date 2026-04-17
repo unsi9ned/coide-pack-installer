@@ -6,7 +6,7 @@
 
 class PdscComponentAttributes : public PdscElement
 {
-private:
+protected:
     QString m_cvendor;      // optional
     QString m_cbundle;      // optional
     QString m_cclass;       // required

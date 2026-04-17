@@ -3,6 +3,9 @@
 #include <QStringList>
 #include "component.h"
 #include "common/constants.h"
+#include "models/mcu/manufacturer.h"
+#include "services/paths.h"
+#include "models/pdsc/pdscfile.h"
 
 int Component::getId() const
 {
@@ -336,7 +339,7 @@ void Component::addParent(Component *parent)
         m_parents.append(parent);
 }
 
-bool Component::hasParents()
+bool Component::hasParents() const
 {
     return !m_parents.isEmpty();
 }
@@ -532,7 +535,7 @@ QStringList Component::supportedMcuList() const
     return _supportsMcuList;
 }
 
-Component::ComponentStatus Component::getStatus()
+Component::ComponentStatus Component::getStatus() const
 {
     return _status;
 }
@@ -553,7 +556,7 @@ bool Component::isDriver()
     return type == ComponentType::DRIVER;
 }
 
-bool Component::isNull()
+bool Component::isNull() const
 {
     return id == -1;
 }
@@ -630,29 +633,131 @@ Component::operator==(const Component &component)
 
 QString Component::getPath() const
 {
-    if(!m_jdscPath.isEmpty()) return m_jdscPath;
+    if(!m_jdscPath.isEmpty())
+        return m_jdscPath;
+    else
+        return m_pdscAttributes.makePath();
+}
 
-    QString localCondition;
+//------------------------------------------------------------------------------
+// Преобразует компонент к формату PDSC
+//------------------------------------------------------------------------------
+PdscComponent Component::toPdscComponent() const
+{
+    PdscComponentAttributes attr = m_pdscAttributes;
+    PdscComponent pdscComponent;
+    PdscCondition requireComponentCond;
+    PdscCondition acceptDevicesCond;
 
-    if(name.startsWith("Compile_") && !_supportsMcuList.isEmpty())
+    pdscComponent.setAttributes(attr);
+    pdscComponent.setDescription(description);
+
+    if(!m_parents.isEmpty())
     {
-        QStringList mcuList = _supportsMcuList;
-        std::sort(mcuList.begin(), mcuList.end());
-        localCondition = mcuList.join("+") + "/";
+        QString condId = m_pdscAttributes.getPdscCondition().isEmpty() ?
+                         name:
+                         m_pdscAttributes.getPdscCondition();
+
+        requireComponentCond.setId(condId);
+
+        for(Component* parent : m_parents)
+        {
+            PdscRequirement require(PdscRequirement::Require);
+
+            QString Cclass = parent->getPdscClass();
+            QString Cgroup = parent->getPdscGroup();
+            QString Csub = parent->getPdscSub();
+            QString Cvariant = parent->getPdscVariant();
+            QString Cversion = parent->getPdscVersion();
+
+            require.setCclass(Cclass);
+            require.setCgroup(Cgroup);
+            require.setCsub(Csub);
+            require.setCvariant(Cvariant);
+            require.setCversion(Cversion);
+
+            requireComponentCond.addRequirement(require);
+        }
     }
 
-    QString path = m_cvendor.isEmpty() ? "" : m_cvendor + "/";
-    path += m_cclass.isEmpty() ? "" : m_cclass + "/";
-    path += m_cgroup.isEmpty() ? "" : m_cgroup + "/";
-    path += m_csub.isEmpty() ? "" : m_csub + "/";
-    path += m_cvariant.isEmpty() ? "" : m_cvariant + "/";
-    path += m_cversion.isEmpty() ? "" : m_cversion + "/";
-    path += m_condition.isEmpty() ? localCondition : m_condition + "/";
+    if(!_supportsMcuList.isEmpty() &&
+       m_pdscAttributes.getCclass().toUpper() != "CMSIS" &&
+       m_pdscAttributes.getCgroup().toUpper() != "CORE")
+    {
+        QString deviceVendor = Manufacturer::makeKeilVendor(m_pdscAttributes.getCvendor());
 
-    if(path.endsWith('/'))
-        path.chop(1);
+        // Искусственно создает атрибут condition
+        acceptDevicesCond.setId(makeCondition());
 
-    return path;
+        for(QString mcu : _supportsMcuList)
+        {
+            PdscRequirement accept(PdscRequirement::Accept);
+
+            accept.setDvendor(deviceVendor);
+            accept.setDname(mcu);
+            acceptDevicesCond.addRequirement(accept);
+        }
+    }
+
+    // Восстанавливаем список файлов
+    QList<QFileInfo> files = Paths::instance()->componentFilesVerbose(id, name);
+
+    if(!files.isEmpty())
+    {
+        for(QFileInfo f : files)
+        {
+            PdscFile pFile;
+
+            if(f.suffix().toLower() == "h")
+            {
+                pFile.setCategory(FileCategory("header"));
+            }
+            else if(f.suffix().toLower() == "c" || f.suffix().toLower() == "s")
+            {
+                pFile.setCategory(FileCategory("source"));
+            }
+            else if(f.suffix().toLower() == "ls" || f.suffix().toLower() == "ld")
+            {
+                pFile.setCategory(FileCategory("linkerScript"));
+            }
+
+            pFile.setName(f.filePath());
+            pdscComponent.files().append(pFile);
+        }
+    }
+
+    if(!requireComponentCond.isNull() && !acceptDevicesCond.isNull())
+    {
+        requireComponentCond.addCondition(acceptDevicesCond);
+        pdscComponent.setCondition(requireComponentCond);
+    }
+    else if(!requireComponentCond.isNull())
+    {
+        pdscComponent.setCondition(requireComponentCond);
+    }
+    else if(!acceptDevicesCond.isNull())
+    {
+        pdscComponent.setCondition(acceptDevicesCond);
+    }
+
+    return pdscComponent;
+}
+
+//------------------------------------------------------------------------------
+// Если компонент не содержит поля condition, то можно сгенерировать его
+// на основе списка поддерживаемых устройств
+//------------------------------------------------------------------------------
+QString Component::makeCondition() const
+{
+    QStringList mcuList = _supportsMcuList;
+    std::sort(mcuList.begin(), mcuList.end());
+
+    QString conditionId = mcuList.join("+") + "/";
+
+    if(conditionId.endsWith('/'))
+        conditionId.chop(1);
+
+    return conditionId;
 }
 
 Category Component::getCategory() const
