@@ -61,6 +61,7 @@ Options:
   -l, --devices           Uploading a DFP and displaying a list of devices
   -c, --components        Uploading a DFP and displaying a list of components
   -i, --install           Install Device Family Package in CoIDE
+  -e                      Install as Package of Examples  
   --optimize-db           Optimize database (clean unused tables and obsolete
                           data)
 ```
