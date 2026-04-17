@@ -94,7 +94,7 @@ int runConsole(int argc, char *argv[])
     parser.addOption(installOption);
 
     QCommandLineOption exampleOption(
-        QStringList() << "e",
+        QStringList() << "e" << "examples",
         "Install as Package of Examples"
     );
     parser.addOption(exampleOption);

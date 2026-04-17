@@ -29,7 +29,6 @@ private:
     int userId;
     QString name;
     QString description;
-    QString keyParameter;
     QString webPageURL;
     QString datasheetURL;
     QString memInfo;
@@ -58,7 +57,7 @@ public:
     QString getName() const {return name;}
     QString getCoName() const {return QString(name).toUpper();}
     QString getDescription() const {return description;}
-    QString getKeyParameter() const {return keyParameter;}
+    QStringList getKeyParameters() const {return keyParameters;}
     QString getWebPageURL() const {return webPageURL;}
     QString coWebPageUrl() const {return "[\"" + webPageURL + "\"]";}
     QString getDatasheetURL() const {return datasheetURL;}
@@ -79,12 +78,13 @@ public:
     void setDebugAlgorithmId(int id);
     Mcu& setName(QString s);
     void setDescription(QString s){this->description = s;}
-    void setKeyParameter(const QString s){this->keyParameter = s;}
+    void setKeyParameters(const QStringList& s){this->keyParameters = s;}
     void setWebPageURL(const QString url){this->webPageURL = url;}
     void fromCoWebPageURL(QString url){this->webPageURL = url.remove("[\"").remove("\"]");}
     void setDatasheetURL(const QString& url){this->datasheetURL = url;}
     void fromCoDatasheetURL(QString url){this->datasheetURL = url.remove("[\"").remove("\"]");}
     void setMemInfoFromJson(const QString& memInfo);
+    void setKeyParameterFromJson(const QString& array);
     void setMemInfo(const QString& info){this->memInfo = info;}
     void setMicro(QString s){this->micro = s;}
     void setAdvertising(QString s){this->advertising = s;}

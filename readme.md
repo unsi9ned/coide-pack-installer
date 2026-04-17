@@ -22,7 +22,9 @@
 - `Milandr.MDR32FxQI_DFP.1.3.2-unsi9ned.2.pack`
 - `Milandr.MDR32FxQI_Examples.1.3.2-unsi9ned.2.pack`
 
-> **Примечание:** Для пакетов других производителей работа не гарантируется. Возможны ошибки при разборе `.pdsc` или интеграции компонентов.
+> **Примечание 1:** Для пакетов других производителей работа не гарантируется. Возможны ошибки при разборе `.pdsc` или интеграции компонентов.
+
+> **Примечание 2:** Пакет Milandr.MDR32FxQI_Example можно установить только после установки основого пакета Milandr.MDR32FxQI_DFP, т.к. он является производным от DFP
 
 ### Требования
 - Windows 7/10/11
@@ -61,7 +63,7 @@ Options:
   -l, --devices           Uploading a DFP and displaying a list of devices
   -c, --components        Uploading a DFP and displaying a list of components
   -i, --install           Install Device Family Package in CoIDE
-  -e                      Install as Package of Examples  
+  -e, --examples          Install as Package of Examples
   --optimize-db           Optimize database (clean unused tables and obsolete
                           data)
 ```

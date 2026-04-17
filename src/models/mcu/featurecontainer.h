@@ -12,6 +12,9 @@ class FeatureContainer
 private:
     QList<DeviceFeature> _featureList;
 
+protected:
+    QStringList keyParameters;
+
 public:
     FeatureContainer();
 

@@ -99,6 +99,24 @@ void Mcu::setMemInfoFromJson(const QString &memInfo)
     }
 }
 
+//------------------------------------------------------------------------------
+// Парсинг поля keyParameter из таблицы mcu
+//------------------------------------------------------------------------------
+void Mcu::setKeyParameterFromJson(const QString &array)
+{
+    QString jsonStr = array;
+
+    // Парсим внешний массив
+    QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
+    QJsonArray outerArray = doc.array();
+
+    for (const QJsonValue& item : outerArray)
+    {
+        QString innerJsonStr = item.toString();
+        keyParameters.append(innerJsonStr);
+    }
+}
+
 Mcu &Mcu::setCoreDebugAlgorithm(const QString &coreName)
 {
     debugAlgorithm.setProcessor(coreName);

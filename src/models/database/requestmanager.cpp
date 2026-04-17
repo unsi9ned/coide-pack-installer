@@ -287,7 +287,7 @@ QList<Mcu> RequestManager::requestMcuList(int seriesId)
         mcu.setDebugAlgorithmId(debugAlgorithmId);
         mcu.setName(name);
         mcu.setDescription(description);
-        mcu.setKeyParameter(keyParameter);
+        mcu.setKeyParameterFromJson(keyParameter);
         mcu.fromCoWebPageURL(webPageURL);
         mcu.fromCoDatasheetURL(datasheetURL);
         mcu.setMemInfoFromJson(memInfo);
@@ -341,7 +341,7 @@ Mcu RequestManager::requestMcu(const QString& name)
         mcu.setDebugAlgorithmId(debugAlgorithmId);
         mcu.setName(name);
         mcu.setDescription(description);
-        mcu.setKeyParameter(keyParameter);
+        mcu.setKeyParameterFromJson(keyParameter);
         mcu.fromCoWebPageURL(webPageURL);
         mcu.fromCoDatasheetURL(datasheetURL);
         mcu.setMemInfoFromJson(memInfo);
@@ -1619,7 +1619,7 @@ bool RequestManager::updateMcuInfo(Mcu mcu)
                                    "id = %7;").
                             arg(mcu.getDebugAlgorithm().coId()).
                             arg(mcu.getDescription()).
-                            arg(QString(mcu.getKeyParameter())).
+                            arg(QString("[\"" + mcu.getKeyParameters().join("\",\"") + "\"]")).
                             arg(QString(mcu.getWebPageURL())).
                             arg(QString(mcu.getDatasheetURL())).
                             arg(QString(mcu.getMemInfo())).
